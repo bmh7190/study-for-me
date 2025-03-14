@@ -1,0 +1,97 @@
+
+---
+
+#### Below Your Program
+1. Application software
+	- written in high-level language(HLL)
+2. System software
+	- Compiler : HLL -> machine code
+	- OS : service code
+		- I/O
+		- 메모리와 스토리지 관리
+		- scheduling tasks & sharing resources
+		
+3. Hardware
+	- processor, memory, I/O controller
+
+---
+### Levels of Program Code
+1. High-level language : 문제 영역에 더 추상화된 언어
+2. Assembly lanaguage : 문자 명령어
+3. Hardware representation : 명령어와 데이터를 이진 수로 표현한 것
+
+---
+### Response Time and Throughput
+
+1. Response time : 응답 시간
+2. Throughput : 시간 당 얼마나 일을 할 수 있는가?
+
+성능 = 1/수행 시간
+X가 Y보다 n 배 빠르다는 것은 X 성능 / Y 성능 = Y 수행 시간 / X 수행 시간
+
+
+---
+#### Elapsed time
+프로세싱, I/O, OS overhead, idle time을 포함한 전체 응답 시간 
+
+#### CPU time
+주어진 일을 수행하는 걸린 시간 
+
+- 단, I/O time, 다른 공유된 일 제외한다.
+- user CPU time 과 system CPU time으로 구분된다.
+- 다른 프로그램은 CPU와 시스템 성능에 따라서 다르게 영향을 받는다. 
+
+
+$$
+\text{Clock Cycle Time} = \frac{1}{\text{Clock Rate}}
+$$
+
+$$
+\text{CPU Time} = \text{CPU Clock Cycles} \times \text{Clock Cycle Time} = \frac{\text{CPU Clock Cycles}}{\text{Clock Rate}}
+$$
+
+Clock이 몇 번 수행 되는지? * Clock 당 수행시간
+
+###### 줄이려면?
+Clock cycle의 수를 줄이던지 Clock rate를 증가시키던지 해야한다.
+하지만 clock rate와 cycle count 는 trade off 관계에 있음
+
+---
+### Instruction Count and CPI
+
+
+$$
+\text{Clock Cycles} = \text{Instruction Count} \times \text{Cycles per Instruction}
+$$
+
+$$ 명령어 수 * 해당 명령어의 수행시간 
+$$
+
+
+$$
+\text{CPU Time} = \text{CPU Clock Cycles} \times \text{Clock Cycle Time} = \frac{\text{CPU Clock Cycles}}{\text{Clock Rate}}
+$$
+
+$$
+= \text{Instruction Count} \times \text{Cycles per Instruction} \times \text{Clock Cycle Time}
+$$
+
+$$
+= \frac{\text{Instruction Count} \times \text{Cycles per Instruction}}{\text{Clock Rate}}
+$$
+
+- 프로그램에 대한 명령어 수는 program 과 컴파일러 ISA에 의해 결정된다.
+- 각 명령에 대한 평균 수행시간은 CPU 하드웨어에 의해 결정된다. 
+- 만약 다른 명령어들이 다른 CPI(Cycles per Instruction )를 가지고 있다면 평균 CPI는 명령어가 실행되는 비율에 영향을 받는다. 
+
+
+#### CPU in More Detail
+
+
+
+$$Clock Cycles = \sum_{i=1}^{n} CPI_i\times Instruction Count_i$$ 
+프로그램이 실행하는 **각 명령어 종류 iii** 에 대한 가중 평균을 구하는 식
+
+$$
+CPI = \frac{\text{Clock Cycles}}{\text{Instruction Count}} = \sum_{i=1}^{n} \left( \frac{CPI_i \times \text{Instruction Count}_i}{\text{Instruction Count}} \right)
+$$

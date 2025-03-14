@@ -1,0 +1,25 @@
+---
+
+---
+---
+
+## Operating System
+A program that act as an intermediary between a user of a computer and the computer and the computer hardware.
+
+goals:
+- execute user programs and make solving user problems easier
+- make the computer system convenient to use
+- use the computer hardware in an efficient manner
+
+## OS History 
+
+### Early 1950s - Mid 1960s
+- hardware expensive, humans cheap
+- job is recorded as a punch card
+	1. receive card decks from users
+	2. loading a deck of cards into a computer system
+	3. output the execution result to the printer
+	4. deliver the output to the user
+- Slow job-to-job transition
+
+ 
