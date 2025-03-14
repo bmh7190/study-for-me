@@ -109,5 +109,9 @@ other services exist for ensuring the efficient operation of the system itselt v
 운영체제는 하드웨어의 지원을 받아 최소한 두 가지 운영 모드를 구별하여 **시스템 보호 및 안정성을 보장**합니다.
 
 1. User mode
+	1. User에 의해 실행된다. 
 2. Kernel mode
-	1. 
+	1. OS에 의해 수행된다.
+	2. kerne mode에서 수행하고 있을 때, OS는 kernel과 user의 메모리에 대한 접근의 제한을 푼다.
+
+컴퓨터 하드웨어에는 **모드 비트(Mode Bit)** 가 추가되며, 특히 **프로세서 상태(Processor Status)** 에 포함된다.
