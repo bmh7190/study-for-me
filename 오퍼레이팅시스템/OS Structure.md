@@ -97,4 +97,8 @@ other services exist for ensuring the efficient operation of the system itselt v
 #### System Calls
 운영체제가 제공하는 서비스에 접근하는 프로그래밍 인터페이스는 주로 **고수준 API(High-Level API)를 통해 사용되며**, 시스템 호출(System Call)을 직접 사용하는 경우는 많지 않다.
 
-대체적으로 각각의 system call에는 번호가 붙여져 있다. system call interface는 이런 번호들에 따른 테이블로 구성된다. 
+대체적으로 각 **시스템 호출(System Call)** 에는 고유한 번호가 부여되며, **시스템 콜 인터페이스(System Call Interface)** 는 이러한 번호를 매핑한 테이블로 구성된다.
+
+시스템 콜 인터페이스는 운영체제(OS) 커널에서 해당 시스템 호출을 실행하고, 그 결과와 상태 정보를 반환한다.
+
+시스템 호출이 내부적으로 어떻게 동작하는지는 호출하는 프로그램(caller)이 알 필요가 없으며, 단순히 **API를 따르고, 운영체제가 시스템 호출을 통해 어떤 작업을 수행하는지만 이해하면 된다.**
