@@ -135,4 +135,8 @@ other services exist for ensuring the efficient operation of the system itselt v
 	
 3. Layered Approach
     OS는 몇 개의 계층으로 나누어진다. 아래 계층으로 갈 수록 하드웨어와 가깝고 위 계층으로  갈 수록 user interface에 가깝다.
-    
+    모듈화(Modularity)를 통해, 각 계층은 오직 하위 계층의 기능(연산)과 서비스만을 사용하도록 설계된다.
+
+4. Microkernel
+	OS는 kernel에서 필수적이지 않은 구성 요소들을 모두 제거하고, 그 요소들은 user-level 프로그램으로서 수행한다. ex) MAC
+	사용자  모듈
