@@ -102,3 +102,12 @@ other services exist for ensuring the efficient operation of the system itselt v
 시스템 콜 인터페이스는 운영체제(OS) 커널에서 해당 시스템 호출을 실행하고, 그 결과와 상태 정보를 반환한다.
 
 시스템 호출이 내부적으로 어떻게 동작하는지는 호출하는 프로그램(caller)이 알 필요가 없으며, 단순히 **API를 따르고, 운영체제가 시스템 호출을 통해 어떤 작업을 수행하는지만 이해하면 된다.**
+
+
+---
+#### User mode VS Kernel mode
+운영체제는 하드웨어의 지원을 받아 최소한 두 가지 운영 모드를 구별하여 **시스템 보호 및 안정성을 보장**합니다.
+
+1. User mode
+2. Kernel mode
+	1. 
