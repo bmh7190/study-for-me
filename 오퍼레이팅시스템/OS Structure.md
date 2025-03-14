@@ -124,4 +124,5 @@ other services exist for ensuring the efficient operation of the system itselt v
 ---
 #### OS Structure
 1. Simple Structure ( MS-DOS )
-	1. 
+	MS-DOS는 **메모리 사용을 최소화하면서도 최대한의 기능을 제공하는 설계**였지만, **모듈화 부족과 명확한 계층 구조의 부재로 인해 현대 운영체제에 비해 구조적으로 복잡하고 유지보수가 어려웠음**. 
+	
