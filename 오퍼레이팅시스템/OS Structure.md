@@ -96,4 +96,5 @@ other services exist for ensuring the efficient operation of the system itselt v
 ---
 #### System Calls
 programming interface to the service provided by the OS
-Typically written 
+Typically written in a high-level language
+mostly accesd by programs via a high-level application programming interface rather than direct system call use

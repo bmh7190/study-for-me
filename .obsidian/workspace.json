@@ -27,12 +27,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "컴퓨터구조론/Computer Abstractions and Technology.md",
+                "file": "오퍼레이팅시스템/OS Structure.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Computer Abstractions and Technology"
+              "title": "OS Structure"
             }
           }
         ],
@@ -93,8 +93,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 200,
-    "collapsed": true
+    "width": 200
   },
   "right": {
     "id": "3bf42c6451d2f6b9",
@@ -158,13 +157,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "컴퓨터구조론/Computer Abstractions and Technology.md",
+                "file": "오퍼레이팅시스템/OS Structure.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of Computer Abstractions and Technology"
+              "title": "Outline of OS Structure"
             }
           }
         ],
@@ -189,6 +188,8 @@
   "active": "6cde92f587a12474",
   "lastOpenFiles": [
     "오퍼레이팅시스템/Process.md",
+    "컴퓨터구조론/Instructions_Language of the Computer.md",
+    "컴퓨터구조론/Computer Abstractions and Technology.md",
     "README.md",
     "Pasted image 20250313170013.png",
     "Pasted image 20250313170002.png",
@@ -198,7 +199,6 @@
     "Welcome.md",
     "Untitled.md",
     "데이터베이스/Intro.md",
-    "컴퓨터구조론/Computer Abstractions and Technology.md",
     "컴퓨터구조론",
     "오퍼레이팅시스템/Introduction to OS.md",
     "오퍼레이팅시스템/History of Photogrammetry.md",
