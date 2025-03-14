@@ -126,6 +126,7 @@ other services exist for ensuring the efficient operation of the system itselt v
 1. Simple Structure ( MS-DOS )
 	MS-DOS는 **메모리 사용을 최소화하면서도 최대한의 기능을 제공하는 설계**였지만, **모듈화 부족과 명확한 계층 구조의 부재로 인해 현대 운영체제에 비해 구조적으로 복잡하고 유지보수가 어려웠음**. 
 	모놀리 식 구조
+	
 2.  More Complex (initial unix)
 	모놀리식 구조
 	UNIX는 두 개의 분리 가능한 부분으로 구성된다.
@@ -139,4 +140,24 @@ other services exist for ensuring the efficient operation of the system itselt v
 
 4. Microkernel
 	OS는 kernel에서 필수적이지 않은 구성 요소들을 모두 제거하고, 그 요소들은 user-level 프로그램으로서 수행한다. ex) MAC
-	사용자  모듈
+	사용자  모듈 간의 통신은 메세지 전달(Message Passing) 방식을 사용한다.
+	
+	장점 
+	- 마이크로커널 확장에 용이
+	- 운영체제를 새로운 아키텍쳐로 이식하기 쉬움
+	- 더 높은 신뢰성 -> kernel에서 돌아가는 코드의 양이 적어지다 보니..
+	- 더 높은 보안성
+	단점 
+	- 사용자 공간과 커널 공간 사이의 통신으로 인한 성능 오버헤드
+
+
+5. Modules
+	많은 현대 운영체제는 **로드 가능한 커널 모듈(LKM)** 방식을 구현한다.
+	- **객체지향적(Object-Oriented) 접근 방식을 사용**
+	- **각 핵심 구성 요소(Core Component)는 독립적으로 존재**
+	- **모듈 간의 통신은 정의된 인터페이스(known interfaces)를 통해 이루어짐**
+	- **필요할 때 커널 내에서 동적으로 로드 및 언로드 가능**
+	- **계층 구조(Layered Structure)와 유사하지만 더 유연함**
+6.  Hybrid Systems
+	사실 현대의 대부분의 OS는
+	
