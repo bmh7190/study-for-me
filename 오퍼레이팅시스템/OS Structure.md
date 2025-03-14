@@ -121,3 +121,7 @@ other services exist for ensuring the efficient operation of the system itselt v
 **인터럽트(Interrupt) 또는 트랩(Trap)이 발생하면, 하드웨어는 자동으로 커널 모드(Kernel Mode)로 전환된다.**
 **커널 모드에서는 특권 명령(Privileged Instructions)을 실행할 수 있다.**
 
+---
+#### OS Structure
+1. Simple Structure ( MS-DOS )
+	1. 
