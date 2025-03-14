@@ -115,3 +115,9 @@ other services exist for ensuring the efficient operation of the system itselt v
 	2. kerne mode에서 수행하고 있을 때, OS는 kernel과 user의 메모리에 대한 접근의 제한을 푼다.
 
 컴퓨터 하드웨어에는 **모드 비트(Mode Bit)** 가 추가되며, 특히 **프로세서 상태(Processor Status)** 에 포함된다.
+- kernel mode : 0
+- user mode : 
+
+**인터럽트(Interrupt) 또는 트랩(Trap)이 발생하면, 하드웨어는 자동으로 커널 모드(Kernel Mode)로 전환된다.**
+**커널 모드에서는 특권 명령(Privileged Instructions)을 실행할 수 있다.**
+
