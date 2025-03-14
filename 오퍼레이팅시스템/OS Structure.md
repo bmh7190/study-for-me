@@ -95,6 +95,6 @@ other services exist for ensuring the efficient operation of the system itselt v
 
 ---
 #### System Calls
-programming interface to the service provided by the OS
-Typically written in a high-level language
-mostly accesd by programs via a high-level application programming interface rather than direct system call use
+운영체제가 제공하는 서비스에 접근하는 프로그래밍 인터페이스는 주로 **고수준 API(High-Level API)를 통해 사용되며**, 시스템 호출(System Call)을 직접 사용하는 경우는 많지 않다.
+
+대체적으로 각각의 system call에는 번호가 붙여져 있다. system call interface는 이런 번호들에 따른 테이블로 구성된다. 
