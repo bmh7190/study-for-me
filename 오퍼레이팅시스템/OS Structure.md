@@ -125,4 +125,14 @@ other services exist for ensuring the efficient operation of the system itselt v
 #### OS Structure
 1. Simple Structure ( MS-DOS )
 	MS-DOS는 **메모리 사용을 최소화하면서도 최대한의 기능을 제공하는 설계**였지만, **모듈화 부족과 명확한 계층 구조의 부재로 인해 현대 운영체제에 비해 구조적으로 복잡하고 유지보수가 어려웠음**. 
+	모놀리 식 구조
+2.  More Complex (initial unix)
+	모놀리식 구조
+	UNIX는 두 개의 분리 가능한 부분으로 구성된다.
+    - **시스템 프로그램(System Programs)**
+    - **커널(Kernel)**
+	   커널은 시스템 호출 인터페이스 아래에서 물리적 하드웨어 위에 위치하며 파일 시스템, CPU 스케줄링, 메모리 관리 및 기타 운영체제 기능을 제공한다.
 	
+3. Layered Approach
+    OS는 몇 개의 계층으로 나누어진다. 아래 계층으로 갈 수록 하드웨어와 가깝고 위 계층으로  갈 수록 user interface에 가깝다.
+    
