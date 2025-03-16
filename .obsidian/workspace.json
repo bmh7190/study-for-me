@@ -25,14 +25,14 @@
             "id": "6cde92f587a12474",
             "type": "leaf",
             "state": {
-              "type": "markdown",
+              "type": "split-diff-view",
               "state": {
-                "file": "오퍼레이팅시스템/OS Structure.md",
-                "mode": "source",
-                "source": false
+                "aFile": "오퍼레이팅시스템/OS Structure.md",
+                "bFile": "오퍼레이팅시스템/OS Structure.md",
+                "aRef": ""
               },
-              "icon": "lucide-file",
-              "title": "OS Structure"
+              "icon": "diff",
+              "title": "Diff: OS Structure"
             }
           }
         ],
@@ -93,8 +93,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 200,
-    "collapsed": true
+    "width": 200
   },
   "right": {
     "id": "3bf42c6451d2f6b9",
@@ -166,14 +165,23 @@
               "icon": "lucide-list",
               "title": "Outline of OS Structure"
             }
+          },
+          {
+            "id": "98a707d992c0302f",
+            "type": "leaf",
+            "state": {
+              "type": "git-view",
+              "state": {},
+              "icon": "git-pull-request",
+              "title": "Source Control"
+            }
           }
         ],
-        "currentTab": 3
+        "currentTab": 4
       }
     ],
     "direction": "horizontal",
-    "width": 200,
-    "collapsed": true
+    "width": 200
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -188,15 +196,15 @@
   },
   "active": "6cde92f587a12474",
   "lastOpenFiles": [
+    "오퍼레이팅시스템/OS Structure.md",
     "오퍼레이팅시스템/Process.md",
     "컴퓨터구조론/Instructions_Language of the Computer.md",
     "컴퓨터구조론/Computer Abstractions and Technology.md",
+    "데이터베이스/Realatonal Model.md",
     "README.md",
     "Pasted image 20250313170013.png",
     "Pasted image 20250313170002.png",
     "Pasted image 20250312214906.png",
-    "오퍼레이팅시스템/OS Structure.md",
-    "데이터베이스/Realatonal Model.md",
     "Welcome.md",
     "Untitled.md",
     "데이터베이스/Intro.md",
