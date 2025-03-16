@@ -27,12 +27,12 @@
             "state": {
               "type": "split-diff-view",
               "state": {
-                "aFile": "오퍼레이팅시스템/OS Structure.md",
-                "bFile": "오퍼레이팅시스템/OS Structure.md",
+                "aFile": "컴퓨터구조론/Instructions_Language of the Computer.md",
+                "bFile": "컴퓨터구조론/Instructions_Language of the Computer.md",
                 "aRef": ""
               },
               "icon": "diff",
-              "title": "Diff: OS Structure"
+              "title": "Diff: Instructions_Language of the Computer"
             }
           }
         ],
@@ -198,8 +198,8 @@
   "lastOpenFiles": [
     "오퍼레이팅시스템/OS Structure.md",
     "오퍼레이팅시스템/Process.md",
-    "컴퓨터구조론/Instructions_Language of the Computer.md",
     "컴퓨터구조론/Computer Abstractions and Technology.md",
+    "컴퓨터구조론/Instructions_Language of the Computer.md",
     "데이터베이스/Realatonal Model.md",
     "README.md",
     "Pasted image 20250313170013.png",
