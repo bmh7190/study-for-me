@@ -47,3 +47,18 @@ referenced relation의 pk가 fk 가 될 수 있음/ 되어야 함
 
 ---
 ### Relation Query Languages
+tuple relational calculus
+domain relational calculus 
+이 두 선언적이지 않다.
+
+relational algebra 안에는 여러가지 relational operator들이 있다.
+
+select projection
+from
+where selection
+
+natural join
+두 집합에서 공통된 attribute가 있다면 같은 값을 가져야 한다는 조건
+natural join하면 그냥 이름 같으면 조인하기 때문에 원하지 않은 결과를 가져올 수 있음
+
+---
