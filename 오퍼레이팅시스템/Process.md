@@ -143,6 +143,7 @@ Operations on Processes
 
 ---
 #### Process Creation
+0번 프로세스도 있음 => 복제 X
 init : build from scrath 
 가장 먼저 생긴 프로세스는 아예 처음부터
 그 다음부터는 복제해서 생성
@@ -154,3 +155,30 @@ child 는 parent를 복제하기 때문에 부모의 메모리를 load한다.
 
 parent는 fork () 를 통해 새로운 프로세스를 복제하고
 child는 exec() 를 통해 loading new program을 한다!
+
+
+Process Creation Example 
+
+#include <sys/types.h>
+#include <stdio.h>
+#include <unistd.h>
+int main() {
+pid_t pid;
+/* fork a child process */
+pid = fork();
+if (pid < 0) { /* error occurred */
+fprintf(stderr, “fork failed”);
+return 1;
+}
+else if (pid == 0) { /* child process */
+execlp(“/bin/ls”, “ls”, NULL);
+}
+else { /* parent process */
+/* parent will wait for the child to complete */
+wait(NULL);
+printf(“child complete”);
+}
+return 0;
+}
+
+pid
