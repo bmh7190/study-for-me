@@ -159,26 +159,29 @@ child는 exec() 를 통해 loading new program을 한다!
 
 Process Creation Example 
 
+```C++
 #include <sys/types.h>
 #include <stdio.h>
 #include <unistd.h>
 int main() {
-pid_t pid;
-/* fork a child process */
-pid = fork();
-if (pid < 0) { /* error occurred */
-fprintf(stderr, “fork failed”);
-return 1;
+	pid_t pid;
+	/* fork a child process */
+	pid = fork();
+	if (pid < 0) { /* error occurred */
+		fprintf(stderr, “fork failed”);
+		return 1;
+	}
+	else if (pid == 0) { /* child process */
+		execlp(“/bin/ls”, “ls”, NULL);
+	}
+	else { /* parent process */
+		/* parent will wait for the child to complete */
+		wait(NULL);
+		printf(“child complete”);
+	}
+	return 0;
 }
-else if (pid == 0) { /* child process */
-execlp(“/bin/ls”, “ls”, NULL);
-}
-else { /* parent process */
-/* parent will wait for the child to complete */
-wait(NULL);
-printf(“child complete”);
-}
-return 0;
-}
+```
+
 
 pid
