@@ -143,21 +143,36 @@ Operations on Processes
 
 ---
 #### Process Creation
-0번 프로세스도 있음 => 복제 X
-init : build from scrath 
-가장 먼저 생긴 프로세스는 아예 처음부터
-그 다음부터는 복제해서 생성
-복제 대상은 parent가 되고, 복제 결과물은 child가 된다.
 
-Resource sharing이 가능해졌다! 
+✅ **0번 프로세스는 복제되지 않음**
 
-child 는 parent를 복제하기 때문에 부모의 메모리를 load한다.
+- 최초의 프로세스는 **복제(Fork)로 생성되지 않고, 처음부터(build from scratch) 생성됨.**
+- 대표적으로 `init` 프로세스가 여기에 해당.
 
-parent는 fork () 를 통해 새로운 프로세스를 복제하고
-child는 exec() 를 통해 loading new program을 한다!
+✅ **가장 먼저 생긴 프로세스(init)는 처음부터 생성되고, 이후 프로세스는 복제를 통해 생성됨**
+
+- `init` 프로세스 이후부터는 **부모 프로세스(Parent)를 복제하여 자식 프로세스(Child)를 생성**.
+- 복제된 프로세스는 **부모의 메모리를 로드**하여 동일한 상태를 가짐.
+- 부모는 새로운 프로세스를 생성하는 역할을 수행.
+
+✅ **리소스 공유 가능 (Resource Sharing Enabled)**
+
+- 부모와 자식 프로세스는 **일부 리소스를 공유**할 수 있음.
+- 예: 파일 디스크립터, 메모리 공간, 환경 변수 등.
+
+✅ **프로세스 생성 메커니즘**
+
+1. **부모 프로세스(Parent Process) → `fork()` 호출**
+    
+    - `fork()`를 호출하면 **부모 프로세스의 복사본(Child Process)이 생성됨.**
+    - 자식 프로세스는 부모와 **거의 동일한 상태**로 시작됨.
+2. **자식 프로세스(Child Process) → `exec()` 호출**
+    
+    - `exec()` 를 호출하면 **새로운 프로그램이 메모리에 로드됨.**
+    - 즉, `exec()` 를 실행한 이후에는 **기존 부모의 코드가 아닌 새로운 프로그램이 실행됨.**
 
 
-Process Creation Example 
+#### Process Creation Example 
 
 ```C++
 #include <sys/types.h>
@@ -184,4 +199,5 @@ int main() {
 ```
 
 
-pid
+---
+### Process Termination
