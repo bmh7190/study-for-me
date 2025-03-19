@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "README.md",
+                "file": "컴퓨터구조론/Instructions_Language of the Computer.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "README"
+              "title": "Instructions_Language of the Computer"
             }
           }
         ]
@@ -179,20 +179,21 @@
       "obsidian-git:Open Git source control": false
     }
   },
-  "active": "ae2f2824023d216e",
+  "active": "010e65ab460faf67",
   "lastOpenFiles": [
+    "image/Pasted image 20250319102729.png",
+    "컴퓨터구조론/Computer Abstractions and Technology.md",
+    "컴퓨터구조론/Instructions_Language of the Computer.md",
+    "README.md",
     "컴퓨터구조론 1/Instructions_Language of the Computer.md",
     "컴퓨터구조론 1/Computer Abstractions and Technology.md",
     "컴퓨터구조론 1",
     "Computer_Architecture/README.md",
-    "README.md",
     "image/Pasted image 20250313170002.png",
     "Computer_Architecture",
     "image/Pasted image 20250312214906.png",
     "오퍼레이팅시스템/Process.md",
     "image",
-    "컴퓨터구조론/Computer Abstractions and Technology.md",
-    "컴퓨터구조론/Instructions_Language of the Computer.md",
     "데이터베이스/Realatonal Model.md",
     "데이터베이스/Intro.md",
     "오퍼레이팅시스템/OS Structure.md",
