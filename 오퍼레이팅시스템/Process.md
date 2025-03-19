@@ -341,4 +341,44 @@ pid = wait(&status);
 |**공유 메모리**|포인터 제공|빠름|✅ 필요함|✅ 효율적|
 
 ---
-### 
+### Producer - Consumner Problem
+
+Producer과 Consumer Process들이 공유된 메모리 공간을 공유한다고 가정해보자
+
+- Processer 0 : Producer
+- Processor 1 : Consumer
+##### 1. Shared data
+```C++
+#define BUFFER_SIZE 10
+typedef struct {
+. . .
+} item;
+item buffer[BUFFER_SIZE];
+int in = 0;
+int out = 0;
+```
+
+##### 2. Consumer code
+```C++
+item next_consumed; 
+while (true) {
+while (in == out) 
+; /* do nothing */
+next_consumed = buffer[out]; 
+out = (out + 1) % BUFFER_SIZE;
+/* consume the item in next consumed */ 
+} 
+```
+
+##### 3. Consumer code
+```c++
+item next_produced; 
+while (true) { 
+/* produce an item in next produced */ 
+while (((in + 1) % BUFFER_SIZE) == out) 
+; /* do nothing */ 
+buffer[in] = next_produced; 
+in = (in + 1) % BUFFER_SIZE; 
+} 
+```
+
