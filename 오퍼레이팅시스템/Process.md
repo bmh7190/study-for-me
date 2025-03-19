@@ -201,3 +201,8 @@ int main() {
 
 ---
 ### Process Termination
+process executes last statement and then asks the operating system to delete it using the exit() system call 
+returns status data from child to parent viat wait())
+process' resources are deallocated by operating system 
+parent may terminate the execution of children processes using the abort kill() int linux, terminateprocess() int windows system call somereasons for doing so: child has execeeded allocated resources
+task assinged to child is no longer required the parent is exiting and os does not allow a child to continue if its parent teminates
