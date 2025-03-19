@@ -144,6 +144,8 @@ Operations on Processes
 ---
 #### Process Creation
 
+![[Pasted image 20250319144624.png]]
+
 ✅ **0번 프로세스는 복제되지 않음**
 
 - 최초의 프로세스는 **복제(Fork)로 생성되지 않고, 처음부터(build from scratch) 생성됨.**
@@ -201,8 +203,32 @@ int main() {
 
 ---
 ### Process Termination
-process executes last statement and then asks the operating system to delete it using the exit() system call 
-returns status data from child to parent viat wait())
-process' resources are deallocated by operating system 
-parent may terminate the execution of children processes using the abort kill() int linux, terminateprocess() int windows system call somereasons for doing so: child has execeeded allocated resources
-task assinged to child is no longer required the parent is exiting and os does not allow a child to continue if its parent teminates
+
+✅ **프로세스가 종료될 때 수행되는 작업**
+
+1. 프로세스는 **마지막 명령을 실행한 후**, `exit()` 시스템 호출을 통해 운영체제에 **삭제 요청**을 보냄.
+2. 자식 프로세스(Child)는 **`wait()` 시스템 호출을 통해 부모에게 종료 상태(Status Data)를 반환**.
+3. 운영체제는 **프로세스가 사용하던 자원(메모리, 파일 디스크립터 등)을 해제(Deallocate)**.
+
+✅ **부모 프로세스가 자식 프로세스를 강제 종료할 수 있음**
+
+- 부모 프로세스는 필요에 따라 자식 프로세스를 종료할 수 있음.
+- **Linux**: `kill()`
+- **Windows**: `TerminateProcess()`
+
+✅ **부모가 자식 프로세스를 종료하는 이유**
+
+1. **자식 프로세스가 할당된 자원을 초과하여 사용함** (예: 메모리, CPU 시간 초과).
+2. **자식 프로세스가 수행해야 할 작업이 더 이상 필요하지 않음**.
+3. **부모 프로세스가 종료될 경우, 일부 운영체제는 자식 프로세스를 계속 실행하는 것을 허용하지 않음**.
+
+---
+어떤 OS 부모가 종료되지 않았다면 자식이 존재하지 않도록 한다. 
+만약 프로세스가 종료되면, 그것의 모든 자식 프로세스도 또한 종료되어야 한다. 
+casading temination : 모든 자식, 그들의 자식들은 제거 되어야 된다.
+OS에 의해 제거가 시작된다. 
+
+부모 process가 wait() 시스템 콜을 사용해서 자식 프로세스의 종료를 기다리게 할지도 모른다. 그 call 은 제거된 프로세스의 pid와 상태정보를 리턴한다. 
+
+	pid = wait($ status);
+만약 wait
