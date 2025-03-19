@@ -253,10 +253,30 @@ pid = wait(&status);
 
 ---
 ### Multiprogram Architecture Example (Chrome)
-많은 웹 브라우저들은 싱글 프로세스로 동작한다.
-만약 하나의 웹 사이트가 문제가 발생하면, 브라우저 전체가  hang or crash 될 수 있다.
 
-구글 크롬 브라우저의 경우 3개의 다른 종류의 프로세스가 동작한다. 
-- Browser 프로세스는 user interface와 dis 그리고 network I/O를 관리한다.
-- Renderer 프로세스는 웹 페이지를 렌더링하고 HTML/JavaScript를 다룬다. 웹 사이트 하나가 열릴 때마다 새로운 renderer가 생성된다.
-- Plug-in 프로세스는 플러그인 의 각 종류에 맞게 process 된다 .
+✅ **일반적인 웹 브라우저**
+
+- 대부분의 웹 브라우저는 **싱글 프로세스(Single Process) 모델**을 사용하여 동작.
+- 이 경우, **하나의 웹사이트에서 문제가 발생하면 전체 브라우저가 멈추거나 충돌(Hang or Crash)할 가능성이 높음.**
+
+✅ **구글 크롬의 멀티 프로세스 모델**  
+구글 크롬은 **3가지 주요 프로세스**로 동작하여 안정성과 보안을 강화함.
+
+1. **브라우저 프로세스(Browser Process)**
+    
+    - **사용자 인터페이스(UI), 디스크 I/O, 네트워크 I/O** 등을 관리함.
+    - 크롬의 전체 프레임워크를 제어하는 **중앙 프로세스** 역할.
+2. **렌더러 프로세스(Renderer Process)**
+    
+    - 웹 페이지를 **렌더링(HTML, CSS, JavaScript 처리)** 하는 역할.
+    - **각 웹사이트(탭)마다 새로운 렌더러 프로세스가 생성**됨.
+    - 웹사이트 충돌이 발생해도 **다른 웹사이트(탭)에는 영향을 주지 않도록 격리됨 (Sandboxing).**
+3. **플러그인 프로세스(Plug-in Process)**
+    
+    - 플러그인(예: Flash, PDF 뷰어 등)이 **독립적인 프로세스로 실행**됨.
+    - 특정 플러그인이 충돌해도 브라우저 전체에는 영향을 미치지 않음.
+
+---
+### Inter - process Communication
+시스템 안의 프로세스들은 아마 독립적이거나 cooperating 할것이다. 
+cooperating process 느
