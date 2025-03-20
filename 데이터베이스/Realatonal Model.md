@@ -2,12 +2,12 @@
 
 ---
 ---
-### Structure of Relational Databases
+## Structure of Relational Databases
 관계형 데이터베이스는 table의 집합으로 구성된다.
 각 테이블은 unique한 이름으로 배정 받아야 하며, relation이라고 불린다.
 
-테이블 한 row(열)는 값들의 사이의 관계를 나타내고, tuple 이라고 불린다.
-각 column(행) 은 attribute(속성)이라고 불린다.
+테이블 한 row(행)는 값들의 사이의 관계를 나타내고, tuple 이라고 불린다.
+각 column(열) 은 attribute(속성)이라고 불린다.
 
 ![[Pasted image 20250320170738.png]]
 
@@ -25,7 +25,7 @@ null 은 모든 domain에 들어갈 수 있다.
 relation r은 모든 D 의 카테시안 곱 중 서브셋이다.
 
 ---
-### Schema and Instance
+## Schema and Instance
 Database schema - logical design of the database
 Database instance - A snapshot of the data in the database  at a given instant in time
 
@@ -35,28 +35,132 @@ $$ r(A1, A2, ...,An)$$
 relation의 현재 값들은 table에 의해 표현된다. 
 
 ---
-### Relations are not ordered
+## Relations are not ordered
 tuple의 순서는 문제 되지 않는다. 
 tuple은 아마 모호한 순서로 저장된다. 
 
 ---
-### Keys
-superkey 
-tuple 간 구분만 할 수 있다면 super key가 될 수 있다.
-유일성만 만족하면 됨.
+## Keys
 
-candidate key
-superkey 중 최소성을 만족하면 candidate key가 되는 듯
-즉, 유일성도 만족하면서 최소성을 만족해야 한다. 
+### **📌 1. Super Key (슈퍼 키)**
 
-primary key
-candidate key 중 하나로 선택된 키( 단 하나만 선택 됨)
-null 값이 없다.
+- **튜플(행) 간 구분만 할 수 있다면 Super Key가 될 수 있음.**
+- 즉, **유일성(uniqueness)** 만 만족하면 Super Key.
+- 하지만 **불필요한 속성이 포함될 수도 있음**.
 
-foreign key
-referenced relation의 pk가 fk 가 될 수 있음/ 되어야 함
-제약 조건이 생긴다. 
-예를 들어 fk로 지정한 대상이 없다면? 쿼리가 수행되지 않겠죠?
+#### ✅ **예제**
+
+**학생 테이블 (`STUDENT`)**
+
+| student_id | name    | phone         | email                                         |
+| ---------- | ------- | ------------- | --------------------------------------------- |
+| 2023001    | Alice   | 010-1234-5678 | [alice@email.com](mailto:alice@email.com)     |
+| 2023002    | Bob     | 010-2345-6789 | [bob@email.com](mailto:bob@email.com)         |
+| 2023003    | Charlie | 010-3456-7890 | [charlie@email.com](mailto:charlie@email.com) |
+
+> **Super Key 예시**
+> 
+> - `{ student_id }` → 모든 학생의 학번이 유일하므로 Super Key
+> - `{ student_id, name }` → 학번만으로도 유일하지만, name을 추가해도 유일성은 유지됨 (비효율적)
+> - `{ email }` → 이메일은 중복되지 않으므로 Super Key
+> - `{ phone }` → 전화번호도 중복되지 않으므로 Super Key
+
+🚨 **주의**: Super Key는 **불필요한 속성이 포함될 수도 있음!** (예: `{ student_id, name }` → `name`이 없어도 유일성 유지됨)
+
+### **📌 2. Candidate Key (후보 키)**
+
+- **Super Key 중에서 최소성을 만족하는 키**
+- 즉, **유일성** + **최소성** 을 만족해야 함.
+
+#### ✅ **Candidate Key 선정**
+
+Super Key 중 불필요한 속성을 제거하면 Candidate Key가 됨.
+
+> **Candidate Key 예시**
+> 
+> - `{ student_id }` ✅ → 학번만으로 학생을 구별할 수 있음 (최소성 만족)
+> - `{ email }` ✅ → 이메일만으로 학생을 구별할 수 있음 (최소성 만족)
+> - `{ phone }` ✅ → 전화번호만으로 학생을 구별할 수 있음 (최소성 만족)
+
+🚨 `{ student_id, name }` ❌ → **name이 없어도 유일성이 유지되므로 최소성이 깨짐!**  
+✅ 즉, `student_id`, `email`, `phone` 이 **후보 키** 가 됨.
+
+---
+
+### **📌 3. Primary Key (기본 키)**
+
+- **Candidate Key 중 하나를 선택한 것.**
+- **NULL 값을 가질 수 없음.** (무조건 값이 있어야 함)
+- **한 릴레이션(테이블)에서 단 하나만 선택됨.**
+
+#### ✅ **Primary Key 선정**
+
+위에서 `student_id`, `email`, `phone` 이 **Candidate Key** 였음.  
+하지만 **Primary Key는 딱 하나만 선택해야 함!**
+
+> 예를 들어, `student_id`를 기본 키로 선택한다고 하면:
+> 
+> ```sql
+> CREATE TABLE STUDENT (
+>     student_id INT PRIMARY KEY,
+>     name VARCHAR(50),
+>     phone VARCHAR(15) UNIQUE,
+>     email VARCHAR(50) UNIQUE
+> );
+> ```
+> 
+> - **`student_id`** 가 Primary Key.
+> - **`phone`** 과 **`email`** 은 Unique 제약 조건을 가질 수 있음.
+
+---
+
+### **📌 4. Foreign Key (외래 키)**
+
+- **다른 테이블의 Primary Key를 참조하는 속성.**
+- **제약 조건이 존재함!**
+    - **참조 대상이 없는 데이터를 넣으면 오류 발생!**
+    - **참조된 데이터가 삭제되면 어떻게 처리할지(`CASCADE`, `SET NULL`, `RESTRICT`) 지정 가능.**
+
+#### ✅ **Foreign Key 예제**
+
+##### 🔹 `STUDENT` 테이블 (기본 테이블)
+
+|student_id|name|
+|---|---|
+|2023001|Alice|
+|2023002|Bob|
+
+##### 🔹 `ENROLLMENT` 테이블 (수강 신청 테이블)
+
+|student_id|course_id|
+|---|---|
+|2023001|CS101|
+|2023001|CS102|
+|2023002|CS101|
+
+> `ENROLLMENT` 테이블의 `student_id`는 **STUDENT 테이블의 `student_id`를 참조**해야 함.
+
+```sql
+CREATE TABLE ENROLLMENT (
+    student_id INT,
+    course_id VARCHAR(10),
+    FOREIGN KEY (student_id) REFERENCES STUDENT(student_id)
+);
+```
+
+### 🚨 **제약 조건**
+
+1. `ENROLLMENT`에 `student_id = 2023003` 을 넣으려고 하면?
+    - `STUDENT` 테이블에 `2023003`이 없으면 오류 발생 ❌
+2. `STUDENT` 테이블에서 `student_id = 2023001`을 삭제하면?
+    - 기본적으로 `RESTRICT` 모드에서는 삭제 불가 ❌
+    - `CASCADE` 모드에서는 해당 학생의 수강 신청 기록도 자동 삭제됨 ⭕
+    - `SET NULL` 모드에서는 `student_id` 값을 NULL로 설정 ⭕
+
+```sql
+ALTER TABLE ENROLLMENT
+ADD CONSTRAINT fk_student FOREIGN KEY (student_id) REFERENCES STUDENT(student_id) ON DELETE CASCADE;
+```
 
 
 ---
