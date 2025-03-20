@@ -86,3 +86,26 @@ select all dept_name
 from instructor
 ```
 
+---
+### Natural Join
+
+주어진 SQL 쿼리:
+
+```sql
+SELECT name, course_id
+FROM instructor NATURAL JOIN teaches;
+```
+
+이 쿼리는 **`instructor`** 테이블과 **`teaches`** 테이블을 **자연 조인(NATURAL JOIN)** 하여, `name`과 `course_id`를 선택하는 SQL입니다.
+
+---
+
+$$R=πname,courseid(instructor⋈teaches)R = \pi_{name, course_id} (\text{instructor} \bowtie \text{teaches})$$
+
+여기서:
+
+- ⋈ : 자연 조인(NATURAL JOIN)
+- π_name,courseid : `name`과 `course_id` 속성만 선택하는 **π (projection, 투영 연산)**
+
+---
+
