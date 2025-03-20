@@ -3,13 +3,18 @@
 ---
 ---
 ### Domain Tyoes in SQL
-- char(n). Fixed length character string, with user-specified length n.
-- varchar(n). Variable length character strings, with user-specified maximum length n. 이거보다 짧게 입력되면 그것만큼 줄어든다.
+---
 
-- int. Integer (a finite subset of the integers that is machine-dependent).
-- smallint. Small integer (a machine-dependent subset of the integer domain type). numeric(p,d). Fixed point number, with user-specified precision of p digits, with d digits to the right of decimal point. 
-- real, double precision. Floating point and double-precision floating point numbers, with machine-dependent precision.
-- float(n). Floating point number, with user-specified precision of at least n digits.
+| 데이터 타입             | 설명                                         |
+| ------------------ | ------------------------------------------ |
+| `CHAR(n)`          | 고정 길이 문자열 (n보다 짧으면 공백 추가)                  |
+| `VARCHAR(n)`       | 가변 길이 문자열 (짧으면 짧게 저장)                      |
+| `INT`              | 일반 정수 (기계 의존 크기)                           |
+| `SMALLINT`         | 작은 정수 (메모리 절약)                             |
+| `NUMERIC(p,d)`     | 고정 소수점 숫자 (`p` = 전체 자릿수, `d` = 소수점 이하 자릿수) |
+| `REAL`             | 부동 소수점 숫자 (낮은 정밀도)                         |
+| `DOUBLE PRECISION` | 부동 소수점 숫자 (더 높은 정밀도)                       |
+| `FLOAT(n)`         | 최소 `n`자리 유효 숫자의 부동 소수점                     |
 
 ---
 ### Create Table Constuct
