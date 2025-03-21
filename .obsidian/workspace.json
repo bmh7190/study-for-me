@@ -4,11 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "843fd9192a0bd674",
+        "id": "bcdb59a490e5f275",
         "type": "tabs",
         "children": [
           {
-            "id": "ae2f2824023d216e",
+            "id": "dfc021055e62716e",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -181,24 +181,24 @@
       "obsidian-git:Open Git source control": false
     }
   },
-  "active": "ae2f2824023d216e",
+  "active": "dfc021055e62716e",
   "lastOpenFiles": [
-    "Pasted image 20250321165838.png",
-    "Pasted image 20250321165752.png",
-    "Pasted image 20250321143558.png",
-    "오퍼레이팅시스템/Process.md",
-    "오퍼레이팅시스템/Threads & Concurrency.md",
-    "데이터베이스/Realatonal Model.md",
-    "Pasted image 20250320170738.png",
-    "데이터베이스/SQL Basics.md",
+    "image/Pasted image 20250321172725.png",
     "컴퓨터구조론/Instructions_Language of the Computer.md",
+    "오퍼레이팅시스템/Threads & Concurrency.md",
+    "image/Pasted image 20250321165838.png",
+    "image/Pasted image 20250321165752.png",
+    "image/Pasted image 20250321143558.png",
+    "오퍼레이팅시스템/Process.md",
+    "데이터베이스/Realatonal Model.md",
+    "image/Pasted image 20250320170738.png",
+    "데이터베이스/SQL Basics.md",
     "image/Pasted image 20250319144624.png",
     "image/Pasted image 20250319150312.png",
     "image/Pasted image 20250319150316.png",
     "image/Pasted image 20250319150318.png",
     "image/Pasted image 20250319150329.png",
     "image/Pasted image 20250319110935.png",
-    "image/Pasted image 20250319102729.png",
     "컴퓨터구조론/Computer Abstractions and Technology.md",
     "README.md",
     "컴퓨터구조론 1/Instructions_Language of the Computer.md",
