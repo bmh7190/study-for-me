@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "데이터베이스/Realatonal Model.md",
+                "file": "오퍼레이팅시스템/Threads & Concurrency.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Realatonal Model"
+              "title": "Threads & Concurrency"
             }
           }
         ]
@@ -183,10 +183,12 @@
   },
   "active": "ae2f2824023d216e",
   "lastOpenFiles": [
+    "Pasted image 20250321143558.png",
+    "오퍼레이팅시스템/Process.md",
+    "오퍼레이팅시스템/Threads & Concurrency.md",
+    "데이터베이스/Realatonal Model.md",
     "Pasted image 20250320170738.png",
     "데이터베이스/SQL Basics.md",
-    "데이터베이스/Realatonal Model.md",
-    "오퍼레이팅시스템/Process.md",
     "컴퓨터구조론/Instructions_Language of the Computer.md",
     "image/Pasted image 20250319144624.png",
     "image/Pasted image 20250319150312.png",
@@ -207,7 +209,6 @@
     "image",
     "데이터베이스/Intro.md",
     "오퍼레이팅시스템/OS Structure.md",
-    "Pasted image 20250313170013.png",
     "Welcome.md",
     "Untitled.md",
     "컴퓨터구조론",
