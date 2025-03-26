@@ -25,12 +25,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "README.md",
+                "file": "CS/컴퓨터구조론/2. Instructions_Language of the Computer.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "README"
+              "title": "2. Instructions_Language of the Computer"
             }
           }
         ],
@@ -185,7 +185,7 @@
             }
           }
         ],
-        "currentTab": 4
+        "currentTab": 5
       }
     ],
     "direction": "horizontal",
@@ -205,14 +205,18 @@
   },
   "active": "772178af9f4ea8d2",
   "lastOpenFiles": [
-    "CS/컴퓨터구조론/Computer Architecture.md",
+    "Pasted image 20250326133823.png",
+    "Pasted image 20250326133525.png",
+    "Pasted image 20250326132948.png",
+    "Pasted image 20250326132437.png",
+    "CS/오퍼레이팅시스템/Operating System.md",
     "README.md",
+    "CS/컴퓨터구조론/Computer Architecture.md",
     "CS/컴퓨터구조론/1. Computer Abstractions and Technology.md",
     "CS/데이터베이스/Relational Model.md",
     "CS/데이터베이스/Database.md",
     "CS/데이터베이스/SQL Basics.md",
     "CS/오퍼레이팅시스템/4. Threads and Concurrency.md",
-    "CS/오퍼레이팅시스템/Operating System.md",
     "4. Threads %26 Concurrency.md",
     "CS/오퍼레이팅시스템/5. CPU Scheduling.md",
     "CS/오퍼레이팅시스템/1. Introduction to OS.md",
@@ -229,9 +233,6 @@
     "image/Pasted image 20250323170435.png",
     "image/Pasted image 20250321172725.png",
     "image/Pasted image 20250321165838.png",
-    "image/Pasted image 20250321165752.png",
-    "image/Pasted image 20250321143558.png",
-    "image/Pasted image 20250320170738.png",
     "컴퓨터구조론 1/Instructions_Language of the Computer.md",
     "컴퓨터구조론 1/Computer Abstractions and Technology.md",
     "컴퓨터구조론 1",
