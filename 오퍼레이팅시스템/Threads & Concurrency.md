@@ -425,21 +425,29 @@ void *runner(void *param) {
 		
 	pthread_exit(0);
 }
+
+```
+
+`int sum` 은 메인 함수와  쓰레드가 접근할 수 있는 공유 변수이다.
+매개변수 `param` 은 문자열로 전달된 값이며  `atoi` 함수를 통해 `int` 형으로 변환 후 1부터 변환된 값까지 모두 `sum에` 더한다. 마지막으로 `pthread_exit`으로 쓰레드 종료한다. 
+
+```C++
 int main(int argc, char *argv[]) {
-pthread_t tid; /* the thread identifier */
-if (argc != 2) {
-fprintf(stderr, “usage: a.out <integer value>\n”);
-return -1;
-}
-if (atoi(argv[1]) < 0) {
-fprintf(stderr, “%d must be >= 0\n”, atoi(argv[1]));
-return -1;
-}
-/* create the thread */
-pthread_create(&tid,NULL,runner,argv[1]);
-/* wait for the thread to exit */
-pthread_join(tid,NULL);
-printf(“sum = %d\n”, sum);
+	pthread_t tid; /* the thread identifier */
+	if (argc != 2) {
+		fprintf(stderr, “usage: a.out <integer value>\n”);
+		return -1;
+	}
+	if (atoi(argv[1]) < 0) {
+		fprintf(stderr, “%d must be >= 0\n”, atoi(argv[1]));
+		return -1;
+	}
+	/* create the thread */
+	pthread_create(&tid,NULL,runner,argv[1]);
+	/* wait for the thread to exit */
+	pthread_join(tid,NULL);
+	printf(“sum = %d\n”, sum);
 }
 ```
 
+명령 인자 `args` 를 통해 인자가 없거나 음수이면 에러 출력 
