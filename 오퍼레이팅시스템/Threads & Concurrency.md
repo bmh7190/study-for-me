@@ -517,6 +517,20 @@ int main(int argc, char *argv[]) {
 이런 방식으로는 Tread Pools, OpenMP, Grand Central Dispatch 가 있다. 다른 방법으로는 Microsoft Threading Build Blocks나 java.util.concurrent package가 있다.
 
 ### OpenMP
-set of compiler directives and an API for C,c++, fortran
-공유 메모리 환경에서 병렬 프로그래밍을 도와준다. 
-identifies parallel regions blocks of code that can run int 
+
+- **C, C++, Fortran** 언어에서 사용할 수 있는 **컴파일러 지시문과 API의 집합**이다.
+- **공유 메모리 환경**에서 병렬 프로그래밍을 쉽게 구현할 수 있도록 지원한다.
+- **병렬 영역(Parallel Regions)** 을 정의하여,  
+    → **병렬 실행이 가능한 코드 블록**을 컴파일러에게 알려줄 수 있다.
+
+`#pragma omp parallel`
+를 통해 코어마다 쓰레드를 생성할 수 있다.
+
+```C++
+#pragma omp parallel for
+for (i = 0; i < N; i++) {
+	c[i] = a[i] + b[i];
+}
+```
+
+`#pragme omp parallel num-thread(10)` 처럼 쓰레드 개수 지정 가능
