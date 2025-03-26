@@ -1,5 +1,7 @@
 [
   "obsidian-git",
   "table-editor-obsidian",
-  "editing-toolbar"
+  "editing-toolbar",
+  "templater-obsidian",
+  "obsidian-plugin-toc"
 ]
