@@ -508,3 +508,7 @@ int main(int argc, char *argv[]) {
 
 여기서 발생할 수 있는 오류가 하나 있음! `sum` 은 여러 쓰레드가 공유하는데 여러 쓰레드가 동시에
 `sum += i`를 실행하게 되면 값이 꼬일 수 있음
+
+---
+## Implicit Threading
+growing in popularity as numbers of threads increase, program correctness more difficult with exiplicit threads
