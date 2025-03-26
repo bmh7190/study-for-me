@@ -450,4 +450,6 @@ int main(int argc, char *argv[]) {
 }
 ```
 
-명령 인자 `args` 를 통해 인자가 없거나 음수이면 에러 출력 
+- 명령 인자 `args` 를 통해 인자가 없거나 음수이면 에러 출력 후 종료
+- `pthread_create` 로 새로운 쓰레드를 생성하고 `runner()` 함수 실행
+- pht
