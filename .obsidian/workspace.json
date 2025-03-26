@@ -25,12 +25,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Computer Science.md",
+                "file": "README.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Computer Science"
+              "title": "README"
             }
           }
         ],
@@ -206,7 +206,7 @@
   "active": "772178af9f4ea8d2",
   "lastOpenFiles": [
     "CS/컴퓨터구조론/Computer Architecture.md",
-    "Computer Science.md",
+    "README.md",
     "CS/컴퓨터구조론/1. Computer Abstractions and Technology.md",
     "CS/데이터베이스/Relational Model.md",
     "CS/데이터베이스/Database.md",
