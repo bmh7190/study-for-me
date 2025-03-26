@@ -13,10 +13,10 @@
 
 ## 📖 Table of Contents
 
-1. **[컴퓨터 구조 (Computer Architecture)](./컴퓨터구조론/README.md)**
-2. **[운영체제 (Operating System)](./오퍼레이팅시스템/Operating System.md)**
+1. **[컴퓨터 구조 (Computer Architecture)](Computer%20Architecture.md)**
+2. **[운영체제 (Operating System)](Operating%20System.md)**
 3. **[알고리즘 (Algorithms)](./Algorithms/README.md)**
-4. **[데이터베이스 (Database)](./Database/README.md)**
+4. **[데이터베이스 (Database)](./데이터베이스/Database.md)**
 5. **[네트워크 (Computer Networks)](./Computer_Networks/README.md)**
 6. **[CS 면접 대비 (CS Interview)](./CS_Interview/README.md)**
 
