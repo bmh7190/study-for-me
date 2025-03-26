@@ -511,4 +511,5 @@ int main(int argc, char *argv[]) {
 
 ---
 ## Implicit Threading
-growing in popularity as numbers of threads increase, program correctness more difficult with exiplicit threads
+최근에는 **쓰레드 수가 증가하면서**, **암시적 쓰레딩(Implicit Threading)** 방식이 **인기를 얻고 있다.**
+쓰레드 생성과 관리가 컴파
