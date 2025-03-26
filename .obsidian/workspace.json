@@ -189,7 +189,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 201.5
+    "width": 200,
+    "collapsed": true
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -203,8 +204,9 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "8a754e19fee1d936",
+  "active": "772178af9f4ea8d2",
   "lastOpenFiles": [
+    "Pasted image 20250326100903.png",
     "image/Pasted image 20250323173709.png",
     "image/Pasted image 20250323174019.png",
     "오퍼레이팅시스템/Threads & Concurrency.md",

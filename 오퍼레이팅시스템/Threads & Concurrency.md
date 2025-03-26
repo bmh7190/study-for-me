@@ -397,12 +397,49 @@ Linux를 포함한 현대의 Unix와 윈도우는 다중 쓰레드를 지원한�
 - 일반적으로 **Linux, macOS 등 UNIX 계열 운영체제에서 널리 사용**된다.
     
 	
-| Pthreads API      | Description                           |
-| ----------------- | ------------------------------------- |
-| pthread_craete( ) | 새로운 쓰레드 생성, fork 와 유사                 |
-| pthread_exit( )   | 쓰레드 종료하기, exit 와 유사                   |
-| pthread_join( )   | wait for a specific thread to exit    |
-| pthread_yield( )  | release CPU to let another thread run |
+| Pthreads API     | Description               |
+| ---------------- | ------------------------- |
+| pthread_create() | 새로운 쓰레드 생성, fork와 유사      |
+| pthread_exit()   | 쓰레드 종료, exit와 유사          |
+| pthread_join()   | 특정 쓰레드가 종료될 때까지 대기        |
+| pthread_yield()  | CPU를 양보하고 다른 쓰레드가 실행되도록 함 |
+
+
+![[Pasted image 20250326100903.png]]
 
 ---
+
+## Pthreads Example - 1thread
+
+```C++
+#include <pthread.h>
+#include <stdio.h>
+int sum; /* this data is shared by the thread(s) */
+/* threads call this function */
+void *runner(void *param) {
+	int i;
+	int upper = atoi(param);
+	sum = 0;
+	for (i = 1; i <= upper; i++)
+		sum += i;
+		
+	pthread_exit(0);
+}
+int main(int argc, char *argv[]) {
+pthread_t tid; /* the thread identifier */
+if (argc != 2) {
+fprintf(stderr, “usage: a.out <integer value>\n”);
+return -1;
+}
+if (atoi(argv[1]) < 0) {
+fprintf(stderr, “%d must be >= 0\n”, atoi(argv[1]));
+return -1;
+}
+/* create the thread */
+pthread_create(&tid,NULL,runner,argv[1]);
+/* wait for the thread to exit */
+pthread_join(tid,NULL);
+printf(“sum = %d\n”, sum);
+}
+```
 
