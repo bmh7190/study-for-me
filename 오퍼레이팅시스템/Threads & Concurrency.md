@@ -374,3 +374,13 @@ Linux를 포함한 현대의 Unix와 윈도우는 다중 쓰레드를 지원한�
 
 ---
 
+# Thread Libraries
+쓰레드 라이브러리는 API를 통해 쓰레드 생성과 관리를 프로그래머들에게 제공한다.
+
+두 개의 기본적인 구현 방법으로 User 스페이스에서 전체적인 라이브러리와 OS에 의해 지원되는 Kernel level 라이브러리가 있다.
+
+## Pthreads
+쓰레드를 생성하고 관리하는 API를 정의한다.
+동작은 같은데 구현은 다른 느낌?
+API specifies behavior of the thread library, implementation is up to development of the library
+Linux나 Mac OS X 같은 UNIX 계열의 OS에 읿
