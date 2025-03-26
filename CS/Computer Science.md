@@ -15,10 +15,8 @@
 
 1. **[컴퓨터 구조 (Computer Architecture)](Computer%20Architecture.md)**
 2. **[운영체제 (Operating System)](Operating%20System.md)**
-3. **[알고리즘 (Algorithms)](./Algorithms/README.md)**
-4. **[데이터베이스 (Database)](./데이터베이스/Database.md)**
-5. **[네트워크 (Computer Networks)](./Computer_Networks/README.md)**
-6. **[CS 면접 대비 (CS Interview)](./CS_Interview/README.md)**
+3. **[데이터베이스 (Database)](./데이터베이스/Database.md)**
+
 
 ---
 
