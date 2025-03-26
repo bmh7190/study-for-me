@@ -512,4 +512,11 @@ int main(int argc, char *argv[]) {
 ---
 ## Implicit Threading
 최근에는 **쓰레드 수가 증가하면서**, **암시적 쓰레딩(Implicit Threading)** 방식이 **인기를 얻고 있다.**
-쓰레드 생성과 관리가 컴파
+쓰레드 생성과 관리가 프로그래머보다는 컴파일러나 run-time 라이브러리에서 이뤄진다.
+
+이런 방식으로는 Tread Pools, OpenMP, Grand Central Dispatch 가 있다. 다른 방법으로는 Microsoft Threading Build Blocks나 java.util.concurrent package가 있다.
+
+### OpenMP
+set of compiler directives and an API for C,c++, fortran
+공유 메모리 환경에서 병렬 프로그래밍을 도와준다. 
+identifies parallel regions blocks of code that can run int 
