@@ -452,4 +452,50 @@ int main(int argc, char *argv[]) {
 
 - 명령 인자 `args` 를 통해 인자가 없거나 음수이면 에러 출력 후 종료
 - `pthread_create` 로 새로운 쓰레드를 생성하고 `runner()` 함수 실행
-- pht
+- `pthread_join`으로 쓰레드 종료까지 대기
+
+---
+## Pthreads Example - 10threads
+
+```C++
+#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+int sum = 0; /* this data is shared by the thread(s) */
+/* threads call this function */
+void *runner(void *param) {
+	int i;
+	int upper = atoi(param);
+	for (i = 1; i <= upper; i++)
+		sum += i;
+	pthread_exit(0);
+}
+
+```
+
+```C++
+int main(int argc, char *argv[]) {
+	pthread_t tid[10]; /* the thread identifiers */
+	if (argc != 11) {
+		fprintf(stderr, “usage: a.out <integer value>\n”);
+		return -1;
+	}
+	for (int i = 1; i < 11; i++) {
+		if (atoi(argv[i]) < 0) {
+			fprintf(stderr, “%d must be >= 0\n”, atoi(argv[i]));
+			return -1;
+		}
+	}
+	/* create the threads */
+	for (int i = 1; i < 11; i++) {
+		pthread_create(&tid[i-1],NULL,runner,argv[i]);
+	}
+	/* wait for the threads to exit */
+	for (int i = 1; i < 11; i++) {
+		pthread_join(tid[i-1],NULL);
+	}
+	printf(“sum = %d\n”, sum);
+}
+```
+
+명령행 인자로 전달된 10개의 숫자에 대해 각각 쓰레드를 생성하고, 각 쓰레드가 1부터 해당 숫자까지 합을 계산하여 `sum` 에 누적하는 방식
