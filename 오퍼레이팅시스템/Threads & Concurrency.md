@@ -375,12 +375,28 @@ Linux를 포함한 현대의 Unix와 윈도우는 다중 쓰레드를 지원한�
 ---
 
 # Thread Libraries
-쓰레드 라이브러리는 API를 통해 쓰레드 생성과 관리를 프로그래머들에게 제공한다.
 
-두 개의 기본적인 구현 방법으로 User 스페이스에서 전체적인 라이브러리와 OS에 의해 지원되는 Kernel level 라이브러리가 있다.
+- **쓰레드 라이브러리(Thread Library)** 는 **API를 통해 쓰레드의 생성과 관리 기능을 프로그래머에게 제공**한다.
+    
+- 쓰레드 라이브러리는 두 가지 기본적인 방식으로 구현될 수 있다:
+    
+    1. **User-Level 라이브러리**: 사용자 공간에서 전체 기능이 동작하며, 커널의 개입이 없다.
+    2. **Kernel-Level 라이브러리**: 커널에 의해 직접 지원되며, 시스템 콜을 통해 쓰레드가 관리된다.
+        
 
-## Pthreads
-쓰레드를 생성하고 관리하는 API를 정의한다.
-동작은 같은데 구현은 다른 느낌?
-API specifies behavior of the thread library, implementation is up to development of the library
-Linux나 Mac OS X 같은 UNIX 계열의 OS에 읿
+---
+
+### ✅ Pthreads (POSIX Threads)
+
+- **Pthreads**는 **쓰레드 생성과 관리를 위한 API(표준 인터페이스)** 를 정의한다.  
+    → `pthread_create()`, `pthread_join()`, `pthread_mutex_lock()` 등의 함수 포함
+    
+- **Pthreads는 "무엇을 해야 한다"는 동작을 정의하고, 실제 구현은 OS 또는 라이브러리에 따라 다르다.**  
+    → 즉, **API는 동일하지만 구현은 다를 수 있음**
+    
+- 일반적으로 **Linux, macOS 등 UNIX 계열 운영체제에서 널리 사용**된다.
+    
+
+---
+
+필요한 내용만 자연스럽게 구성했어! 더 구체적인 예제나 함수 설명도 원하면 도와줄게 😊
