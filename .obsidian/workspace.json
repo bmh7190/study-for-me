@@ -23,12 +23,14 @@
             "id": "772178af9f4ea8d2",
             "type": "leaf",
             "state": {
-              "type": "image",
+              "type": "markdown",
               "state": {
-                "file": "image/Pasted image 20250323173709.png"
+                "file": "오퍼레이팅시스템/Threads & Concurrency.md",
+                "mode": "source",
+                "source": false
               },
-              "icon": "lucide-image",
-              "title": "Pasted image 20250323173709"
+              "icon": "lucide-file",
+              "title": "Threads & Concurrency"
             }
           }
         ],
@@ -190,10 +192,10 @@
       "obsidian-git:Open Git source control": false
     }
   },
-  "active": "010e65ab460faf67",
+  "active": "772178af9f4ea8d2",
   "lastOpenFiles": [
-    "image/Pasted image 20250323174019.png",
     "image/Pasted image 20250323173709.png",
+    "image/Pasted image 20250323174019.png",
     "오퍼레이팅시스템/Threads & Concurrency.md",
     "image/Pasted image 20250323174029.png",
     "컴퓨터구조론/Instructions_Language of the Computer.md",
