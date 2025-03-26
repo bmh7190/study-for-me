@@ -397,6 +397,12 @@ Linux를 포함한 현대의 Unix와 윈도우는 다중 쓰레드를 지원한�
 - 일반적으로 **Linux, macOS 등 UNIX 계열 운영체제에서 널리 사용**된다.
     
 	
+| Pthreads API      | Description                           |
+| ----------------- | ------------------------------------- |
+| pthread_craete( ) | 새로운 쓰레드 생성, fork 와 유사                 |
+| pthread_exit( )   | 쓰레드 종료하기, exit 와 유사                   |
+| pthread_join( )   | wait for a specific thread to exit    |
+| pthread_yield( )  | release CPU to let another thread run |
 
 ---
 
