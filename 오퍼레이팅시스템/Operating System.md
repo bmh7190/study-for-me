@@ -16,7 +16,7 @@
 3. [3. Processes](3.%20Processes.md)  
    프로세스 개념, 상태, PCB, 컨텍스트 스위칭 등
 
-4. [4. Threads and Concurrency](./4.%20Threads%20and%20Concurrency.md)
+4. [4. Threads and Concurrency](4.%20Threads%20and%20Concurrency.md)
    스레드, 멀티스레딩, 동시성 문제, 동기화 등
 
 5. [5. CPU Scheduling](5.%20CPU%20Scheduling.md)  

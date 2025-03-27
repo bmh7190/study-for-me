@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "CS/데이터베이스/SQL Basics.md",
+                "file": "오퍼레이팅시스템/5. CPU Scheduling.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "SQL Basics"
+              "title": "5. CPU Scheduling"
             }
           }
         ]
@@ -194,7 +194,11 @@
   },
   "active": "d7ee7a3908ca6180",
   "lastOpenFiles": [
-    "CS/컴퓨터구조론/2. Instructions_Language of the Computer.md",
+    "오퍼레이팅시스템/Operating System.md",
+    "컴퓨터구조론/Computer Architecture.md",
+    "README.md",
+    "데이터베이스/SQL Basics.md",
+    "컴퓨터구조론/2. Instructions_Language of the Computer.md",
     "image/Pasted image 20250313170002.png",
     "image/Pasted image 20250326161918.png",
     "image/Pasted image 20250326160151.png",
@@ -205,25 +209,21 @@
     "image/Pasted image 20250326143455.png",
     "image/Pasted image 20250326142802.png",
     "image/Pasted image 20250326142437.png",
-    "CS/컴퓨터구조론/Computer Architecture.md",
     "toc.md",
     "Templates/Image with Right Layout.md",
     "Templates/Image with Left Layout.md",
     "Templates",
-    "CS/컴퓨터구조론/1. Computer Abstractions and Technology.md",
-    "CS/오퍼레이팅시스템/Operating System.md",
-    "README.md",
-    "CS/데이터베이스/Relational Model.md",
-    "CS/데이터베이스/Database.md",
-    "CS/데이터베이스/SQL Basics.md",
-    "CS/오퍼레이팅시스템/4. Threads and Concurrency.md",
+    "컴퓨터구조론/1. Computer Abstractions and Technology.md",
+    "데이터베이스/Relational Model.md",
+    "데이터베이스/Database.md",
+    "오퍼레이팅시스템/4. Threads and Concurrency.md",
     "4. Threads %26 Concurrency.md",
-    "CS/오퍼레이팅시스템/5. CPU Scheduling.md",
-    "CS/오퍼레이팅시스템/1. Introduction to OS.md",
+    "오퍼레이팅시스템/5. CPU Scheduling.md",
+    "오퍼레이팅시스템/1. Introduction to OS.md",
     "CS",
     "스레드.md",
-    "CS/오퍼레이팅시스템/3. Processes.md",
-    "CS/오퍼레이팅시스템/2. OS Structure.md",
+    "오퍼레이팅시스템/3. Processes.md",
+    "오퍼레이팅시스템/2. OS Structure.md",
     "오퍼레이팅시스템/Untitled.canvas",
     "컴퓨터구조론 1/Instructions_Language of the Computer.md",
     "컴퓨터구조론 1/Computer Abstractions and Technology.md",
@@ -231,13 +231,13 @@
     "Computer_Architecture/README.md",
     "Computer_Architecture",
     "image",
-    "CS/데이터베이스/Intro.md",
+    "데이터베이스/Intro.md",
     "Welcome.md",
     "Untitled.md",
-    "CS/컴퓨터구조론",
+    "컴퓨터구조론",
     "오퍼레이팅시스템/History of Photogrammetry.md",
     "사진측량",
-    "CS/오퍼레이팅시스템",
-    "CS/데이터베이스"
+    "오퍼레이팅시스템",
+    "데이터베이스"
   ]
 }

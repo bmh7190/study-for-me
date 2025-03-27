@@ -15,7 +15,7 @@
 
 1. **[컴퓨터 구조 (Computer Architecture)](Computer%20Architecture.md)**
 2. **[운영체제 (Operating System)](Operating%20System.md)**
-3. **[데이터베이스 (Database)](./데이터베이스/Database.md)**
+3. **[데이터베이스 (Database)](Database.md)**
 
 
 ---
