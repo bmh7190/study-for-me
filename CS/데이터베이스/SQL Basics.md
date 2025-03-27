@@ -1,8 +1,8 @@
 ---
 
 ---
----
-### Domain Tyoes in SQL
+
+### Domain Types in SQL
 ---
 
 | 데이터 타입             | 설명                                         |

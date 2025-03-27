@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "CS/컴퓨터구조론/2. Instructions_Language of the Computer.md",
+                "file": "CS/데이터베이스/SQL Basics.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "2. Instructions_Language of the Computer"
+              "title": "SQL Basics"
             }
           }
         ]
@@ -192,8 +192,10 @@
       "templater-obsidian:Templater": false
     }
   },
-  "active": "010e65ab460faf67",
+  "active": "d7ee7a3908ca6180",
   "lastOpenFiles": [
+    "CS/컴퓨터구조론/2. Instructions_Language of the Computer.md",
+    "image/Pasted image 20250313170002.png",
     "image/Pasted image 20250326161918.png",
     "image/Pasted image 20250326160151.png",
     "image/Pasted image 20250326144755.png",
@@ -201,13 +203,10 @@
     "image/Pasted image 20250326143830.png",
     "image/Pasted image 20250326143135.png",
     "image/Pasted image 20250326143455.png",
-    "CS/컴퓨터구조론/2. Instructions_Language of the Computer.md",
     "image/Pasted image 20250326142802.png",
     "image/Pasted image 20250326142437.png",
     "CS/컴퓨터구조론/Computer Architecture.md",
     "toc.md",
-    "image/Pasted image 20250326132437.png",
-    "image/Pasted image 20250326141813.png",
     "Templates/Image with Right Layout.md",
     "Templates/Image with Left Layout.md",
     "Templates",
