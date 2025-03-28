@@ -9,7 +9,8 @@
 테이블 한 row(행)는 값들의 사이의 관계를 나타내고, tuple 이라고 불린다.
 각 column(열) 은 attribute(속성)이라고 불린다.
 
-![[Pasted image 20250320170738.png]]
+![](images/Pasted%20image%2020250320170738.png)
+
 
 atttibute 는  A1, A2, …, An 이라고 하고 domain은 D1, D2, …, Dn 이라고 한다.
 
