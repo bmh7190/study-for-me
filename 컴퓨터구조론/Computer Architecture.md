@@ -7,8 +7,10 @@
 
 ## 📚 목차
 
-1. [1. Computer Abstractions and Technology](1.%20Computer%20Abstractions%20and%20Technology.md)  
-   컴퓨터 시스템의 계층 구조, 성능 평가 방식, 기술 트렌드
+ [1. Computer Abstractions and Technology](1.%20Computer%20Abstractions%20and%20Technology.md)  
+컴퓨터 시스템의 계층 구조, 성능 평가 방식, 기술 트렌드
 
-2. [2. Instructions_Language of the Computer](2.%20Instructions_Language%20of%20the%20Computer.md)  
-   명령어 구조, MIPS 어셈블리 언어, 연산 명령어와 메모리 접근 방식
+ [2. Instructions_Language of the Computer](2.%20Instructions_Language%20of%20the%20Computer.md)  
+명령어 구조, MIPS 어셈블리 언어, 연산 명령어와 메모리 접근 방식
+
+ [](3.%20Arithmetic%20for%20Compters.md)  

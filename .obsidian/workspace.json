@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "데이터베이스/1. Relational Model.md",
+                "file": "컴퓨터구조론/Computer Architecture.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "1. Relational Model"
+              "title": "Computer Architecture"
             }
           }
         ]
@@ -192,11 +192,15 @@
   },
   "active": "08e2288efa5f7dda",
   "lastOpenFiles": [
+    "3. Arithmetic for Compters.md",
+    "컴퓨터구조론/Computer Architecture.md",
+    "컴퓨터구조론/3. Arithmetic for Computers.md",
+    "컴퓨터구조론/2. Instructions_Language of the Computer.md",
+    "데이터베이스/1. Relational Model.md",
     "데이터베이스/Intro.md",
     "데이터베이스/Database.md",
     "데이터베이스/2. SQL Basics.md",
     "README.md",
-    "컴퓨터구조론/2. Instructions_Language of the Computer.md",
     "images/Pasted image 20250331011005.png",
     "images/Pasted image 20250331005454.png",
     "images/Pasted image 20250331005350.png",
@@ -207,11 +211,9 @@
     "images/Pasted image 20250330185413.png",
     "images/Pasted image 20250330185147.png",
     "images/Pasted image 20250330183432.png",
-    "컴퓨터구조론/Computer Architecture.md",
     "Templates/Insert Last Image.md",
     "컴퓨터구조론/1. Computer Abstractions and Technology.md",
     "오퍼레이팅시스템/Operating System.md",
-    "데이터베이스/1. Relational Model.md",
     "오퍼레이팅시스템/5. CPU Scheduling.md",
     "오퍼레이팅시스템/4. Threads and Concurrency.md",
     "Templates/Image with Right Layout.md",
@@ -232,7 +234,6 @@
     "Computer_Architecture",
     "images",
     "Welcome.md",
-    "Untitled.md",
     "컴퓨터구조론",
     "사진측량",
     "오퍼레이팅시스템",
