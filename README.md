@@ -23,6 +23,8 @@
 - [2. Instructions: Language of the Computer](컴퓨터구조론/2.%20Instructions_Language%20of%20the%20Computer.md)  
   명령어 구조, MIPS 어셈블리 언어, 연산 명령어와 메모리 접근 방식
 
+- [3. Arithmetic for Computers](컴퓨터구조론/3.%20Arithmetic%20for%20Computers.md)  
+
 ---
 
 ### 🖥️ Operating System
