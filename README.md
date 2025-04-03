@@ -54,7 +54,6 @@
 - [2. SQL Basics](데이터베이스/2.%20SQL%20Basics.md)  
   SELECT, INSERT, UPDATE, DELETE 문법과 기본 SQL 연산
 
-
-
+- [3. Intermediate SQL](데이터베이스/3.%20Intermediate%20SQL.md)  
 ---
 
