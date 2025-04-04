@@ -1,7 +1,8 @@
 
-# 🏛️ Computer Science Notes with Obsidian
+# 🏛️ Computer Science Notes
 
-이 저장소는 **옵시디언(Obsidian)**을 활용하여 정리한 **컴퓨터 과학(Computer Science)** 과목별 학습 자료를 모아둔 곳입니다.  
+이 저장소는 혼자 공부하면서 정리한 **컴퓨터 과학(Computer Science)** 과목별 학습 자료를 모아둔 곳입니다.  다른 과목이 포함되어있기도 합니다...^^
+
 효율적인 학습과 복습을 위해 체계적으로 정리한 내용을 공유합니다.  
 
 > 📚 **이 저장소는 다음과 같은 분들에게 유용합니다!**  
@@ -55,5 +56,6 @@
   SELECT, INSERT, UPDATE, DELETE 문법과 기본 SQL 연산
 
 - [3. Intermediate SQL](데이터베이스/3.%20Intermediate%20SQL.md)  
+
 ---
 
