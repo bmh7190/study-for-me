@@ -22,3 +22,70 @@
 초기에는 카운터가 0으로 설정됩니다.
     
 생산자는 새로운 항목을 생성할 때 카운터를 증가시키고, 소비자는 항목을 소비할 때 카운터를 감소시킵니다.
+
+```C++
+while (true) {
+	/* produce an item in next produced */ 
+
+	/* do nothing */ 
+	buffer[in] = next_produced; 
+	in = (in + 1) % BUFFER_SIZE; 
+	counter++; 
+} 
+```
+
+```c++
+while (counter == BUFFER_SIZE) ; 
+```
+
+만약 `counter`가 버퍼 사이즈와 동일하면 버퍼에 더 넣을 수 없으니까 자리가 날 때까지 기다려야 한다.
+
+
+```c++
+while (true) {
+	while (counter == 0) 
+	; /* do nothing */ 
+	next_consumed = buffer[out]; 
+	out = (out + 1) % BUFFER_SIZE; 
+	counter--; 
+	/* consume the item in next consumed */ 
+}
+```
+
+```c
+while (counter == 0) 
+```
+
+만약 버퍼에 들어온 `Consumer`가 없다면? 들어올 때까지 기다려야 한다. 
+
+
+- **카운터 증가 (counter++)**는 다음과 같이 구현될 수 있다:
+    
+    - `register1 = counter`
+        
+    - `register1 = register1 + 1`
+        
+    - `counter = register1`
+        
+- **카운터 감소 (counter--)**는 다음과 같이 구현될 수 있다:
+    
+    - `register2 = counter`
+        
+    - `register2 = register2 - 1`
+        
+    - `counter = register2`
+        
+
+### **실행 순서 (counter = 5에서 시작)**
+
+1. 생산자(producer)가 `register1 = counter`를 실행 (register1 = 5)
+    
+2. 생산자가 `register1 = register1 + 1`을 실행 (register1 = 6)
+    
+3. 소비자(consumer)가 `register2 = counter`를 실행 (register2 = 5)
+    
+4. 소비자가 `register2 = register2 - 1`을 실행 (register2 = 4)
+    
+5. 생산자가 `counter = register1`을 실행 (counter = 6)
+    
+6. 소비자가 `counter = register2`를 실행 (counter = 4)
