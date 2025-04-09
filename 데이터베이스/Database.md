@@ -17,3 +17,5 @@ GitHub와 Obsidian 양쪽에서 쉽게 탐색할 수 있도록 구성되어 있�
 SELECT, INSERT, UPDATE, DELETE 문법과 기본 SQL 연산
 
 [3. Intermediate SQL](3.%20Intermediate%20SQL.md)  
+
+[4. Entity-Relationship Model](4.%20Entity-Relationship%20Model.md)
