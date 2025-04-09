@@ -76,7 +76,7 @@ while (counter == 0)
     - `counter = register2`
         
 
-### **실행 순서 (counter = 5에서 시작)**
+##### **실행 순서 (counter = 5에서 시작)**
 
 1. 생산자(producer)가 `register1 = counter`를 실행 (register1 = 5)
     
@@ -89,3 +89,11 @@ while (counter == 0)
 5. 생산자가 `counter = register1`을 실행 (counter = 6)
     
 6. 소비자가 `counter = register2`를 실행 (counter = 4)
+
+
+현재 설명에서, **생산자**가 **레지스터**에서 값을 증가시키고, **`counter` 변수에 최종 값을 반영**하는 방식으로 진행되고 있다. 그런데 이 과정에서 **레지스터만 증가**시키고 `counter`에 값을 반영하기 전에 **소비자**가 `counter`를 건드리면 **이상한 값**이 들어가게 된다.
+
+
+---
+## **Critical Section Problem**
+
