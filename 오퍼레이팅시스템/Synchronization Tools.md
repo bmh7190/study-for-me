@@ -116,14 +116,17 @@ while (counter == 0)
 
 Critical section 문제는 다음과 같은 3개의 요구사항을 만족시키면 해결됐다고 할 수 있다.
 
-Mutual Exclusion
-• If process Pi is executing in its critical section, then no other processes can be executing 
-in their critical sections
-• Progress
-• If no process is executing in its critical section, and there exist some processes that wish 
-to enter their critical section, the selection of the processes that will enter the critical 
-section next cannot be postponed indefinitely
-• Bounded Waiting
-• A bound must exist on the number of times that other processes are allowed to enter 
-their critical sections after a process has made a request to enter its critical section and 
-before that request is granted
+
+**Mutual Exclusion (상호 배제)**
+    
+**Pi 프로세스**가 자신의 critical section에서 실행 중이라면, 다른 프로세스들은 **자신들의 critical section에 들어갈 수 없다**.
+        
+**Progress (진행)**
+    
+**어떤 프로세스도 critical section에서 실행 중이지 않고**, **진입을 원하는 프로세스가 있다면**, **다음에 어떤 프로세스가 critical section에 들어갈지 선택하는 과정은 무한히 미뤄져선 안 된다**.
+        
+**Bounded Waiting (유한 대기)**
+
+프로세스가 **critical section에 들어가기를 요청한 후**, 그 요청이 승인되기 전에 다른 프로세스들이 **critical section에 들어가는 횟수에 한계가 있어야 한다**.
+
+---
