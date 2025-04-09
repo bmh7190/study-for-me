@@ -93,7 +93,37 @@ while (counter == 0)
 
 현재 설명에서, **생산자**가 **레지스터**에서 값을 증가시키고, **`counter` 변수에 최종 값을 반영**하는 방식으로 진행되고 있다. 그런데 이 과정에서 **레지스터만 증가**시키고 `counter`에 값을 반영하기 전에 **소비자**가 `counter`를 건드리면 **이상한 값**이 들어가게 된다.
 
+이 문제를 해결하려면 **동기화**가 필요하다. **세마포어**나 **뮤텍스**를 사용해서 **생산자와 소비자**가 `counter`에 접근할 때 **서로 간섭하지 않도록** 해야 한다. **`counter`를 수정할 때 다른 프로세스가 접근하지 못하게 막는** 방법이 필요하다.
 
 ---
 ## **Critical Section Problem**
 
+시스템에 **n개의 프로세스**가 있다고 생각해보자. 각 프로세스는 코드 내에 **critical section**을 가지고 있다. 이 critical section은 **일반 변수, 테이블 갱신, 파일 입력** 등을 변화시키는 부분이다. 만약 **하나의 프로세스가 critical section에 들어가 있다면**, 다른 프로세스는 **그곳에 들어갈 수 없다**.
+
+**Critical section 문제**는 바로 이 **상황을 해결하는 프로토콜**을 설계하는 것이다.
+
+각 프로세스는 **critical section에 들어가기 전에 진입 섹션(entry section)**에서 **허락을 받아야 한다**.  
+그 후에는 **exit section**을 통해 **critical section을 나가고**, **remainder section**에서 나머지 작업을 진행한다.
+
+![](../images/Pasted%20image%2020250409154610.png)
+
+- **entry section**에서는 **진입 허가를 받았다고 알리기 위해** 그에 맞는 동기화 절차가 필요하다.
+- **exit section**에서는 **나갔다는 사실을 다른 프로세스에 알려주어야** 한다.
+
+
+---
+## **Solution to Critical Section Problem**
+
+Critical section 문제는 다음과 같은 3개의 요구사항을 만족시키면 해결됐다고 할 수 있다.
+
+Mutual Exclusion
+• If process Pi is executing in its critical section, then no other processes can be executing 
+in their critical sections
+• Progress
+• If no process is executing in its critical section, and there exist some processes that wish 
+to enter their critical section, the selection of the processes that will enter the critical 
+section next cannot be postponed indefinitely
+• Bounded Waiting
+• A bound must exist on the number of times that other processes are allowed to enter 
+their critical sections after a process has made a request to enter its critical section and 
+before that request is granted
