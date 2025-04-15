@@ -19,3 +19,5 @@ SELECT, INSERT, UPDATE, DELETE 문법과 기본 SQL 연산
 [3. Intermediate SQL](3.%20Intermediate%20SQL.md)  
 
 [4. Entity-Relationship Model](4.%20Entity-Relationship%20Model.md)
+
+[5. Relational DB Design ](5.%20Relational%20DB%20Design.md)
