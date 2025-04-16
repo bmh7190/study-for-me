@@ -45,7 +45,7 @@
 - [5. CPU Scheduling](오퍼레이팅시스템/5.%20CPU%20Scheduling.md)  
   스케줄링 알고리즘, 우선순위, 응답시간 등
 
----
+- 
 
 ### 🗃️ Database
 
@@ -56,6 +56,11 @@
   SELECT, INSERT, UPDATE, DELETE 문법과 기본 SQL 연산
 
 - [3. Intermediate SQL](데이터베이스/3.%20Intermediate%20SQL.md)  
+
+- [4. Entity-Relationship Model](데이터베이스/4.%20Entity-Relationship%20Model.md)
+
+- [5. Relational DB Design ](데이터베이스/5.%20Relational%20DB%20Design.md)
+
 
 ---
 
