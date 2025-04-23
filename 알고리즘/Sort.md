@@ -1,5 +1,5 @@
 
-# Insertion Sort
+# **Insertion Sort**
 
 ```c
 void insertionSort (Element[] E, int n){
@@ -12,6 +12,8 @@ void insertionSort (Element[] E, int n){
 	}
 }
 ```
+
+첫 인덱스부터 그 인덱스를 기준으로 shiftVacRec 수행한다. 그걸 수행하면, 인덱스의 정렬된 위치가 나오고, 그 위치에 미리 저장해둔 인덱스의 값을 옮긴다. 
 
 ```c
 int shiftVacRec(Element[] E, int vacant, Key x){
@@ -70,7 +72,10 @@ while ㄱS.isEmpty()
 return L, E, G
 ```
 
+퀵정렬은 divide and conquer을 기반으로 랜덤한 정렬 알고리즘이다.
 
+Divde: 랜덤한 원소 x, pivot을 설정하고, 그 x 보다 작은면 L그룹에 똑같으면, E, 더 크면 G그룹으로 나눈다.
+계속 Divide한다면 결국 작은 원소와 큰 원소가 결정되고, combine 하면서 정렬이 완룓
 
 ```c++
 Alogirthm inPlaceQuickSort(S, l, r){
