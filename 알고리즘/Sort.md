@@ -205,6 +205,39 @@ fixHeap(H, K){ // Outline
 # **Accelerated Heapsort**
 
 ```c
+void fixHeapFast(Element[] E, int n, Element K, int vacant, int h)
+	if (h ≤ 1) 
+		Process heap of height 0 or 1
+	else
+		int hStop = h/2
+		int vacStop = promote (E, hStop, vacant, h);
+		// vacStop is new vacant location, at height hStop
+		int vacParent = vacStop / 2; 
+		if (E[vacParent].key ≤ K.key)
+			E[vacStop] = E[vacParent];
+			bubbleUpHeap (E, vacant, K, vacParent);
+		else
+		fixHeapFast (E, n, K, vacStop, hStop);
+```
+
+
+
+```c
+int promote (Element[] E, int hStop, int vacant, int h)
+	int vacStop;
+	if (h ≤ hStop)
+		vacStop = vacant;
+	else if (E[2*vacant].key ≤ E[2*vacant+1].key)
+		E[vacant] = E[2*vacant+1];
+		vacStop = promote (E, hStop, 2*vacant+1, h-1)
+	else
+		E[vacant] = E[2*vacant];
+		vacStop = promote (E, hStop, 2*vacant, h-1);
+	return vacStop;
+```
+
+
+```c
 void bubbleUpHeap (Element[] E, int root, Element K, int vacant){
 	if (vacant == root)
 		E[vacant] = K;
