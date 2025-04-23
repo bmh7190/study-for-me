@@ -82,3 +82,7 @@ Alogirthm inPlaceQuickSort(S, l, r){
 	inPlaceQuickSort(S, k+1, r);
 }
 ```
+
+---
+# **HeapSort**
+
