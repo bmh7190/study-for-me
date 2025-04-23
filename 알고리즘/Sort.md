@@ -48,15 +48,17 @@ int shiftVacRec(Element[] E, int vacant, Key x){
 ---
 # **Quick-Sort**
 
-```psuedo
+```c
 Algorithm partition(S, p)
 	Input sequence S, position p of pivot
 	Output subsequences L, E, G of the
 	elements of S less than, equal to,
 	or greater than the pivot, resp.
+	
 L, E, G <- empty sequences
 x <- S.remove(p)
-while S.isEmpty()
+
+while ㄱS.isEmpty()
 	y <- S.remove(S.first())
 	if y < x
 		L.insertLast(y)
@@ -64,5 +66,19 @@ while S.isEmpty()
 		E.insertLast(y)
 	else { y > x }
 		G.insertLast(y)
+		
 return L, E, G
+```
+
+
+
+```c++
+Alogirthm inPlaceQuickSort(S, l, r){
+	if(l>=r) return;
+	int i = a random integer between l and r;
+	x = S.elemAtRank(i);
+	(h, k) = inPlacePartition(x);
+	inPlaceQuickSort(S, l, h-1);
+	inPlaceQuickSort(S, k+1, r);
+}
 ```
