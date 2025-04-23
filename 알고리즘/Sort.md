@@ -103,11 +103,46 @@ j와 k는 양 쪽 끝에서 시작하고 j는 피봇보다 클 경우 k는 피�
 ---
 ## **Merge Sorted Sequences**
 
+머지 소트는 정렬되어 있는 두 배열을 병합하는 전략을 이용한 정렬 알고리즘이다. 정렬된 두 배열에서 하나씩 원소를 꺼내면서 대소 비교를 통해 더 작은 값을 새로운 배열에 넣는 방식이다. 이렇게 하면 최종적으로 두 배열이 하나의 정렬된 배열로 합쳐진다. 이 원리를 이용하는 게 머지 소트다.
 
+먼저 배열의 원소가 하나가 될 때까지 계속 반으로 나눠가며 divide 과정을 반복하고, 그런 다음 다시 병합을 수행한다. 나누는 횟수는 대략 $logn$번이고, 각 병합 단계에서는 전체 원소 수인 $n$만큼의 연산이 필요하므로, 전체 수행 시간은 $nlogn$이 된다.
 
-머지 소트는 정렬되어있는 두 배열을 병합하는 전략이다. 정렬되어있는 두 배열에서 하나 씩 원소를 제거해가면서, 대소비교를 통해 하나의 배열에 넣는다. 그럼 최종적으로 정렬된 두 배열이 정렬된 하나의 배열이 되는 것이다. 이 점을 이용한다
+```c
+void mergeSort(Element[] E, int first, int last){
+	if (first < last)
+		int mid = (first+last)/2;
+		mergeSort(E, first, mid);
+		mergeSort(E, mid+1, last);
+		merge(E, first, mid, last);
+	return;
+}
+```
 
-우선 배열의 원소가 1이 될 때까지 divide한다. ㅇ
+기본적인 mergeSort 함수는 `first >= last`일 경우, 즉 정렬할 구간이 하나 이하일 때 재귀를 종료한다.  
+그 외의 경우에는 먼저 중간 지점을 구한 뒤,
+
+- **왼쪽 구간(first ~ mid)**
+    
+- **오른쪽 구간(mid+1 ~ last)**
+
+각각에 대해 `mergeSort`를 재귀적으로 호출하고,  마지막에 `merge` 함수를 호출하여 두 정렬된 부분 배열을 하나로 합친다. 이처럼 `merge`가 **재귀 호출 이후에 실행**되므로,  전체 구조는 **postorder traversal(후위 순회)** 방식이라 할 수 있다.
+ 
+```c
+merge(A, B, C)
+	if (A is empty)
+		rest of C = rest of B
+	else if (B is empty)
+		rest of C = rest of A
+	else if (first of A ≤ first of B)
+		first of C = first of A
+		merge (rest of A, B, rest of C)
+	else
+		first of C = first of B
+		merge (A, rest of B, rest of C)
+return
+```
+
+A와 B 배열은
 
 
 ---
