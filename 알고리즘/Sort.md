@@ -86,3 +86,52 @@ Alogirthm inPlaceQuickSort(S, l, r){
 ---
 # **HeapSort**
 
+```c
+heapSort(E, n) // Outline
+construct H from E, the set of n elements to be sorted
+for (i = n; i ≥ 1; i--)
+	curMax = getMax(H)
+	deleteMax(H);
+	E[i] = curMax;
+```
+
+```c
+deteleMax(H) // Outline
+	copy the rightmost element of the lowest level of H into K
+	delete the rightmost element on the lowest level of H
+	fixHeap(H, K);
+```
+
+```c
+fixHeap(H, K){ // Outline
+	if (H is a leaf)
+		insert K in root(H);
+	else
+		set largerSubHeap to leftSubtree(H) or rightSubtree(H), whichever 
+		has larger key at its root. This involves one key comparison. 
+	
+	if (K.key ≥ root(largerSubHeap.key)
+		insert K in root(H);
+	else
+		insert root(largerSubHeap) in root(H);
+		fixHeap(largerSubHeap, K);
+	return;
+}
+```
+
+---
+# **Accelerated Heapsort**
+
+```c
+void bubbleUpHeap (Element[] E, int root, Element K, int vacant){
+	if (vacant == root)
+		E[vacant] = K;
+	else
+		int parent = vacant / 2;
+		if (K.key ≤ E[parent].key)
+			E[vacant] = K;
+		else
+			E[vacant] = E[parent];
+			bubbleUpHeap (E, root, K, parent);
+}
+```
