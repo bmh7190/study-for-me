@@ -112,17 +112,45 @@ void release() {
 ---
 ## **Condition vairable choices**
 
-만약 Q가 x.wait() 상태에 있고, P가 x.signal()을 호출 하면 무슨 일이 일어날까? 
+만약 Q가 `x.wait()` 상태에 있고, P가 `x.signal()`을 호출하면 어떤 일이 발생할까?
 
-Q와 P는 병렬적으로 실행될 수 없다. Q가 남아있다면, P는 무조건 기다려야 한다. 
+Q와 P는 동시에 병렬적으로 실행될 수 없다. 만약 Q가 깨어나 실행된다면, **P는 반드시 대기해야 한다.**  
+이는 모니터 내부에는 **오직 하나의 프로세스만 들어올 수 있기 때문**이다.
 
-사실 wait() 상태가 되면, wait() 상태가 되었다는 것을 conditon 즉 waiting queue에 넣고, 모니터 밖에서 대기하게 된다. 만약 모니터 안에서 대기하게 되면, 모니터는 하나의 쓰레드만 접근 가능하기 때문에 아무런쓰레드도 접근할 수 없게 되기 때문이다. 
+사실 `wait()` 상태가 된다는 것은, **해당 프로세스를 condition queue, 즉 대기 큐에 넣고 모니터 밖에서 기다리게 한다는 의미**이다.  만약 `wait()` 상태를 모니터 내부에서 유지한다면, **모니터에 하나의 쓰레드만 들어올 수 있다는 제약** 때문에,  다른 어떤 쓰레드도 모니터에 진입할 수 없게 되어버린다. 결과적으로 **모든 프로세스가 교착상태에 빠지게 된다.**
 
-signal and wait
-P가 Q를 깨웠을 때, P가 깨우고 나가는 경우 + 다른 condtion으로  Q
-잠깐 wait을 할 P를 위해서 queue가 하나 더 필요하겠죠?
 
-signal and continue
-P가 Q를 깨우고, P 끝내고 Q 실행!
+#### Signal and Wait
 
-두 방법 다 장단점이 있다. 구현자가 결정할 수 있죠ㅕ
+P가 Q를 깨웠을 때, **P는 잠시 대기 상태로 전환되고 Q가 모니터에 들어가 실행**된다.  Q의 실행이 끝난 후에야 **P가 다시 모니터에 들어가 실행을 이어간다.**  또한, 만약 Q가 실행 도중 다시 `wait()`을 호출하게 된다면,  P는 계속 대기 중이므로, 이를 위해 **잠시 대기할 별도의 큐(Urgent Queue)** 가 필요하다.
+
+#### Signal and Continue
+
+P가 Q를 깨운 후, **P가 계속 실행을 마친다.**  Q는 **P가 모니터를 나간 뒤에야 들어와서 실행**된다.  
+혹은, P가 실행 도중 다시 `wait()`을 호출하게 되면,  그 시점에 Q가 모니터에 들어와 실행을 이어가게 된다.
+
+---
+## **Monitor Implemetation( Signal and Wait )**
+
+```c
+semaphore monitor_lock; // initially = 1
+semaphore sig_lock; // initially = 0
+int sig_lock_count = 0;
+```
+
+모니터 바깥에 queue가 지금 2개 존재한다. entry queue랑 signal and wait을 하는 signaler queue
+그리고 그것들을 관리하는 변수가 세마포어로 monitor_lock, sig_lock이 있다고 가정한다 .
+sig_lock_count 은 singalere queue에 있는 프로세스가 몇 개인가를 나타내는 변수이다. 
+
+```c
+wait(monitor_lock);
+	…
+	body of F;
+	…
+if (sig_lock_count > 0)
+	signal(sig_lock);
+else
+	signal(monitor_lock);
+```
+
+구현 기능은 언어 레벨에서 제공한다 예를 들어 F라는 함수를 만들었다면, 그것을 컴파일해주는 과정에서 ㅋ
