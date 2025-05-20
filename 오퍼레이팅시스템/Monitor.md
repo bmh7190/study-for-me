@@ -138,9 +138,12 @@ semaphore sig_lock; // initially = 0
 int sig_lock_count = 0;
 ```
 
-모니터 바깥에 queue가 지금 2개 존재한다. entry queue랑 signal and wait을 하는 signaler queue
-그리고 그것들을 관리하는 변수가 세마포어로 monitor_lock, sig_lock이 있다고 가정한다 .
-sig_lock_count 은 singalere queue에 있는 프로세스가 몇 개인가를 나타내는 변수이다. 
+모니터 바깥에는 두 개의 큐가 존재한다.
+
+- **entry queue**: `monitor_lock`을 얻지 못한 일반 프로세스들이 대기
+- **signaler queue**: `signal-and-wait` 방식에서, 신호를 보내고 잠시 대기 중인 프로세스들이 대기
+
+`monitor_lock`과 `sig_lock`은 각각의 큐 접근과 실행 제어를 위한 **세마포어**이며,  `sig_lock_count`는 현재 **signaler queue에서 대기 중인 프로세스의 수**를 나타낸다.
 
 ```c
 wait(monitor_lock);
@@ -153,4 +156,15 @@ else
 	signal(monitor_lock);
 ```
 
-구현 기능은 언어 레벨에서 제공한다 예를 들어 F라는 함수를 만들었다면, 그것을 컴파일해주는 과정에서 ㅋ
+###### **`wait(monitor_lock)`**
+세마포어 기반의 진입 제어로 키를 얻은 프로세스만 모니터에 진입 가능하며,  **못 얻은 프로세스는 entry queue에서 대기**한다.
+###### **함수 `F` 본체 실행**
+실제 공유 데이터를 다루는 로직이 이 위치에 들어간다. 언어 수준에서 모니터를 지원하는 경우, 컴파일러가 이 진입(Entry Section)과 퇴장(Exit Section) 코드를 자동 삽입해준다.
+###### **모니터 퇴장 시점**
+`signal()` 호출 여부에 따라,  다음 실행 주체를 **signaler queue > entry queue** 우선순위로 결정한다.
+
+**`sig_lock_count > 0`** 이면 signaler queue에 대기 중인 프로세스가 있다는 뜻이므로,  `sig_lock`에 signal을 보내어 **그 프로세스를 깨운다.** 그렇지 않으면, `monitor_lock`을 signal하여 **entry queue에 있는 프로세스를 진입시킨다.**
+
+> [!note] 왜 signaler queue에 우선순위를 주는가?
+> 
+> `signaler queue`에 있는 프로세스는 이미 모니터 내부에서 `signal()`을 호출하고  **잠시 나가 있던 중인 프로세스**이다.  즉, **작업을 완료하지 못한 상태**에서 기다리고 있으므로  `entry queue`에서 처음 진입하려는 프로세스보다 우선권을 주는 것이 올바른 동작이다.
