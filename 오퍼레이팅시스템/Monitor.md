@@ -173,7 +173,7 @@ else
  
  
 ```c
- int x count; / / x에서 기다리는 프로세스 수
+ int x count; // x에서 기다리는 프로세스 수
  semaphore x_sem; // x에 대한 semaphore
 ```
 
@@ -188,6 +188,23 @@ wait(x_sem);
 x_count--;
 ```
 
-x.wait() 은 모니터 안에 들어와 있는 상태에서 실행, 
+`x.wait()`은 **모니터 안에서 실행**된다.  우선 `x_count++`를 통해 자신이 조건 변수 `x`에서 대기할 것임을 알린다.  그 후, `sig_lock_count > 0`인 경우에는 **signaler queue에 있는 프로세스를 깨우기 위해 `sig_lock`에 signal을 보내고,** 그렇지 않으면 일반적인 entry queue에 대기 중인 프로세스를 위해 `monitor_lock`을 signal한다.
 
-x_count 를 통해서 잘거라고 알리고, 누군가 깨운다음, wait(x_sem)을 해서 잠든다? semaphore 1 증가 해주고, signal(x_sem)을 해주면 1 해주면서 깨어나겠지
+그 후 `wait(x_sem)`을 통해 조건 변수 큐에서 대기 상태에 들어간다. 나중에 `signal(x_sem)`이 호출되면 깨어나고, 그 시점에서 `x_count--`를 통해 대기 수를 감소시킨다.
+
+```c
+/* x.signal */
+if (x_count > 0) {
+	sig_lock_count++;
+	signal(x_sem);
+	wait(sig_lock);
+	sig_lock_count--;
+}
+```
+
+`x.signal()`은 **모니터 내부에서 실행**되며, 조건 변수 `x`에 대기 중인 프로세스가 있을 때에만 동작한다.  
+`x_count > 0`일 경우, `signal(x_sem)`을 통해 조건 변수 큐에 있는 대기 중 프로세스를 하나 깨운다.
+
+그 대신, **signal을 호출한 현재 프로세스 자신은 모니터에서 나갈 수 없으므로 `sig_lock`에서 대기하게 된다.**  
+이를 나타내기 위해 `sig_lock_count++`로 signaler queue 대기 수를 증가시키고,  
+`wait(sig_lock)`으로 대기 상태에 들어간 후, 깨어나면 다시 `sig_lock_count--`를 수행한다.
