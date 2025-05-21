@@ -205,6 +205,25 @@ if (x_count > 0) {
 `x.signal()`은 **모니터 내부에서 실행**되며, 조건 변수 `x`에 대기 중인 프로세스가 있을 때에만 동작한다.  
 `x_count > 0`일 경우, `signal(x_sem)`을 통해 조건 변수 큐에 있는 대기 중 프로세스를 하나 깨운다.
 
-그 대신, **signal을 호출한 현재 프로세스 자신은 모니터에서 나갈 수 없으므로 `sig_lock`에서 대기하게 된다.**  
-이를 나타내기 위해 `sig_lock_count++`로 signaler queue 대기 수를 증가시키고,  
-`wait(sig_lock)`으로 대기 상태에 들어간 후, 깨어나면 다시 `sig_lock_count--`를 수행한다.
+그 대신, **signal을 호출한 현재 프로세스 자신은 모니터에서 나갈 수 없으므로 `sig_lock`에서 대기하게 된다.**  이를 나타내기 위해 `sig_lock_count++`로 signaler queue 대기 수를 증가시키고, `wait(sig_lock)`으로 대기 상태에 들어간 후, 깨어나면 다시 `sig_lock_count--`를 수행한다.
+
+---
+## **Monitor Implementation (Signal and Continue)**
+
+```c
+/* x.wait */
+add current_thread to x.queue; //x_count++
+signal(monitor_lock);
+block current_thread; //wait(x_sem);
+
+acquire monitor_lock;
+```
+
+
+```c
+/* x.signal */
+if (!x.queue.empty()) { //x_count>0
+	move one thread from x.queue to ready queue; //signal(x_sem)
+}
+```
+
