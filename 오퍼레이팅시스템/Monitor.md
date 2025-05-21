@@ -232,4 +232,4 @@ if (!x.queue.empty()) { //x_count>0
     
 - 단, `signal and continue` 방식에서는 signal을 호출한 스레드가 **모니터를 계속 점유**한다.
     
-- 따라서 깨어난 스레드는 곧바로 모니터에 들어올 수 없으며, **`wait(monitor_lock)`을 통해 다시 대기**해야 한다.
+- 따라서 깨어난 스레드는 곧바로 모니터에 들어올 수 없으며, 애초에 x.wait() 안에서 **`wait(monitor_lock)`을 통해 다시 대기**가 되고, 안에 있던 프로세스가 끄
