@@ -168,3 +168,26 @@ else
 > [!note] 왜 signaler queue에 우선순위를 주는가?
 > 
 > `signaler queue`에 있는 프로세스는 이미 모니터 내부에서 `signal()`을 호출하고  **잠시 나가 있던 중인 프로세스**이다.  즉, **작업을 완료하지 못한 상태**에서 기다리고 있으므로  `entry queue`에서 처음 진입하려는 프로세스보다 우선권을 주는 것이 올바른 동작이다.
+
+---
+ 
+ 
+```c
+ int x count; / / x에서 기다리는 프로세스 수
+ semaphore x_sem; // x에 대한 semaphore
+```
+
+```c
+/* x.wait */
+x_count++;
+if (sig_lock_count > 0)
+	signal(sig_lock);
+else
+	signal(monitor_lock);
+wait(x_sem);
+x_count--;
+```
+
+x.wait() 은 모니터 안에 들어와 있는 상태에서 실행, 
+
+x_count 를 통해서 잘거라고 알리고, 누군가 깨운다음, wait(x_sem)을 해서 잠든다? semaphore 1 증가 해주고, signal(x_sem)을 해주면 1 해주면서 깨어나겠지
