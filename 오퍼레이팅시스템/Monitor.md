@@ -216,9 +216,10 @@ add current_thread to x.queue; //x_count++
 signal(monitor_lock);
 block current_thread; //wait(x_sem);
 
-acquire monitor_lock;
+acquire monitor_lock; //wait(monitor_lock);
 ```
 
+`x.wait`은 **모니터 안에서 호출**된다. 현재 스레드를 `x.queue`에 추가하고, **모니터 락을 반납**한다. 이후 **자신은 `x.queue`에서 대기** 상태로 들어간다.
 
 ```c
 /* x.signal */
@@ -227,3 +228,8 @@ if (!x.queue.empty()) { //x_count>0
 }
 ```
 
+- `x.queue`에 대기 중인 스레드가 있다면, 하나를 깨워 **ready queue로 이동**시킨다.
+    
+- 단, `signal and continue` 방식에서는 signal을 호출한 스레드가 **모니터를 계속 점유**한다.
+    
+- 따라서 깨어난 스레드는 곧바로 모니터에 들어올 수 없으며, **`wait(monitor_lock)`을 통해 다시 대기**해야 한다.
