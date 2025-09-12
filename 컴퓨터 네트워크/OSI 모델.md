@@ -9,3 +9,7 @@ layer-to-layer 커뮤니케이션
 `Layer-to-Layer Communication` (또는 Peer-to-Peer Communication)은 **각 계층이 자신과 짝이 되는 상대방 계층과 직접 통신한다고 "인식"하는 것**을 말한다.
 
 예를 들어, A의 Application 계층이 B에게 메시지를 보낸다고 하면, A의 Application은 “내가 곧장 B의 Application에 메시지를 전달한다”고 생각한다. 실제 동작은 그 메시지가 아래 Transport, Network, Data Link 계층을 거치며 **캡슐화**되고, 물리적인 신호로 변환되어 전송된다. 하지만 **논리적으로는** Application ↔ Application, Transport ↔ Transport, Network ↔ Network … 이런 식으로 같은 계층끼리 통신한다고 보는 거다. B 측에서는 받은 데이터를 자기 계층에서 “A의 같은 계층이 보낸 데이터구나” 하고 인식하게 된다.
+
+
+---
+## Physcial Layer
