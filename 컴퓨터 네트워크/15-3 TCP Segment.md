@@ -132,3 +132,25 @@ TCP는 독립적으로 IP 헤더를 “가지고 있는” 것이 아니라, **�
 
 TCP는 이 정보를 이용해 **Pseudo Header** 를 만들고, Checksum 계산이 끝나면 그 정보를 **버린다**.  
 즉, TCP는 IP 정보를 “항상 알고 있는” 게 아니라, **Checksum 계산을 위해 일시적으로 참조**하는 것이다.
+
+---
+### Encapsulation
+
+네트워크에서 데이터가 전송될 때는 **상위 계층에서 하위 계층으로 내려가며** 각 계층의 프로토콜 헤더가 차례대로 붙는다. 이 과정을 **캡슐화(Encapsulation)** 라고 한다.
+
+![](../images/Pasted%20image%2020251014140543.png)
+
+> **[TCP Header] + [Application Data]**
+
+애플리케이션에서 생성된 데이터는 **Application Data** 또는 **메시지(Message)** 라고 부른다.  
+이 데이터가 **TCP 계층(전송 계층)** 으로 내려가면,  TCP는 여기에 **TCP 헤더(TCP Header)** 를 붙인다. 이때 애플리케이션에서 내려온 데이터는 **TCP의 페이로드(Payload)** 가 된다.  
+
+
+> **[IP Header] + [TCP Header + Application Data]**
+
+CP 계층에서 만들어진 세그먼트는 **네트워크 계층(IP)** 으로 전달된다. IP는 여기에 자신의 **IP 헤더(IP Header)** 를 붙인다. 이때 **TCP 세그먼트 전체**가 **IP의 페이로드**가 된다.
+
+
+> **[Frame Header] + [IP Header + TCP Header + Application Data] + [Frame Trailer]**
+
+IP 패킷이 데이터링크 계층으로 내려가면, 데이터링크 계층은 여기에 **프레임 헤더(Frame Header)** 와 **프레임 트레일러(Frame Trailer)** 를 붙인다. 이때 지금까지 만들어진 **IP 패킷 전체**가 **프레임의 페이로드**가 된다.
