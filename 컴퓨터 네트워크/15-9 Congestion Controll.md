@@ -102,13 +102,25 @@ TCP의 **혼잡 제어(Congestion Control)** 는 단순히 전송 속도를 늘�
 
 ![](../images/Pasted%20image%2020251014210022.png)
 
-자 처음에 cwnd는 1부터 시작하고 thresh에 도달하기 전까지 2배씩 증가하게 된다. 그 다음 threshhod를 넘어서는 순간부터 1씩 증가한다. 
+TCP는 네트워크 혼잡이 발생하면 스스로 전송 속도를 조절하여 안정적인 통신을 유지한다.  
+이를 위해 사용하는 핵심 변수는 **cwnd**와 **ssthresh (Slow Start Threshold)** 이다.
 
-이때 혼잡이 생겼다. 혼잡이 생기는 경우는 2가지로 구분할 수 있는 위에서 fast retransmission이 올 조건이 3번의 중복 ACK이 오는 경우랑 한 가지는 timeout 이 되는 경우이다.
+처음 연결이 시작되면 **cwnd = 1 MSS** 로 설정되고, 데이터를 전송하며 ACK을 받을 때마다 cwnd가 점점 커진다. 이때 **ssthresh(임계값)** 에 도달하기 전까지는 cwnd가 **2배씩 증가(Slow Start)** 하고, 임계값을 넘어서면 **1씩 증가(Congestion Avoidance)** 하며 네트워크 상태를 조심스럽게 관찰한다.
+
+TCP는 네트워크에서 **패킷 손실(Packet Loss)** 이 발생했을 때 이를 **혼잡(Congestion)** 으로 간주한다. 실제로 전체 패킷 손실의 약 99%는 네트워크 혼잡으로 인해 발생하기 때문이다. 따라서 TCP는 패킷이 손실되었다고 판단하는 순간, **혼잡이 발생했다**고 인식하고 전송 속도를 줄인다.
+
+TCP는 **혼잡 회피(Congestion Avoidance)** 구간에서 네트워크의 여유를 관찰하며 천천히 cwnd를 1씩 증가시키며 전송량을 늘린다.  
+하지만 네트워크가 일정 수준 이상으로 바빠지면, 결국 **혼잡(Congestion)** 이 발생할 수 있다.
+
+이때 TCP는 패킷 손실을 통해 혼잡을 감지하며,  
+혼잡이 발생했다고 판단하는 상황은 두 가지로 구분된다.  
+하나는 **3번의 중복 ACK이 도착한 경우**,  
+다른 하나는 **Timeout(재전송 타이머 초과)** 이 발생한 경우다.
+threshhold를 넘어서서 혼잡이 발생한 경우에, 혼잡이 생겼다. 혼잡이 생기는 경우는 2가지로 구분할 수 있는 위에서 fast retransmission이 올 조건이 3번의 중복 ACK이 오는 경우랑 한 가지는 timeout 이 되는 경우이다.
 
 3번의 중복 ACK이 되는 경우에는 window를 반으로 즉 cwnd를 반을 줄여서 다시 1씩 증가한다. 
 
 하지만 timeout이 되는 경우는 혼잡이 굉장히 심한 상황이라고 볼 수 있는데 이때는 너무 혼잡이 심해서 반으로 줄이는 것을 해결이 안될거 같아 1부터 다시 출발하게 된다. 또 중요한 점은 thrshhold를 timeout이 발생한 window반으로 수정하게 된다. 
 
 
-지금까지는 
+지금까지는 threshhold를 넘어서서 혼잡이 발생한 경우이고, threshold를 넘기 전에도 혼잡은 발생할 수 있다 . 그럴 경우에도 timeout과 3번의 복제 ACK 에 의한 경우에 따라 다르게 작용하는데 congestion aovidance 상태와 약간 다르다. 먼저  3중복ACK에 대해서 혼잡이 발생했다면 원래 기존에는 slow start에 따라 2배씩 증가하던 cwnd가 바로 반으로 줄이고 congestion avoidance 상태에 처한다. 즉 cwnd가 1씩 증가하게 된다. 반면 timeout 상태에서는 congestion avoidance 상태로 가는게 아니라 아까랑 똑같이 1부터 다시 출발하고 timeout되었을 때 cwnd의 반을 thrshohold 값을 설정한다. 
