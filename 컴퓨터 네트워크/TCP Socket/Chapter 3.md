@@ -43,5 +43,27 @@ bind(serv_sock, (struct sockarr *) &serv_addr, sizeof(serv_addr));
 
 bind 매개 변수가 sockaddr 타입이기 때문에 sockaddr_in을 scokaddr로 강제 형변환 해야한다.
 
-sockaddr은 다
+```c
+struct sockaddr
+{
+	sa_family_t sin_family;
+	char sa_data[14];
+}
+```
+sockaddr은 다양한 주소체계의 주소 정보를 담을 수 있도록 정의 되었다. 그래서 ipv4의 주소 체계를 담기가 불편해서 동일한 바이트 열을 구성하는 구조체 sockaddr_in을 통해 쉽게 ipv4의 주소 정보를 담을 수 있도록 한 것!
+
+---
+## 네트워크 바이트 VS 호스트 바이트 순서
+
+네트워크는 바이트는 빅엔디안으로 되어있고, 호스트 바이트는 스몰엔디안 방식으로 작성됨 그래서 형변환이 반드시 필요함
+
+
+```c
+unsigned short hton(unsigned short);
+unsigned short ntohs(unsigned short);
+unsigned long htonl(unsigned long);
+unsigned long ntohl(unsigned long);
+```
+
+여기서ㅓ h는 호스트 n은 네트워크 s는 리턴 값이 short, l은 리턴 값이 long
 
