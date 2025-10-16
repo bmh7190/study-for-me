@@ -71,131 +71,50 @@ IP 주소는 전 지구적으로 유일하게 할당되며, 출발지에서 목�
 
 ![](../images/Pasted%20image%2020251016181225.png)
 
-### **1️⃣ Physical Layer (물리 계층)**
+#### **1️Physical Layer (물리 계층)**
 
 - **설명:** 데이터를 실제 전기적·기계적 신호로 변환하여 전송하는 계층
     
 - **기능:** 비트 전송, 전압/주파수/케이블 등 물리적 특성 정의
-    
-k Layer (데이터 링크 계층)**
+
+
+#### **Data Link Layer (데이터 링크 계층)**
 
 - **설명:** 물리적 전송 오류를 제어하고, 인접한 노드 간의 프레임 전송을 담당
     
 - **기능:** 프레임화(Frame), MAC 주소를 통한 Hop-to-Hop 전달, 오류 검출 (CRC)
-    
-- **핵심 문장:**
-    
-    > To organize bits into frames; to provide hop-to-hop delivery  
-    > → 비트를 프레임 단위로 구성하고, 인접 노드 간 전달을 담당한다.
-    
-- **예시:** 스위치, 브리지, MAC 주소, 이더넷(Ethernet), ARP
-    
 
----
 
-### **3️⃣ Network Layer (네트워크 계층)**
+#### **Network Layer (네트워크 계층)**
 
 - **설명:** 패킷을 목적지까지 전달하기 위해 경로를 설정하는 계층
     
 - **기능:** 라우팅, IP 주소 지정, 패킷 전달 (Source to Destination)
-    
-- **핵심 문장:**
-    
-    > To move packets from source to destination; to provide internetworking  
-    > → 패킷을 출발지에서 목적지까지 이동시키고, 네트워크 간 연결을 제공한다.
-    
-- **예시:** 라우터, IP, ICMP, ARP, NAT
-    
 
----
+#### **Transport Layer (전송 계층)**
 
-### **4️⃣ Transport Layer (전송 계층)**
-
-- **설명:** 애플리케이션 간 신뢰성 있는 데이터 전달을 보장하는 계층
+- **설명:** 프로세스 간 신뢰성 있는 메시지 전달과 오류 복구를 제공한다.
     
 - **기능:** 신뢰성 보장, 흐름 제어, 혼잡 제어, 오류 복구
-    
-- **핵심 문장:**
-    
-    > To provide reliable process-to-process message delivery and error recovery  
-    > → 프로세스 간 신뢰성 있는 메시지 전달과 오류 복구를 제공한다.
-    
-- **예시:** TCP, UDP, 포트 번호, 3-way handshake
-    
 
----
-
-### **5️⃣ Session Layer (세션 계층)**
+#### **Session Layer (세션 계층)**
 
 - **설명:** 통신 세션(대화)의 생성, 관리, 종료를 담당
     
 - **기능:** 연결 관리, 세션 유지, 동기화
-    
-- **핵심 문장:**
-    
-    > To establish, manage, and terminate sessions  
-    > → 세션을 생성하고 관리하며 종료한다.
-    
-- **예시:** API 통신, 인증 세션, RPC, NetBIOS
-    
 
----
 
-### **6️⃣ Presentation Layer (표현 계층)**
+#### **Presentation Layer (표현 계층)**
 
 - **설명:** 데이터의 표현 방식을 변환하여 상호 이해가 가능하도록 함
     
 - **기능:** 인코딩, 암호화, 압축
-    
-- **핵심 문장:**
-    
-    > To translate, encrypt, and compress data  
-    > → 데이터를 변환, 암호화, 압축하여 표현 형식을 맞춘다.
-    
-- **예시:** SSL/TLS, JPEG, ASCII, MPEG, 데이터 인코딩
-    
 
----
 
-### **7️⃣ Application Layer (응용 계층)**
+
+#### **Application Layer (응용 계층)**
 
 - **설명:** 사용자가 네트워크 서비스에 접근할 수 있도록 하는 계층
     
 - **기능:** 애플리케이션 간 네트워크 통신 인터페이스 제공
-    
-- **핵심 문장:**
-    
-    > To allow access to network resources  
-    > → 네트워크 자원에 접근할 수 있도록 한다.
-    
-- **예시:** HTTP, FTP, SMTP, DNS, 웹 브라우저
-    
 
----
-
-## 🧠 정리 요약표
-
-|계층 번호|계층 이름|주요 역할|예시 프로토콜|
-|---|---|---|---|
-|**7**|Application|사용자와 네트워크 자원 연결|HTTP, FTP, SMTP|
-|**6**|Presentation|데이터 변환, 암호화, 압축|SSL/TLS, JPEG|
-|**5**|Session|세션 생성 및 관리|NetBIOS, RPC|
-|**4**|Transport|신뢰성, 흐름/혼잡 제어|TCP, UDP|
-|**3**|Network|경로 설정, 패킷 전달|IP, ICMP|
-|**2**|Data Link|프레임화, MAC 주소 기반 전송|Ethernet, ARP|
-|**1**|Physical|비트 전송, 물리적 연결|케이블, 허브|
-
----
-
-### 💡 핵심 요약 문장
-
-> OSI 7계층은 네트워크 통신을 **7단계로 나누어 구조화한 모델**로,  
-> 각 계층은 **자신의 역할에 맞게 데이터를 처리**하고,  
-> 하위 계층에 서비스를 제공하며, 상위 계층의 요청을 수행한다.
-
----
-
-원하신다면 이 그림 내용을 기반으로  
-📘 “OSI 7계층 요약 슬라이드 (기능 + 예시 + 키워드)”  
-형태로 깔끔하게 학습용 정리 이미지를 만들어드릴 수도 있어요.  
-그림 형태로 만들어드릴까요?
