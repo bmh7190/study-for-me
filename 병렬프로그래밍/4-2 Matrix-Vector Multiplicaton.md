@@ -210,8 +210,22 @@ void block_parallel_mult(
 ```
 
 ##### 일 나누기
-일 자체는 64/8 해서 8개 씩 돌아서 하기로 했다.
+
+일 자체는 **캐시 라인(예: 64B)** 을 고려해 `chunk_size = 64 / sizeof(value_t)`로 잡아, 한 번에 처리할 **행 블록 크기**를 정한다. (예: `value_t = double`이면 대략 8개 단위)
 
 ##### 어디서부터 어디까지 할지
 
-자 여기서 chunk size 즉 실제 thread 가 할 일이 chunck size 부터 되지 않는다. 이게 무슨 말이냐면 1번 쓰레가 100 을 일하면 다음 쓰레드는 100부터 200이 아니라는 것이다 왜냐면 cyclic 하게 배분 중이니까! 그래서 stride를 도입했는데, chunck  * num_threads 를 해서 내가 다음에 일 할 곳은 어딘지를 계산한다.
+여기서 각 스레드의 작업 시작점은 단순히 `id * chunk_size`이고, 이후 작업은 **사이클릭(cyclic)** 하게 돌기 때문에 다음 시작점은 `lower + stride`가 된다.
+
+![](../images/Pasted%20image%2020251017154619.png)
+
+- `offset = id * chunk_size` : 스레드 `id`의 첫 블록 시작 행
+    
+- `stride = num_threads * chunk_size` : 동일 스레드가 **다음에** 맡을 블록까지 건너뛸 간격
+    
+- 첫 작업 구간: `[lower, upper)` = `[offset, min(offset + chunk_size, m))`
+    
+- 다음 작업 구간: `lower += stride`를 반복하며 같은 방식으로 처리
+
+
+즉, **각 스레드는 자기 차례의 블록만** 맡아 처리하고, 그다음 차례의 블록은 `stride`만큼 건너뛴 위치에서 다시 `chunk_size`만큼 처리한다. 이렇게 하면 블록 단위의 **캐시 친화성**을 유지하면서도 **부하 분산(load balancing)** 이 좋아진다.
