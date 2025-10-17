@@ -26,7 +26,7 @@ cv.notify_one(); // wake up one waiting thread
 
 반면 `unique_lock`은 조금 더 유연하다. `wait`에 들어갈 때 잠시 **락을 해제(unlock)** 하고, 깨울 때 다시 **락을 획득(lock)** 하는 구조이기 때문에 **다른 스레드가 공유 변수에 접근하고 상태를 바꿀 수 있다.**
 
-##### 예시로 알아보자
+##### 예시로 알아보자!
 
 이게 왜 필요한지 예시로 생각해보자.
 
@@ -43,9 +43,9 @@ cv.notify_one(); // wake up one waiting thread
 ---
 ## Modeling ad Sleeping Student
 
-![](../images/Pasted%20image%2020251017164444.png)
+![](Pasted%20image%2020251017164444.png)
 
-아침 먹을 시간에 일어나고 싶어 하는 상황이다.
+아침 먹을 시간에 시간에 일어나고 싶은 상황이다.
 
 ```c++
 int main() {
@@ -77,11 +77,20 @@ int main() {
 	my_thread.join(); // wait until breakfast is fini
 ```
 
+thread가 `student` 함수를 실행하면 `unique_lock`으로 먼저 `mutex`를 잡는다. 그다음 조건을 확인한다. **아침 먹을 시간이 아니면**(= `time_for_breakfast == false`) `while` 안으로 들어가 `cv.wait(unique_lock)`로 **잠든다**. 이때 `unique_lock`을 넘겨주기 때문에 **wait에 들어가는 순간 lock을 풀고**, 깨울 때 **다시 lock을 잡은 뒤** `wait`가 반환된다. (스푸리어스 웨이크업 대비해서 지금처럼 `while`로 재확인하거나 `cv.wait(lock, pred)`를 쓰는 게 정석)
+
+> 주의: `cv`는 “wait되었음을 알려주는 **상태 변수**”가 아니다.  
+> **상태는 `time_for_breakfast`** 같은 공유 변수에 있고, **`cv`는 ‘상태가 바뀌었어!’라고 알리는 신호(벨)** 역할이다.
+
+메인 스레드는 2초 기다렸다가(`sleep_for(2s)`), `lock_guard`로 `mutex`를 잠시 잡고 **`time_for_breakfast = true`로 상태를 갱신**한다. 그다음 lock을 **풀고 나서** `cv.notify_one()`으로 **대기 중인 스레드 하나를 깨운다**. (상태 갱신 → unlock → notify 순서는 깨어난 스레드가 곧바로 lock을 잡고 진행하기 좋아서 흔히 쓰는 패턴)
+
+깨워진 `student` 스레드는 `wait`가 **lock을 다시 획득한 상태로** 반환되고, `while` 조건을 재확인해서 참이면 루프를 빠져나온다. 그 시점에 `unique_lock` 스코프가 끝나면서 lock이 풀리고, `"Time to make some coffee!"`를 출력한다. 마지막에 `join()`으로 스레드가 끝날 때까지 기다리면 깔끔하게 종료된다.
+
 
 ---
 ## Playing Ping-Pong with Condition Variables
 
-![](../images/Pasted%20image%2020251017164750.png)
+![](Pasted%20image%2020251017164750.png)
 
 ```c++
 
@@ -121,6 +130,22 @@ int main() {
 }
 ```
 
+기존 방식에서는 이렇게 썼다.
+
+```c++
+while (!is_ping) { 	cv.wait(unique_lock); }
+```
+
+즉, 조건이 거짓이면 계속 `wait` 상태에 들어가고, 깨워져도 다시 조건을 확인해서  
+거짓이면 다시 잠드는 구조였다.
+
+하지만 이렇게 한 줄로 표현할 수도 있다.
+
+```c++
+cv.wait(unique_lock, [&](){return is_ping;});
+```
+
+`is_ping`이 `true`일 때만  `wait`을 빠져나와 이후 코드 실행한다.
 
 
 ### 개선 사항

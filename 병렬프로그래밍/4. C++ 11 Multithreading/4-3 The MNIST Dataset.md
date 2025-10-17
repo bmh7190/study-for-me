@@ -2,7 +2,7 @@ MNIST 데이터셋은 손글씨 숫자(0~9) 이미지를 모은 대표적인 머
 총 약 **65,000장(훈련용 60,000장 + 테스트용 10,000장)** 의 이미지로 구성되어 있으며,  
 각 이미지는 **28 × 28 픽셀**의 흑백(grayscale) 이미지다.
 
-![](../images/Pasted%20image%2020251017155154.png)
+![](Pasted%20image%2020251017155154.png)
 
 이때 각 이미지를 행렬로 나타낼 수 있다.  
 하나의 이미지를 `D_i`라 하면, 그 안의 `j`번째 픽셀 값을 `D_{ij}`로 표현할 수 있다.
@@ -59,7 +59,7 @@ int main() {
 
 예를 들어 아래 그림처럼, **0번 스레드**는 (예시) **1번, 2번 이미지** 인덱스를 맡아 각각 비교를 수행하고, **1번 스레드**는 **3번, 4번 이미지** 인덱스를 맡아 3번과 비교, 4번과 비교를 수행한다.  
 
-![](../images/Pasted%20image%2020251017160331.png)
+![](Pasted%20image%2020251017160331.png)
 
 ```c++
 template <typename index_t,typename value_t>
@@ -103,7 +103,7 @@ index_t rows, index_t cols, index_t num_threads = 64, index_t chunk_size = 64 / 
     
 - **캐시 친화성**: `chunk_size = 64 / sizeof(value_t)`처럼 캐시 라인(64B) 기준으로 맞추면 공간 지역성과 false sharing 측면에서 유리하다.
 
-![](../images/Pasted%20image%2020251017161142.png)
+![](Pasted%20image%2020251017161142.png)
 
 실행 시간을 보면 chunck size 크면 speedup은 떨어지고 있다. 
 
@@ -115,7 +115,7 @@ cuncksize가 작으면 loadbalancing 자체는 잘 되기 때문에 속도는 �
 
 지금까지는 단순히 **스레드 번호 순서대로** 일을 나눠서 각 스레드가 고정된 구간만 처리하도록 했다.  하지만 이번에는 **작업을 더 빨리 끝내는 스레드에게** 남은 일을 **끝나는 순서대로 다시 배분하는 방식**을 사용할 수 있다.
 
-![](../images/Pasted%20image%2020251017161734.png)
+![](Pasted%20image%2020251017161734.png)
 
 이 방식을 구현하기 위해서는 몇 가지 고려할 점이 있다.
 
@@ -216,7 +216,7 @@ index_t rows, index_t cols, index_t num_threads = 64, index_t chunk_size = 64 / 
 }
 ```
 
-![](../images/Pasted%20image%2020251017162745.png)
+![](Pasted%20image%2020251017162745.png)
 
 static한 방식과 dynamic 방식을 비교해 보면, **성능 차이가 드라마틱하지 않을 때가 많다.**
 
