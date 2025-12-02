@@ -1,5 +1,5 @@
 
-![](Pasted%20image%2020251017144941.png)
+![](../../images/Pasted%20image%2020251017144941.png)
 
 ```c++
 for (int i = 0; i<m; i++){
@@ -48,13 +48,13 @@ int main(int argc, char* argv[]) {
 
 첫번째 방법은 블록 단위로 쓰레드들에게 할 일을 나눠주는 것이다. 간단하게 생각해보면 똑같은 일을 하고 있기 때문에 그냥 전체 행을 thread 수로 나눠서 각 쓰레드들에게 배정하면 된다.
 
-![](Pasted%20image%2020251017145638.png)
+![](../../images/Pasted%20image%2020251017145638.png)
 
 #### Cyclic distribution of threads
 
 다음 방법은 처음부터 할당하지 말고 그냥 쓰레드들에게 순환적으로 배분하는 것이다.
 
-![](Pasted%20image%2020251017145834.png)
+![](../../images/Pasted%20image%2020251017145834.png)
 
 이제 각 방법들이 c++11 multithread를 통해 어떻게 구현할 수 있는지 살펴보자
 
@@ -165,7 +165,7 @@ index_t m, n, index_t num_threads = 8) {
 
 잠깐 생각해보면 두 방법을 섞어서 쓸 수 있다. **block 단위로 나눈 뒤**, 그 블록들을 **cyclic하게 배분**하는 방법이다.
 
-![](Pasted%20image%2020251017152026.png)
+![](../../images/Pasted%20image%2020251017152026.png)
 
 이 방법은 한 단위에 포함된 **block 크기/개수**를 어떻게 잡느냐에 따라 균형이 달라진다. 블록이 **너무 크면** 균형(load balancing)이 나빠질 수 있고, **너무 작으면** 스레드 간 쓰기 위치가 자주 엇갈리며 **false sharing** 가능성이 높아진다. 따라서 **캐시 친화적(cache-friendly)** 으로 블록을 정하는 것이 중요하다. 예를 들어 **캐시 라인이 64 byte**라면(일반적), `double` 기준 **8개(8×8B=64B)** 단위로 맞추거나, 그 배수로 블록 크기를 설정해 라인 경계를 잘 맞춰주는 식의 튜닝이 효과적이다.
 
@@ -217,7 +217,7 @@ void block_parallel_mult(
 
 여기서 각 스레드의 작업 시작점은 단순히 `id * chunk_size`이고, 이후 작업은 **사이클릭(cyclic)** 하게 돌기 때문에 다음 시작점은 `lower + stride`가 된다.
 
-![](Pasted%20image%2020251017154619.png)
+![](../../images/Pasted%20image%2020251017154619.png)
 
 - `offset = id * chunk_size` : 스레드 `id`의 첫 블록 시작 행
     

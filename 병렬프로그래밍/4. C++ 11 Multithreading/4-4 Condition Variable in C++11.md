@@ -43,7 +43,7 @@ cv.notify_one(); // wake up one waiting thread
 ---
 ## Modeling ad Sleeping Student
 
-![](Pasted%20image%2020251017164444.png)
+![](../../images/Pasted%20image%2020251017164444.png)
 
 아침 먹을 시간에 시간에 일어나고 싶은 상황이다.
 
@@ -90,7 +90,7 @@ thread가 `student` 함수를 실행하면 `unique_lock`으로 먼저 `mutex`를
 ---
 ## Playing Ping-Pong with Condition Variables
 
-![](Pasted%20image%2020251017164750.png)
+![](../../images/Pasted%20image%2020251017164750.png)
 
 ```c++
 
