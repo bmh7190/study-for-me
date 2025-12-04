@@ -89,54 +89,59 @@ template <typename index_t, typename value_t, uint32_t chunk_size = 8>
 __global__ void shared_covariance_kernel(
 value_t * Data, value_t * Cov, index_t num_entries, index_t num_features) {
 
-// first index in a window of width chunk_size
-const index_t base_x = blockIdx.x*chunk_size;
-const index_t base_y = blockIdx.y*chunk_size;
-
-// local thread identifiers
-const index_t thid_y = threadIdx.y;
-const index_t thid_x = threadIdx.x;
-
-// global thread identifiers
-const index_t x = base_x + thid_x;
-const index_t y = base_y + thid_y;
-
-// optional early exit for tiles above the diagonal
-if (base_x >= base_y + chunck) return;
-
-// allocate shared memory
-__shared__ value_t cache_x[chunk_size][chunk_size];
-__shared__ value_t cache_y[chunk_size][chunk_size];
-
-// compute the number of chunks to be computed
-const index_t num_chunks = SDIV(num_entries, chunk_size);
-value_t accum = 0; // accumulated value of scalar product
-
-//Start of the main loop for each chunk
-for (index_t chunk = 0; chunk < num_chunks; chunk++) {
-
-// assign thread IDs to rows and columns
-const index_t row = thid_y + chunk*chunk_size;
-const index_t col_x = thid_x + base_x;
-const index_t col_y = thid_x + base_y;
-
-// check if valid row or column indices
-const bool valid_row = row < num_entries;
-const bool valid_col_x = col_x < num_features;
-const bool valid_col_y = col_y < num_features;
-
-cache_x[thid_y][thid_x] 
-	= valid_row*valid_col_x ? Data[row*num_features + col_x] : 0;
-cache_y[thid_y][thid_x] 
-	= valid_row*valid_col_y ? Data[row*num_features + col_y] : 0;
-__syncthreads(); 
-
-if (x <= y) // optional early exit
-for (index_t k = 0; k < chunk_size; k++) // here we actually evaluate the scalar product
-accum += cache_y[k][thid_y] * cache_x[k][thid_x];
-__syncthreads(); // ensure that shared memory can safely be overwritten in the next iteration
-} // end for loop over chunk entries
-if (y < num_features && x <= y) Cov[y*num_features+x] = Cov[x*num_features+y] = accum / num_entries;
+	// first index in a window of width chunk_size
+	const index_t base_x = blockIdx.x*chunk_size;
+	const index_t base_y = blockIdx.y*chunk_size;
+	
+	// local thread identifiers
+	const index_t thid_y = threadIdx.y;
+	const index_t thid_x = threadIdx.x;
+	
+	// global thread identifiers
+	const index_t x = base_x + thid_x;
+	const index_t y = base_y + thid_y;
+	
+	// optional early exit for tiles above the diagonal
+	if (base_x >= base_y + chunck) return;
+	
+	// allocate shared memory
+	__shared__ value_t cache_x[chunk_size][chunk_size];
+	__shared__ value_t cache_y[chunk_size][chunk_size];
+	
+	// compute the number of chunks to be computed
+	const index_t num_chunks = SDIV(num_entries, chunk_size);
+	value_t accum = 0; // accumulated value of scalar product
+	
+	//Start of the main loop for each chunk
+	for (index_t chunk = 0; chunk < num_chunks; chunk++) {
+	
+		// assign thread IDs to rows and columns
+		const index_t row = thid_y + chunk*chunk_size;
+		const index_t col_x = thid_x + base_x;
+		const index_t col_y = thid_x + base_y;
+		
+		// check if valid row or column indices
+		const bool valid_row = row < num_entries;
+		const bool valid_col_x = col_x < num_features;
+		const bool valid_col_y = col_y < num_features;
+		
+		cache_x[thid_y][thid_x] 
+			= valid_row*valid_col_x ? Data[row*num_features + col_x] : 0;
+		cache_y[thid_y][thid_x] 
+			= valid_row*valid_col_y ? Data[row*num_features + col_y] : 0;
+			
+		__syncthreads(); 
+	
+		if (x <= y) // optional early exit
+			for (index_t k = 0; k < chunk_size; k++) 
+				accum += cache_y[k][thid_y] * cache_x[k][thid_x];
+			
+		__syncthreads();
+	
+	} // end for loop over chunk entries
+	
+	if (y < num_features && x <= y) 
+		Cov[y*num_features+x] = Cov[x*num_features+y] = accum / num_entries;
 }
 ```
 
@@ -314,7 +319,7 @@ __syncthreads();
 -  유효하지 않은 경우에는 0을 넣어서 계산에 영향 없게 처리.
 
 
-`__syncthreads()` : 블록 내 모든 스레드가 shared memory 로딩을 끝낼 때까지 기다린 뒤, 그 다음 단계(부분합 계산)로 넘어감.
+`__syncthreads()` : 블록 내 모든 쓰레드가 shared memory에 작성을 끝낼 때까지 기다린 뒤, 그 다음 단계(부분합 계산)로 넘어감.
 
 ---
 
@@ -333,18 +338,13 @@ __syncthreads();
     (위쪽 삼각형은 대칭으로 복사하기 때문에 계산 안 함)
     
 - `for (k = 0; k < chunk_size; k++)`  
-	이 chunk 안에서 `k` 방향으로 쭉 돌면서  
-    `cache_y[k][thid_y]` 와 `cache_x[k][thid_x]` 를 곱해서 `accum`에 더한다.  
-    즉, 한 chunk(행 8개)에 대해서 부분 스칼라곱을 계산하는 것.
+	이 chunk 안에서 `k` 방향으로 쭉 돌면서 `cache_y[k][thid_y]` 와 `cache_x[k][thid_x]` 를 곱해서 `accum`에 더한다. 즉, 한 chunk(행 8개)에 대해서 부분 스칼라곱을 계산하는 것.
     
 - 두 번째 `__syncthreads()`  
-    → 이 chunk에 대한 연산이 모두 끝났으니,  
-    다음 chunk에서 shared memory를 다시 덮어써도 괜찮도록  
-    스레드들을 동기화.
-    
+    이 chunk에 대한 연산이 모두 끝났으니, 다음 chunk에서 shared memory를 다시 덮어써도 괜찮도록 스레드들을 동기화.
 
 이 과정을 모든 chunk에 대해 반복하면,  
-결국 `accum`에는 (\sum_{i=0}^{m-1} D_i(y) D_i(x)) 전체가 누적된다.
+결국 `accum`에는 $\sum_{i=0}^{m-1} D_i(y) D_i(x)$ 전체가 누적된다.
 
 ---
 
@@ -358,19 +358,52 @@ if (y < num_features && x <= y)
 
 - `y < num_features` : 행 인덱스가 feature 범위 안인지 체크.
     
-- `x <= y` : 아래 삼각형만 직접 계산.  
-    위쪽은 복사로 채울 것이므로 여기서는 쓰지 않음.
+- `x <= y` : 아래 삼각형만 직접 계산. 위쪽은 복사로 채울 것이므로 여기서는 쓰지 않음.
     
-- `Cov[y*num_features + x]` 에 결과를 쓰고,  
-    동시에 `Cov[x*num_features + y]` 에도 같은 값을 써서  
-    **C = Cᵀ(대칭)** 을 만족시키도록 한다.
-    
+- `Cov[y*num_features + x]` 에 결과를 쓰고, 동시에 `Cov[x*num_features + y]` 에도 같은 값을 써서 **C = Cᵀ(대칭)** 을 만족시키도록 한다.
 
-결과적으로:
 
-- shared memory 타일을 이용해 global memory 접근을 줄이고,
+결과적으로 shared memory 타일을 이용해 global memory 접근을 줄이고, chunk 단위로 데이터를 나눠 처리하면서, 대칭성까지 활용해 연산량을 절반 정도로 줄인 공분산 커널이다.
     
-- chunk 단위로 데이터를 나눠 처리하면서,
+---
+## Performance Considerations
+
+chunk size(타일 크기)가 커지면 커질수록 성능이 좋아진다.  
+
+예를 들어, chunk_size = 8이면 하나의 블록에서 8×8 = 64개의 스레드가 동작하고,  
+각 스레드는 shared memory에 데이터를 한 번만 로드한 뒤 여러 번 재활용할 수 있기 때문이다.  
+즉, chunk가 클수록 **재사용되는 데이터의 양이 많아지고**, 그만큼 global memory 접근이 줄어들어 더 빠른 성능을 낼 수 있다.
+
+### chunk_size = 2
+
+- 각 블록의 쓰레드 수: **2 × 2 = 4 threads**
     
-- 대칭성까지 활용해 연산량을 절반 정도로 줄인 공분산 커널이다.
+- 각 블록의 global memory load 수: **4 × 2 = 8 loads = 32 bytes**
     
+- 각 블록이 수행하는 연산량: ** 8 mul/add = 8 FLOPs**
+    
+- CGMA:
+
+$$\text{CGMA} = \frac{8\ \text{FLOPs}}{8 \times 4\text{byte}} = 0.25 \text{ flop/byte}$$
+
+즉, global memory 접근 대비 연산량이 적어서 효율이 낮다.
+
+####  chunk_size = 8일 때
+
+- 각 블록의 쓰레드 수: **8 × 8 = 64 threads**
+    
+- 각 블록의 global memory load 수: **2 × 64 = 128번loads = 512 bytes**
+    
+- 각 블록이 수행하는 연산 수: 
+	- **스레드당 연산 = 8 FLOPs**
+	- 전체 스레드 64개 = **64 × 8 = 512 FLOPs**
+    
+$$\text{CGMA} = \frac{512\ \text{FLOPs}}{128 \times 4\text{byte}} = 1 \text{ flop/byte}$$
+
+chunk_size=2일 때보다 **4배 이상 더 높은 연산 효율**을 가지게 된다.  
+
+즉, chunk가 커질수록 같은 global memory 접근으로 더 많은 연산을 수행하게 되므로 GPU 자원을 훨씬 효율적으로 사용하게 된다.
+
+대신에 shared memory 의 크기는 더 커져야한다. 지금ㄲ자ㅣ는 shared memroy 용량이 64kb이라 뭔가 괜찮아보인다 
+
+근데 생각해보면 지금은 여러 block 즉 chunck 별로 block 이기 때문에 여러 blcok 이 하나의 SM에 할당된다. 근데 gpu에서는 warp단위로 실행되는데, 이 warp 들이 공유를 할거기 때문에, 메모리가 넘칠 수도 잇다.
