@@ -17,6 +17,360 @@ __shared__ value_t cache_x[chunk_size][chunk_size]; __shared__ value_t cache_y[c
 이렇게 선언된 `cache_x`와 `cache_y`는 **블록 내부의 모든 스레드가 함께 접근하고 재사용할 수 있는 고속 메모리 공간**이 된다. global memory에서 동일한 데이터를 반복해서 불러오는 대신, 한 번 shared memory로 가져와 여러 스레드가 공동으로 쓰기 때문에 메모리 대역폭을 크게 절약할 수 있고 연산 속도도 훨씬 빨라진다.
 
 ---
-기존의 Covriance matrix를 생각해보면 2475 * 200000개의 이미지를 나타내는 행렬을 서로 곱해서 나타내게 되는데, 이때 결과물은 2475 2475 사이즈 일 것인데, 예를 들어서 J~J+7 까지 j ~j+7 까지의 하나의 공간을 나타내기 위해서는 오른쪽 그림과 같이 각각 8개 씩 들어가게 된다. 그래서 서로 곱해주기 때문에 총 64가지의 경우가 생기는데, 이때 동일한 데이터를 쓰는 경우가 발생하는데 이 점을 최적화 할 수 있다. 왼족 그림의 경우에는 global 메모리에 존재하는데, shared memory의 경우 크기가 제한적이기 때문에 타일링 그니까 끊어서 shared memory에 넣고 연산하고를 반복하게 된다.
+
+공분산 행렬 $C = \frac{1}{m}D^T D$ 을 계산하는 과정은, 크기가 **2475 × 200,000**인 mean-centered 데이터 행렬 $D$의 컬럼들끼리 서로 곱해 최종적으로 **2475 × 2475** 크기의 공분산 행렬을 만드는 작업이다.
+
+예를 들어 공분산 행렬에서 행 범위가 $j \sim j+7$, 열 범위가 $J \sim J+7$ 에 해당하는 **8×8 블록** 하나를 계산한다고 하자.  
 
 ![](../../images/Pasted%20image%2020251204140448.png)
+
+이 블록의 64개 원소는 각각 $D$의 **j~j+7 번째 픽셀 열**, $D$의 **J~J+7 번째 픽셀 열**이 만들어내는 모든 조합 $8×8 = 64개$의 내적이다. 즉, 이 작은 블록을 계산하는 동안 **같은 열 데이터가 여러 번 반복해서 사용된다**는 점이 자연스럽게 드러난다.
+
+이 중복 접근을 줄이기 위해, CUDA에서는 **shared memory**를 사용하여  
+자주 재사용되는 열 데이터들을 **한 번만 global memory에서 읽어와**  
+스레드 블록 내부에서 함께 공유할 수 있다.
+
+그림처럼  j~j+7 범위에 해당하는 열 타일 / J~J+7 범위에 해당하는 열 타일을 각각 shared memory에 위한 공간 두 개를 만들어 두고:
+
+```c
+__shared__ value_t cache_x[chunk_size][chunk_size];   // j-side tile
+__shared__ value_t cache_y[chunk_size][chunk_size];   // J-side tile
+```
+
+global memory에서 chunk 단위로 데이터 일부를 가져와 두 shared memory 타일에 각각 저장하고 블록 내부의 8×8 스레드가 이 shared memory 타일들을 재사용하며 4개의 조합을 동시에 계산한다.
+
+즉, 필요한 열 데이터들을 **shared memory 타일에 일시 저장한 뒤**, 그 타일 안에서 모든 스레드가 재사용하는 방식으로 global memory 접근 횟수를 크게 줄일 수 있다.
+
+shared memory의 용량은 제한적이기 때문에 전체 200,000행을 한 번에 담을 수는 없다.  
+그래서 세로 방향을 일정 크기의 **chunk 단위로 잘라(tile)** chunk를 shared에 로드하고 부분 계산 다음 chunk 로드하고고 누적을 반복하여 전체 합을 만든다.
+
+---
+## Tiling Example
+
+또 다른 예시를 통해 shared memory의 필요성을 다시 살펴보자.  
+
+예를 들어, 16×16 크기의 데이터 배열이 있다고 하자. 
+
+공분산 행렬을 계산하려면 이 배열의 값들을 여러 조합으로 곱해주어야 한다. 원래 naive 방식이라면, 각 스레드가 자신에게 할당된 픽셀 데이터를 곱하기 위해 필요할 때마다 **global memory에서 직접 데이터를 읽어와야 한다.**
+
+물론 GPU에는 L1/L2 cache가 있어서 어느 정도는 캐싱을 해주지만, 이 캐시는 **하드웨어가 자동으로 관리**하기 때문에 개발자가 어떤 데이터를 재사용하고 싶은지 명시적으로 제어할 수 없다.  
+즉, *“잘 캐싱되기만을 바라는 수동적인 방식”*이 된다.
+
+![](../../images/Pasted%20image%2020251204141853.png)
+
+그래서 CUDA에서는 더 능동적으로 메모리를 제어하기 위해  
+**shared memory**를 활용한다.
+
+shared memory는 같은 SM에 있는 스레드들(block 내 스레드들)이 함께 접근하고 재사용할 수 있는, 개발자 관리형의 고속 메모리다. 한 번 shared memory에 데이터를 올려두면, 블록 내 모든 스레드가 추가적인 global 접근 없이 같은 데이터를 읽고 사용할 수 있다.
+
+이 과정은 다음과 같이 진행된다.
+
+1. 먼저 global memory에서 일정 크기의 **chunk(타일)** 만큼 데이터를 읽어온다.  
+    이 chunk 크기는 shared memory 크기에 맞게 잘라낸 것이다.
+    
+2. 읽어온 데이터를 shared memory에 복사한 뒤 블록 내의 모든 스레드는 이 shared memory에서 데이터를 가져와 연산을 수행한다.
+    
+3. 모든 스레드가 해당 chunk에 대한 계산을 마치면, 다음 chunk를 global memory에서 shared memory로 불러오고 다시 연산을 반복한다.
+
+**global memory 접근은 chunk 단위로 딱 한 번씩**, **연산 중 쓰레드들은 shared memory만 접근**,
+**캐시를 예측하거나 기다릴 필요 없이 재사용 필터를 직접 관리**할 수 있다.
+
+이 방식 덕분에 global memory 왕복 횟수가 대폭 줄어들고 스레드들이 동일 데이터를 효율적으로 공유할 수 있어서 공분산 계산 같은 대규모 행렬 연산의 성능을 크게 끌어올릴 수 있게 된다.
+
+---
+## CUDA Cov Matrix
+
+![](../../images/Pasted%20image%2020251204142511.png)
+
+### 전체 코드
+
+```c++
+template <typename index_t, typename value_t, uint32_t chunk_size = 8>
+__global__ void shared_covariance_kernel(
+value_t * Data, value_t * Cov, index_t num_entries, index_t num_features) {
+
+// first index in a window of width chunk_size
+const index_t base_x = blockIdx.x*chunk_size;
+const index_t base_y = blockIdx.y*chunk_size;
+
+// local thread identifiers
+const index_t thid_y = threadIdx.y;
+const index_t thid_x = threadIdx.x;
+
+// global thread identifiers
+const index_t x = base_x + thid_x;
+const index_t y = base_y + thid_y;
+
+// optional early exit for tiles above the diagonal
+if (base_x >= base_y + chunck) return;
+
+// allocate shared memory
+__shared__ value_t cache_x[chunk_size][chunk_size];
+__shared__ value_t cache_y[chunk_size][chunk_size];
+
+// compute the number of chunks to be computed
+const index_t num_chunks = SDIV(num_entries, chunk_size);
+value_t accum = 0; // accumulated value of scalar product
+
+//Start of the main loop for each chunk
+for (index_t chunk = 0; chunk < num_chunks; chunk++) {
+
+// assign thread IDs to rows and columns
+const index_t row = thid_y + chunk*chunk_size;
+const index_t col_x = thid_x + base_x;
+const index_t col_y = thid_x + base_y;
+
+// check if valid row or column indices
+const bool valid_row = row < num_entries;
+const bool valid_col_x = col_x < num_features;
+const bool valid_col_y = col_y < num_features;
+
+cache_x[thid_y][thid_x] 
+	= valid_row*valid_col_x ? Data[row*num_features + col_x] : 0;
+cache_y[thid_y][thid_x] 
+	= valid_row*valid_col_y ? Data[row*num_features + col_y] : 0;
+__syncthreads(); 
+
+if (x <= y) // optional early exit
+for (index_t k = 0; k < chunk_size; k++) // here we actually evaluate the scalar product
+accum += cache_y[k][thid_y] * cache_x[k][thid_x];
+__syncthreads(); // ensure that shared memory can safely be overwritten in the next iteration
+} // end for loop over chunk entries
+if (y < num_features && x <= y) Cov[y*num_features+x] = Cov[x*num_features+y] = accum / num_entries;
+}
+```
+
+
+
+---
+
+```c++
+template <typename index_t, typename value_t, uint32_t chunk_size = 8>
+__global__ void shared_covariance_kernel(
+    value_t * Data, value_t * Cov, index_t num_entries, index_t num_features) {
+```
+
+- `index_t`, `value_t` : 인덱스와 값 타입을 템플릿으로 받음 (예: `int`, `float`).
+- `chunk_size` : 한 번에 처리할 타일의 크기(기본 8).
+- `Data` : mean-centered 데이터 행렬 (D) (크기 m × n).
+- `Cov` : 공분산 행렬 (C) (크기 n × n).
+- `num_entries` = m (이미지 개수), `num_features` = n (픽셀 개수).
+    
+
+이 커널의 목표는
+**shared memory(타일링)를 이용해서 공분산 행렬 $D^T D / m$을 효율적으로 계산.**
+
+---
+
+### 1. 타일(윈도우)의 시작 위치 계산
+
+```c++
+// first index in a window of width chunk_size
+const index_t base_x = blockIdx.x*chunk_size;
+const index_t base_y = blockIdx.y*chunk_size;
+```
+
+- 그리드가 2차원 블록으로 깔려 있고, 각 블록은 공분산 행렬의 **chunk_size × chunk_size** 타일 하나를 담당.
+    
+- `base_x` : 이 블록이 담당하는 타일의 열 방향 시작 인덱스 (J).
+- `base_y` : 이 블록이 담당하는 타일의 행 방향 시작 인덱스 (j).
+    
+
+즉, 이 블록은 공분산 행렬의  
+행: `base_y ~ base_y + chunk_size - 1`  
+열: `base_x ~ base_x + chunk_size - 1`  
+에 해당하는 작은 정사각형 타일을 계산한다.
+
+---
+
+### 2. 블록 내부에서 thread ID
+
+```c++
+// local thread identifiers
+const index_t thid_y = threadIdx.y;
+const index_t thid_x = threadIdx.x;
+
+// global thread identifiers
+const index_t x = base_x + thid_x;
+const index_t y = base_y + thid_y;
+```
+
+- `thid_x`, `thid_y` : 블록 내부에서 스레드 위치 (0 ~ chunk_size-1).
+- `x`, `y` : 공분산 행렬 전체 기준에서 이 스레드가 담당하는 **열(x), 행(y)** 위치.
+
+→ 이 스레드는 결국 `Cov[y][x]`(대칭성 이용하면 위/아래 둘 다)에 대응하는 원소를 계산한다.
+
+---
+### 3. 대각선 위 타일은 바로 스킵 (대칭성 이용)
+
+```c++
+// optional early exit for tiles above the diagonal
+if (base_x >= base_y + chunk_size) return;
+```
+
+- 공분산 행렬은 대칭이므로,  
+    **대각선 위쪽 타일(열 > 행)** 은 계산할 필요가 없다.
+    
+- `base_x >= base_y + chunk_size` 인 타일은 “완전히 대각선 위”에 있으므로,  
+    이런 타일들은 **아예 커널 초반에서 리턴**해서 연산을 건너뜀.
+
+---
+
+### 4. shared memory 타일 선언
+
+```c++
+// allocate shared memory
+__shared__ value_t cache_x[chunk_size][chunk_size];
+__shared__ value_t cache_y[chunk_size][chunk_size];
+```
+
+- `cache_x` : 열 방향으로 `base_x` 주변 컬럼들을 담는 타일.
+- `cache_y` : 열 방향으로 `base_y` 주변 컬럼들을 담는 타일.
+    
+
+두 타일 모두 크기는 `chunk_size × chunk_size`.  
+각 chunk 루프마다 global memory → shared memory로 데이터를 옮겨와,  
+이 타일 안에서 여러 스레드가 재사용한다.
+
+---
+
+### 5. 전체 chunk 개수와 누적 변수
+
+```c++
+// compute the number of chunks to be computed
+const index_t num_chunks = SDIV(num_entries, chunk_size);
+value_t accum = 0; // accumulated value of scalar product
+```
+
+- `num_chunks` : 세로 방향(이미지 개수 m)을 chunk_size씩 나누었을 때 몇 번 반복해야 하는지. 
+    (예: m=200,000, chunk_size=8 → 대략 25,000번)
+
+- `accum` : 이 스레드가 담당하는 `(y, x)` 위치에 대해 $\sum_i D_i(y) D_i(x)$을 누적할 레지스터 변수.
+    
+---
+
+### 6. 각 chunk(타일 조각)마다 반복
+
+```c++
+// Start of the main loop for each chunk
+for (index_t chunk = 0; chunk < num_chunks; chunk++) {
+```
+
+각 chunk 루프에서 하는 일:
+
+1. global memory에서 “현재 chunk에 해당하는 행 구간”을 shared memory로 로드.
+    
+2. 그 chunk 내부에서 부분 스칼라곱을 계산해 `accum`에 더함.
+    
+3. 다음 chunk로 넘어가서 반복.
+    
+
+---
+
+### 7. 이 chunk에서 사용할 행/열 인덱스 계산
+
+```c++
+// assign thread IDs to rows and columns
+const index_t row   = thid_y + chunk*chunk_size;
+const index_t col_x = thid_x + base_x;
+const index_t col_y = thid_x + base_y;
+```
+
+- `row` : 현재 chunk에서 이 스레드가 담당해서 가져올 **데이터 행(i)** 인덱스.
+    
+    - chunk가 0일 때: 0~7
+        
+    - chunk가 1일 때: 8~15 … 이런 식으로 증가.
+        
+- `col_x` : x방향(열) 쪽 타일에서 실제 feature 인덱스 (J~J+7).
+- `col_y` : y방향(열) 쪽 타일에서 실제 feature 인덱스 (j~j+7).  
+
+즉, 이 스레드는 데이터 행: `row` + 열 두 개: `col_x`, `col_y`에 해당하는 값을 shared memory에 옮겨오는 역할을 한다.
+
+---
+
+### 8. 인덱스 유효성 검사 + shared memory 로딩
+
+```c++
+// check if valid row or column indices
+const bool valid_row   = row   < num_entries;
+const bool valid_col_x = col_x < num_features;
+const bool valid_col_y = col_y < num_features;
+
+cache_x[thid_y][thid_x] 
+    = valid_row*valid_col_x ? Data[row*num_features + col_x] : 0;
+cache_y[thid_y][thid_x] 
+    = valid_row*valid_col_y ? Data[row*num_features + col_y] : 0;
+
+__syncthreads(); 
+```
+
+- 끝 chunk에서는 `row`가 범위를 넘을 수 있기 때문에, 유효한 인덱스인지 체크해서 out-of-bounds를 막는다.
+    
+- `cache_x[thid_y][thid_x]` 에는 `Data[row][col_x]` 값 (x쪽 컬럼),
+    
+- `cache_y[thid_y][thid_x]` 에는 `Data[row][col_y]` 값 (y쪽 컬럼)을 저장.
+
+-  유효하지 않은 경우에는 0을 넣어서 계산에 영향 없게 처리.
+
+
+`__syncthreads()` : 블록 내 모든 스레드가 shared memory 로딩을 끝낼 때까지 기다린 뒤, 그 다음 단계(부분합 계산)로 넘어감.
+
+---
+
+### 9. 이 chunk에서 스칼라곱 부분 계산
+
+```c++
+if (x <= y) // optional early exit
+    for (index_t k = 0; k < chunk_size; k++) 
+        accum += cache_y[k][thid_y] * cache_x[k][thid_x];
+
+__syncthreads(); 
+} // end for loop over chunk entries
+```
+
+- `if (x <= y)` : 공분산 행렬의 **아래 삼각형(대각 포함)** 만 계산.  
+    (위쪽 삼각형은 대칭으로 복사하기 때문에 계산 안 함)
+    
+- `for (k = 0; k < chunk_size; k++)`  
+	이 chunk 안에서 `k` 방향으로 쭉 돌면서  
+    `cache_y[k][thid_y]` 와 `cache_x[k][thid_x]` 를 곱해서 `accum`에 더한다.  
+    즉, 한 chunk(행 8개)에 대해서 부분 스칼라곱을 계산하는 것.
+    
+- 두 번째 `__syncthreads()`  
+    → 이 chunk에 대한 연산이 모두 끝났으니,  
+    다음 chunk에서 shared memory를 다시 덮어써도 괜찮도록  
+    스레드들을 동기화.
+    
+
+이 과정을 모든 chunk에 대해 반복하면,  
+결국 `accum`에는 (\sum_{i=0}^{m-1} D_i(y) D_i(x)) 전체가 누적된다.
+
+---
+
+### 10. 공분산 결과를 global memory에 기록
+
+```c++
+if (y < num_features && x <= y)
+    Cov[y*num_features+x] = Cov[x*num_features+y] = accum / num_entries;
+}
+```
+
+- `y < num_features` : 행 인덱스가 feature 범위 안인지 체크.
+    
+- `x <= y` : 아래 삼각형만 직접 계산.  
+    위쪽은 복사로 채울 것이므로 여기서는 쓰지 않음.
+    
+- `Cov[y*num_features + x]` 에 결과를 쓰고,  
+    동시에 `Cov[x*num_features + y]` 에도 같은 값을 써서  
+    **C = Cᵀ(대칭)** 을 만족시키도록 한다.
+    
+
+결과적으로:
+
+- shared memory 타일을 이용해 global memory 접근을 줄이고,
+    
+- chunk 단위로 데이터를 나눠 처리하면서,
+    
+- 대칭성까지 활용해 연산량을 절반 정도로 줄인 공분산 커널이다.
+    
