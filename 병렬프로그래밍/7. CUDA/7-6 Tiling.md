@@ -380,7 +380,7 @@ chunk size(타일 크기)가 커지면 커질수록 성능이 좋아진다.
     
 - 각 블록의 global memory load 수: **4 × 2 = 8 loads = 32 bytes**
     
-- 각 블록이 수행하는 연산량: ** 8 mul/add = 8 FLOPs**
+- 각 블록이 수행하는 연산량: **2 × 4 = 8 mul/add = 8 FLOPs**
     
 - CGMA:
 
@@ -392,7 +392,7 @@ $$\text{CGMA} = \frac{8\ \text{FLOPs}}{8 \times 4\text{byte}} = 0.25 \text{ flop
 
 - 각 블록의 쓰레드 수: **8 × 8 = 64 threads**
     
-- 각 블록의 global memory load 수: **2 × 64 = 128번loads = 512 bytes**
+- 각 블록의 global memory load 수: **2 × 64 = 128loads = 512 bytes**
     
 - 각 블록이 수행하는 연산 수: 
 	- **스레드당 연산 = 8 FLOPs**
@@ -402,8 +402,8 @@ $$\text{CGMA} = \frac{512\ \text{FLOPs}}{128 \times 4\text{byte}} = 1 \text{ flo
 
 chunk_size=2일 때보다 **4배 이상 더 높은 연산 효율**을 가지게 된다.  
 
-즉, chunk가 커질수록 같은 global memory 접근으로 더 많은 연산을 수행하게 되므로 GPU 자원을 훨씬 효율적으로 사용하게 된다.
+chunk_size를 크게 설정하면 한 번 global memory에서 가져온 데이터를 shared memory에 올려 두고 더 많이 재활용할 수 있기 때문에, 연산 대비 글로벌 메모리 접근 비율(CGMA)이 높아지고 성능도 크게 향상된다. 예를 들어 chunk_size를 2에서 8로 늘리면 CGMA가 0.25에서 1.0으로 증가하며, 같은 메모리 대역폭으로 더 많은 연산을 수행할 수 있게 된다. 그래서 처음 보면 “chunk_size는 클수록 무조건 좋은 것 아닌가?”라는 생각이 들 수 있다.
 
-대신에 shared memory 의 크기는 더 커져야한다. 지금ㄲ자ㅣ는 shared memroy 용량이 64kb이라 뭔가 괜찮아보인다 
+하지만 여기에는 중요한 제약이 하나 있다. shared memory는 SM(SM당 64KB 등) 전체가 공유하는 자원이기 때문에, 블록 하나가 사용하는 shared memory 크기가 커질수록 하나의 SM에 동시에 배치할 수 있는 block의 수가 줄어든다는 점이다. SM에서는 여러 block이 동시에 올라가 있어야 충분한 수의 warp를 유지할 수 있고, 그래야만 어떤 warp가 global memory 접근으로 대기 중일 때 다른 warp를 실행시키며 레이턴시를 숨길 수 있다. 그런데 chunk_size가 너무 커져 shared memory를 많이 차지하게 되면, 한 SM에 단 하나의 block만 올라가는 상황이 발생할 수 있고, 이렇게 되면 warp 수도 급격히 줄어들면서 오히려 전체 성능이 떨어질 수 있다.
 
-근데 생각해보면 지금은 여러 block 즉 chunck 별로 block 이기 때문에 여러 blcok 이 하나의 SM에 할당된다. 근데 gpu에서는 warp단위로 실행되는데, 이 warp 들이 공유를 할거기 때문에, 메모리가 넘칠 수도 잇다.
+즉, chunk_size를 키우는 과정은 CGMA 향상(=데이터 재사용 증가)과 SM occupancy 감소(=활성 warp 감소) 사이에서 균형을 맞추는 작업이다. shared memory 용량 자체는 64KB 정도로 꽤 넉넉해 보이지만, 실제로는 여러 block이 동시에 SM을 공유해야 한다는 점 때문에 chunk_size를 무작정 크게 잡을 수는 없다. 결국 최적의 chunk_size는 shared memory 사용량과 occupancy를 함께 고려하여, **데이터 재사용 효율이 높으면서도 충분한 수의 warp를 유지할 수 있는 지점**을 찾는 것이 중요하다.
