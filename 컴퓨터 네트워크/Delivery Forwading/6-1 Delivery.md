@@ -1,4 +1,3 @@
-
 ## Direct delivery
 
 IP 패킷이 이동되는 경우 중 direct delivery 에 대해서 알아보자.
