@@ -241,7 +241,7 @@ DTW 제약(연속성/단조성/경계 조건)을 모두 만족하는 경로들 �
 
 다음은 이 코드르를 멀티쓰레드로 나타낼건데 사용될 것은 바로 전에 다뤘던 openmp이다. 
 
-### main
+### host_dtw
 ```c
 #include <omp.h>
 template <
@@ -267,36 +267,305 @@ void host_dtw(
 
 ## optimized_dtw
 
+여기서는 맨 위에서 설명한 방식과 달리, 메모리 사용을 줄이기 위한 최적화를 하나 적용했다.  
+생각해 보면 DP 테이블에서 어떤 한 지점을 계산할 때 필요한 값은 **좌상단, 왼쪽, 위쪽** 이렇게 세 방향뿐이다. 이 세 값의 위치 관계를 잘 보면, 사실 전체 행이 아니라 **위 행과 현재 행, 즉 2개 행만 있으면 계산이 가능하다.**
+
+그래서 DP 테이블 전체를 저장하지 않고, **오직 두 줄만 유지**하면서 이 두 줄의 역할을 번갈아가며 사용하는 방식으로 구현했다.
+
+1. 처음에는 첫 번째 줄을 `source row`, 그 다음 줄을 `target row`로 둔다.
+    
+2. `source row`를 참조하여 `target row`의 각 칸에 cost를 채워 넣으면서 한 행을 모두 계산한다.
+    
+3. 한 행 계산이 끝나면, 두 줄의 역할을 바꾼다.
+    
+    - 기존의 `target row`가 이제 다음 계산을 위한 `source row`가 되고,
+        
+    - 기존의 `source row`는 새로운 `target row` 역할을 맡는다.
+        
+4. 예를 들어, 지금 2행의 정보를 가지고 3행을 계산하는 시점에서는, **1행의 정보는 더 이상 필요하지 않다.** 따라서 1행이 들어 있던 버퍼(줄)에 3행 값을 **그냥 덮어써도** 전혀 문제가 없다.
+    
+이런 식으로 매 단계마다 두 줄의 역할만 교대로 바꿔 주면, 전체 DP 테이블을 모두 들고 있지 않아도 되고, **항상 2개의 행만으로 모든 계산을 수행**할 수 있게 된다.
+
 ```c++
 template <typename index_t, typename value_t> __host__
 value_t optimized_dtw(value_t * query, value_t * subject, index_t num_features) {
-const index_t lane = num_features+1; // allocate two rows of penalty matrix of shape 2x(n+1)
-value_t * penalty = new value_t[2*lane];
-// initialization is slightly different to the quadratic case
-for (index_t index=0; index<lane; index++) penalty[index+1] = INFINITY;
-penalty[0] = 0;
-for (index_t row=1; row<lane; row++) { // traverse graph in topologically sorted order
-const value_t q_value = query[row-1]; // compute cyclic indices (0,1,0,1,0,...)
-const index_t target_row = row & 1;
-const index_t source_row = !target_row;
-// this is crucial to reset the zero from row zero to inf
-if (row == 2) penalty[target_row*lane] = INFINITY;
-for (index_t col=1; col<lane; col++) { // now everything as usual
-const value_t diag = penalty[source_row*lane+col-1]; // cyclic indices for score matrix
-const value_t abve = penalty[source_row*lane+col+0];
-const value_t left = penalty[target_row*lane+col-1];
-const value_t residue = q_value - subject[col-1]; // traditional indices for time series
-penalty[target_row*lane + col] = residue*residue + min(diag,min(abve, left)); // relax cell
-}
-}
-const index_t last_row = num_features & 1; // compute the index of the last row
-const value_t result = penalty[last_row*lane + num_features];
-delete[] penalty;
-return result;
+	const index_t lane = num_features+1;
+	value_t * penalty = new value_t[2*lane];
+	
+	// initialization is slightly different to the quadratic case
+	for (index_t index=0; index<lane; index++) penalty[index+1] = INFINITY;
+	
+	penalty[0] = 0;
+		
+	for (index_t row=1; row<lane; row++) { 
+		const value_t q_value = query[row-1];
+		
+		const index_t target_row = row & 1;
+		const index_t source_row = !target_row;
+		
+		// this is crucial to reset the zero from row zero to inf
+		if (row == 2) penalty[target_row*lane] = INFINITY;
+		
+		for (index_t col=1; col<lane; col++) { // now everything as usual
+			const value_t diag = penalty[source_row*lane+col-1];
+			const value_t abve = penalty[source_row*lane+col+0];
+			const value_t left = penalty[target_row*lane+col-1];
+			const value_t residue = q_value - subject[col-1];
+			penalty[target_row*lane + col] 
+				= residue*residue + min(diag,min(abve, left)); // relax cell
+		}
+	}
+	
+	const index_t last_row = num_features & 1;
+	const value_t result = penalty[last_row*lane + num_features];
+	delete[] penalty;
+	return result;
 }
 
 ```
 
-여기서는 맨 위의 과정과 다르게 최적화 포인트를 적용한게 있다. 생각해보면 dp 테이블에서 한의 지점을 얻기 위해서 필요한 데이터는 좌상단 좌 상 이렇게 3방향인데, 이거 위치를 보면 사실상 2행만 있으면 계산할 수 있다. 그래서 2줄만 사용하되, 2줄의 역할을 번갈아가면서 지정해준다.
+이 코드에서는 기존 DTW 구현과 대부분 동일하지만, 메모리를 절약하기 위해 **penalty 테이블을 전체 (n+1)×(n+1) 크기로 만들지 않고, 단 2개의 행만 유지하도록 최적화**하였다.
 
-맨 처음에는 source row 그 다음줄을 target row로 지정해줘서 source row를 통해 target row 에 cost를 입력해주고 한 행이 끝나면 이제 역할을 바꾼다. 그럼 2번째 줄이 source row가 되고, 첫 번째 줄은 target row가 된다. 이 시점은 지금 2행읉 통해서 3행을 계산하기 때문에 지금 target row에 잇는 첫번째 행 정보는 필요없고, 여기에 덮어씌워서 3행을 계산한거다. 그래서 2줄 사이에 역할을 번갈아가면서 할 수 있는 것이다. 
+먼저 다음과 같이 penalty 버퍼를 2행만 갖도록 할당한다.
+
+```c++
+const index_t lane = num_features + 1;
+value_t * penalty = new value_t[2 * lane];
+```
+
+이제 DP 테이블은 실제로는 여러 행이 존재하지만, 메모리에서는 **두 행을 번갈아가며 재사용**하는 방식으로 처리하게 된다.
+
+초기화 방식도 약간 달라졌다.  
+
+왼쪽 첫 열(col = 0)은 DTW 특성상 항상 무한대(INF)로 시작해야 하는데, 두 행만 번갈아 사용하는 구조에서는 매번 전체를 초기화할 필요가 없다. 따라서 **맨 처음 한 번만** 다음과 같이 첫 행을 초기화한다.
+
+```c++
+for (index_t index = 0; index < lane; index++)
+    penalty[index + 1] = INFINITY;
+
+penalty[0] = 0;
+```
+
+즉, 첫 번째 행은 `[0, INF, INF, ..., INF]`로 설정되며 이는 기존 DTW 초기 조건과 동일하다.
+
+이후부터는 실제 DP 행(row)을 1부터 순회하며 두 버퍼 행의 역할을 교대로 바꿔 가면서 계산한다.
+
+```c++
+for (index_t row = 1; row < lane; row++) { 
+    const value_t q_value = query[row - 1];
+		
+    const index_t target_row = row & 1;   // 이번에 값을 쓸 행
+    const index_t source_row = !target_row; // 이전 값을 가지고 있는 행
+```
+
+이때 `&` 연산자는 비트 AND 연산자로, `row & 1` 을 수행하면 **row 의 마지막 비트(LSB)가 1인지 0인지**를 확인하게 된다.
+
+정수에서 **마지막 비트가 1이면 홀수**, 0이면 짝수를 의미하므로 `row & 1` 은 row 값이 홀수일 때 1, 짝수일 때 0을 반환한다.
+
+따라서 row가 1부터 시작하면, 첫 번째 반복(row=1)에서는 `row & 1 = 1` 이 되어 **target_row가 1**이 되고, `source_row` 는 그 반대 값이므로 0이 된다. 그 이후 row 값이 증가할 때마다 `row & 1` 결과가 **0, 1, 0, 1…** 형태로 번갈아 나오므로, `target_row` 와 `source_row` 의 역할도 **두 버퍼 사이에서 계속 교대로 바뀌게** 된다.
+
+여기서 중요한 점은 `row == 2`일 때이다. 이 시점에서 `target_row`는 다시 0번 버퍼가 되는데, 이 버퍼의 `(0,0)` 위치에는 초기화 때 넣어 두었던 `0`이 그대로 남아 있다. 그러나 DP[2][0]은 무조건 `INF`여야 하므로, 이 값을 반드시 다시 초기화해 주어야 한다.
+
+```c++
+    if (row == 2)
+        penalty[target_row * lane] = INFINITY;
+```
+
+이렇게 해두면 이후부터는 두 버퍼 행이 모두 일반 DP 행처럼 사용되며,  
+불필요한 0이 남아 있어 계산을 방해하는 일이 없어진다.
+
+이후 각 열(col)에 대해 좌상단, 위, 왼쪽 값을 이용한 전형적인 DTW 점화식을 적용하여  
+현재 행(target row)에 값을 채워 넣는다.
+
+```c++
+    for (index_t col = 1; col < lane; col++) {
+        const value_t diag = penalty[source_row * lane + col - 1];
+        const value_t abve = penalty[source_row * lane + col];
+        const value_t left = penalty[target_row * lane + col - 1];
+        const value_t residue = q_value - subject[col - 1];
+
+        penalty[target_row * lane + col] =
+            residue * residue + min(diag, min(abve, left));
+    }
+}
+```
+
+---
+### main
+
+위 코드는 메인 함수 부분으로, DTW를 테스트하기 위한 전체 흐름은 다음과 같다.
+
+```c++
+typedef uint64_t index_t; // 인덱스에 사용할 정수 타입
+typedef uint8_t  label_t; // 라벨(C,B,F)을 0,1,2로 인코딩
+typedef float    value_t; // 실제 데이터 값(시계열) 타입
+
+int main() {
+    constexpr index_t num_features = 128;        // 각 시계열의 길이
+    constexpr index_t num_entries  = 1UL << 20;  // 시계열 개수 (약 100만 개)
+	
+    value_t * data   = nullptr;
+    value_t * dist   = nullptr;
+    label_t * labels = nullptr; // C, B, F를 0, 1, 2로 인코딩한 라벨
+	
+    // CUDA에서 제공하는 cudaMallocHost를 사용해 페이지락(pinned) 메모리 할당
+    cudaMallocHost(&data,   sizeof(value_t) * num_features * num_entries);
+    cudaMallocHost(&dist,   sizeof(value_t) * num_entries);
+    cudaMallocHost(&labels, sizeof(label_t) * num_entries);
+
+    // CBF 데이터셋을 생성해서 data와 labels를 채워 넣는다.
+    generate_cbf(data, labels, num_entries, num_features);
+	
+    // CPU에서 DTW를 수행하고, 결과를 dist 배열에 저장한다.
+    host_dtw(data, data, dist, num_entries, num_features); 
+	
+    // 앞쪽 몇 개 샘플에 대해 라벨과 DTW 결과를 출력해 비교해 본다.
+    for (index_t index = 0; index < 9; index++) 
+        std::cout << index_t(labels[index]) << " " << dist[index] << std::endl;
+		
+    // cudaMallocHost로 할당한 메모리는 cudaFreeHost로 해제
+    cudaFreeHost(labels);
+    cudaFreeHost(data);
+    cudaFreeHost(dist);
+}
+
+```
+
+정리하자면,
+
+- `cudaMallocHost`를 사용해서 **호스트 메모리 영역을 CUDA용으로 고정(pinned)** 해 두고,
+    
+- `generate_cbf`로 CBF 데이터와 라벨을 생성한 뒤,
+    
+- `host_dtw`를 호출해 DTW 결과를 `dist` 배열에 채운 다음,
+    
+- 일부 샘플에 대해 **라벨과 DTW 거리 값을 나란히 출력하면서 결과를 확인**하는 구조다.
+
+---
+## DTW: Naive CUDA Kernel
+우리가 앞에서 구현한 DTW를 이제 CUDA 커널로 옮겨서,  
+**각 time series 쌍에 대한 DTW 계산을 GPU의 각 스레드가 하나씩 담당**하게 만든 코드이다.
+
+```c
+template <typename index_t, typename value_t> __global__
+void DTW_naive_kernel(
+    value_t * Query,   // pointer to the query time series
+    value_t * Subject, // pointer to the subject / database time series
+    value_t * Dist,    // pointer to the output distance array
+    value_t * Cache,   // auxiliary memory for DP matrices (2 rows per thread)
+    index_t num_entries,   // number of time series (m)
+    index_t num_features)  // length of each time series (n)
+{
+    // 전역 스레드 ID, DP 행 길이, 각 스레드가 처리할 시계열의 시작 위치 계산
+    const index_t thid = blockDim.x * blockIdx.x + threadIdx.x;
+    const index_t lane = num_features + 1;
+    const index_t base = thid * num_features;  // 시계열의 시작 오프셋
+
+    if (thid < num_entries) { // 유효한 인덱스인지 체크해서 out-of-bounds 접근 방지
+        // 이 스레드를 위한 penalty 버퍼 주소 설정 (2 x (n+1) 크기)
+        value_t * penalty = Cache + thid * 2 * lane;
+
+        // penalty 행렬 초기화: 첫 행을 [0, INF, INF, ..., INF]로 설정
+        penalty[0] = 0;
+        for (index_t index = 0; index < lane; index++)
+            penalty[index + 1] = INFINITY;
+
+        // DP 테이블을 행(row) 기준으로 순회하면서 완화(relax) 수행
+        for (index_t row = 1; row < lane; row++) {
+            // 이 스레드가 담당하는 query에서 현재 행에 해당하는 값
+            const value_t q_value = Query[base + row - 1];
+
+            // 2행 롤링 버퍼: 홀짝을 이용해 target/source 행 결정
+            const index_t target_row = row & 1;
+            const index_t source_row = !target_row;
+
+            // 두 번째 행부터는 (0,0)에 남아 있던 0을 INF로 리셋해줘야 함
+            if (row == 2)
+                penalty[target_row * lane] = INFINITY;
+
+            const index_t src_off = source_row * lane;
+            const index_t trg_off = target_row * lane;
+
+            // 열(col)을 순회하면서 DTW 점화식 적용
+            for (index_t col = 1; col < lane; col++) {
+                const value_t diag = penalty[src_off + col - 1]; // 좌상단
+                const value_t abve = penalty[src_off + col];     // 위
+                const value_t left = penalty[trg_off + col - 1]; // 왼쪽
+
+                const value_t s_value = Subject[base + col - 1]; 
+                const value_t residue = q_value - s_value;
+
+                penalty[trg_off + col] =
+                    residue * residue + min(diag, min(abve, left));
+            }
+        }
+
+        // 마지막 행 인덱스(짝수/홀수)에 따라 결과 위치 선택 후 Dist에 기록
+        const index_t last_row = num_features & 1;
+        Dist[thid] = penalty[last_row * lane + num_features];
+    }
+}
+
+```
+
+---
+일단 기본적으로 이전에 openmp버전과 로직 자체는 동일하나, openmp에서는 thread를 알아서 지정해줬다면 gpu에서는 thread id에 대한 계산이 필요하다.
+
+    
+```c++
+const index_t thid = blockDim.x * blockIdx.x + threadIdx.x;
+const index_t lane = num_features + 1;
+const index_t base = thid * num_features;  // 시계열의 시작 오프셋
+```
+    
+각 스레드는 `thid`를 기준으로 **서로 다른 하나의 시계열(entry)** 데이터 셋을 담당한다. threadid는 늘 구하던대로 blockDim.x 즉 x축에 따른 block 길이가 있는데, blockidx.x그 중에 blockidx 
+    
+
+    ```c++
+    const index_t lane = num_features + 1;
+    const index_t base = thid * num_features;
+    ```
+    
+    - `lane` : DP 테이블의 열 개수 = 시계열 길이 + 1
+        
+    - `base` : `Query`, `Subject` 배열에서 이 스레드가 담당하는 시계열의 시작 인덱스
+        
+3. **Cache에서 이 스레드용 penalty 버퍼 할당**
+    
+    ```c++
+    value_t * penalty = Cache + thid * 2 * lane;
+    ```
+    
+    → 각 스레드는 **2 x (n+1)** 크기의 DP 버퍼를 하나씩 가짐  
+    (앞에서 CPU 버전에서 썼던 2-row 롤링 배열을 그대로 GPU 쪽에서도 쓰는 것)
+    
+4. **초기화**
+    
+    ```c++
+    penalty[0] = 0;
+    for (index_t index = 0; index < lane; index++)
+        penalty[index + 1] = INFINITY;
+    ```
+    
+    → 첫 행을 `[0, INF, INF, ..., INF]`로 만드는 초기 조건 설정.
+    
+5. **DP 루프 (row, col 순회)**
+    
+    - `row` 에 따라 `target_row`, `source_row`를 결정해서
+        
+    - 2줄짜리 롤링 배열만으로 전체 DP를 시뮬레이션.
+        
+    - `row == 2` 에서 `(0,0)` 위치를 INF로 리셋하는 것도 CPU 버전과 동일한 논리.
+        
+6. **결과 쓰기**
+    
+    ```c++
+    const index_t last_row = num_features & 1;
+    Dist[thid] = penalty[last_row * lane + num_features];
+    ```
+    
+    → 최종 `DTW(query, subject)` 값을 `Dist[thid]`에 기록.
+    
+
+---
+
