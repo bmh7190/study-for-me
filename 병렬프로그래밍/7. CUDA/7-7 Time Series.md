@@ -1,7 +1,7 @@
 여기서는 시계열(time series) 데이터를 예시로 활용해보려고 한다. 시계열 데이터란 말 그대로 시간의 흐름에 따라 변화하는 값을 기록한 데이터로, 음성 신호, 센서 기록, 주가, 생체신호 등 다양한 분야에서 등장한다. 우리는 여러 개의 시계열 데이터가 주어졌을 때, **서로 얼마나 유사한지 비교해야 하는 상황**을 가정해볼 것이다.
 
-
 ![](../../images/Pasted%20image%2020251204151653.png)
+
 예를 들어 위 그림은 “exact”라는 단어를 미국인과 영국인이 발음한 음성 파형을 각각 시계열로 나타낸 것이다. 두 사람은 같은 단어를 발음했기 때문에 전체적인 파형의 모양은 비슷하다. 지금까지 이미지에서는 단순히 유클리디안 거리(Euclidean distance)를 이용해 두 데이터가 비슷한지 판별할 수 있었다. 이미지의 경우 각 픽셀이 고정된 위치를 갖고 있기 때문에 같은 위치의 값을 비교하면 의미가 있기 때문이다.
 
 하지만 시계열 데이터는 상황이 다르다. 같은 파형이라도 **언제 피크가 발생했는지**, 즉 **시간이 얼마나 빨리 혹은 늦게 흐르는지**에 따라 모양이 어긋날 수 있다. 예를 들어 두 사람이 같은 단어를 말하더라도 한 사람은 조금 더 천천히 말하고, 다른 사람은 더 빠르게 말할 수 있다. 이럴 때 단순히 같은 시점(time index)의 값을 빼서 거리를 계산해버리면, 실제로는 유사한 두 신호가 서로 다르게 보일 수 있다.
@@ -769,12 +769,23 @@ DTW_shared_kernel<uint64_t, float>
 
 ### 결과 정리
 
-• Runtime on a Titan X: 0.63 sec (4.3x faster than OpenMP DTW_static_kernel)
-• Disadvantage: cannot use this approach for longer time series 
-• Shared memory size (n = 128, 32 threads): 2(n+1)blockDim.xsizeof(float) = 2(128+1)324 
-32.25KB
+Titan X에서 이 shared memory 버전의 실행 시간은 약 **0.63초**로 나타났으며, 이는 이전 `DTW_static_kernel` 대비 약 **4.3배 빠른 성능**이다. 즉, penalty 테이블을 shared memory로 옮기고 on-chip 메모리를 적극적으로 활용함으로써 메모리 병목이 크게 완화된 결과라고 볼 수 있다.
 
-이 방식으로 하면 global d에서 loacl로 바꿀 때 문제점과 똑같지 않나? 
+하지만 이 방식에는 분명한 단점이 존재한다.
 
+### shared memory의 크기는 한정적이다
 
-shared memory 크기가 작기 때문에 만약 길이가 긴 경우 shared memoryㄹ르 넘어가게 된다. 근데 SM 에 block을 할당할 때 shared memory 공간도 같이 할당하는데, 이 공간이 없으면 block 자체가 할당이 안된다.
+shared memory는 빠른 대신 공간이 매우 작기 때문에 시계열 길이가 길어지면 공유 메모리의 한계를 넘어버린다. CUDA에서는 하나의 SM에 block을 배치할 때 shared memory도 함께 할당되는데, 이 공간이 부족하면 block 자체가 실행되지 못하거나, 한 SM에서 동시에 실행 가능한 block의 수가 줄어 occupancy가 떨어지는 문제가 발생한다.
+
+### Non-coalesced 접근 문제는 여전히 남아 있다
+
+이 shared memory 버전 역시 Query와 Subject를 global memory에서 읽는 방식은 그대로 유지된다. 따라서 warp 내부 thread들이 서로 떨어진 주소를 동시에 읽는 **non-coalesced 접근 문제는 여전히 존재**한다. 하지만 shared memory는 on-chip SRAM이라 global memory처럼 32B 혹은 128B cache-line 정렬 제약을 받지 않고, thread마다 비연속적인 인덱스를 접근해도 sub-transaction 비용이 거의 발생하지 않는다. 즉, shared memory는 **비연속 접근 성능 저하가 거의 없는 메모리 계층**이며, coalescing 요구가 사실상 없다고 볼 수 있다.
+
+따라서 Query/Subject는 여전히 non-coalesced 방식으로 global memory를 읽지만, DTW 연산의 핵심 부분인 penalty 테이블 갱신은 대부분 shared memory에서 수행되므로 coalescing 문제의 영향이 크게 줄어든다. 결과적으로 shared memory 버전은 non-coalesced 문제를 해결한 것은 아니지만, penalty 계산을 global memory 대신 shared memory에서 처리함으로써 전체 성능을 의미 있게 끌어올린 형태라고 정리할 수 있다.
+
+---
+## Wavefront Relaxtion
+
+지금까지 의존성은 좌대각선 위 왼쪽에 있다고 해서 2줄만 사용해서 역할을 번갈아가도록 배정해서 사용 공간을 줄였다. 근데 조금더 생각해보면 좌우 대각선 사이의 값들은 의존성이 없다. 어
+
+![](../../images/Pasted%20image%2020251205164822.png)
