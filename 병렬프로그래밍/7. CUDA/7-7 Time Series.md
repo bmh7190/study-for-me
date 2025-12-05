@@ -789,3 +789,52 @@ shared memory는 빠른 대신 공간이 매우 작기 때문에 시계열 길�
 지금까지 의존성은 좌대각선 위 왼쪽에 있다고 해서 2줄만 사용해서 역할을 번갈아가도록 배정해서 사용 공간을 줄였다. 근데 조금더 생각해보면 좌우 대각선 사이의 값들은 의존성이 없다. 어
 
 ![](../../images/Pasted%20image%2020251205164822.png)
+
+```c++
+template <typename index_t, typename value_t> __global__
+void DTW_wavefront_kernel(
+value_t * Query, // pointer to the query
+value_t * Subject, // pointer to the database
+value_t * Dist, // pointer to the distance
+index_t num_entries, // number of time series (m)
+index_t num_features) { // number of time ticks (n)
+// compute block and local thread identifier
+const index_t blid = blockIdx.x;
+const index_t thid = threadIdx.x;
+// calculate lane length and time series offset
+const index_t lane = num_features+1;
+const index_t base = blid*num_features;
+extern __shared__ value_t Cache[]; // define score matrix in shared memory
+value_t * penalty = Cache;
+for (index_t l=thid; l<lane; l+=blockDim.x) {
+// initialize score matrix with infinity
+penalty[0*lane+l] = INFINITY;
+penalty[1*lane+l] = INFINITY;
+penalty[2*lane+l] = INFINITY;
+}
+penalty[0*lane+0] = 0; // upper left corner set to zero
+__syncthreads(); // force all threads within a block to synchronize
+
+// Main computation in the wavefront DTW kernel utilizing shared memory
+for (index_t k=2; k<2*lane-1; k++) { // relax diagonals
+const index_t target_row = k%3; // compute cyclic lane indices
+const index_t before_row = target_row == 2 ? 0 : target_row+1;
+const index_t source_row = before_row == 2 ? 0 : before_row+1;
+for (index_t l=thid; l<lane; l+=blockDim.x) { // each thread updates one cell
+const index_t j = k-l; // compute traditional indices (j,j') from (k,l)
+const index_t J = l;
+const bool outside = k<=l || J==0 || j>=lane; // determine if indices are outside of score matrix
+// compute the residue Q_{j-1} - S^{(i)}_{j'-1}
+const value_t residue = outside ? INFINITY : Query[j-1] - Subject[base+J-1];
+const index_t bfr_off = before_row*lane; // concurrently relax the cells
+const index_t src_off = source_row*lane;
+const index_t trg_off = target_row*lane;
+penalty[trg_off+l] = outside ? INFINITY: residue*residue +
+min(penalty[bfr_off+l-1], min(penalty[src_off+l+0], penalty[src_off+l-1]));
+}
+__syncthreads(); // force all threads within a block to synchronize
+}
+const index_t last_diag = (2*num_features)%3;
+Dist[blid] = penalty[last_diag*lane + num_features];
+}
+```
