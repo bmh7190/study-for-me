@@ -509,63 +509,56 @@ void DTW_naive_kernel(
 ```
 
 ---
-일단 기본적으로 이전에 openmp버전과 로직 자체는 동일하나, openmp에서는 thread를 알아서 지정해줬다면 gpu에서는 thread id에 대한 계산이 필요하다.
+CUDA 버전의 DTW는 기본적인 계산 방식은 OpenMP 구현과 동일하지만, GPU에서는 각 스레드가 처리해야 할 데이터를 직접 지정해야 한다는 차이가 있다. 이를 위해 먼저 전역 스레드 ID를 계산하는데, 다음 코드처럼 블록 크기와 블록 인덱스, 그리고 스레드 인덱스를 조합해 `thid` 값을 얻는다.
 
-    
 ```c++
 const index_t thid = blockDim.x * blockIdx.x + threadIdx.x;
+```
+
+이 값은 전체 쓰레드 중에서 이 쓰레드가 몇 번째인지 나타내며, 이후 이 번호를 기준으로 어떤 시계열 데이터를 처리할지 결정된다. 
+
+```c
 const index_t lane = num_features + 1;
 const index_t base = thid * num_features;  // 시계열의 시작 오프셋
 ```
-    
-각 스레드는 `thid`를 기준으로 **서로 다른 하나의 시계열(entry)** 데이터 셋을 담당한다. threadid는 늘 구하던대로 blockDim.x 즉 x축에 따른 block 길이가 있는데, blockidx.x그 중에 blockidx 
-    
 
-    ```c++
-    const index_t lane = num_features + 1;
-    const index_t base = thid * num_features;
-    ```
-    
-    - `lane` : DP 테이블의 열 개수 = 시계열 길이 + 1
-        
-    - `base` : `Query`, `Subject` 배열에서 이 스레드가 담당하는 시계열의 시작 인덱스
-        
-3. **Cache에서 이 스레드용 penalty 버퍼 할당**
-    
-    ```c++
-    value_t * penalty = Cache + thid * 2 * lane;
-    ```
-    
-    → 각 스레드는 **2 x (n+1)** 크기의 DP 버퍼를 하나씩 가짐  
-    (앞에서 CPU 버전에서 썼던 2-row 롤링 배열을 그대로 GPU 쪽에서도 쓰는 것)
-    
-4. **초기화**
-    
-    ```c++
-    penalty[0] = 0;
-    for (index_t index = 0; index < lane; index++)
-        penalty[index + 1] = INFINITY;
-    ```
-    
-    → 첫 행을 `[0, INF, INF, ..., INF]`로 만드는 초기 조건 설정.
-    
-5. **DP 루프 (row, col 순회)**
-    
-    - `row` 에 따라 `target_row`, `source_row`를 결정해서
-        
-    - 2줄짜리 롤링 배열만으로 전체 DP를 시뮬레이션.
-        
-    - `row == 2` 에서 `(0,0)` 위치를 INF로 리셋하는 것도 CPU 버전과 동일한 논리.
-        
-6. **결과 쓰기**
-    
-    ```c++
-    const index_t last_row = num_features & 1;
-    Dist[thid] = penalty[last_row * lane + num_features];
-    ```
-    
-    → 최종 `DTW(query, subject)` 값을 `Dist[thid]`에 기록.
-    
+DTW에서 DP 테이블의 열 개수는 패딩을 포함해 `num_features + 1` 이므로 이를 lane이라 정의하며, 여러 개의 시계열이 하나의 긴 배열에 붙어 저장되어 있으므로 쓰레드마다 자신의 입력 데이터가 시작하는 위치를 알아야 한다. 이를 위해 `thid * num_features` 만큼 건너뛰어 offset을 계산하고, 이제 `base` 위치부터 해당 쓰레드가 담당할 시계열 데이터가 존재하게 된다.
+
+추가로, GPU에서는 각 스레드가 사용할 penalty 버퍼가 필요하다. 이 버퍼는 `Cache` 라는 큰 메모리 안에 연속적으로 저장되어 있으며, 쓰레드는 자신의 ID를 이용해 다음과 같이 penalty 영역의 시작 위치를 얻는다.
+
+```c++
+value_t * penalty = Cache + thid * 2 * lane;
+```
+
+즉, Cache는 전체 쓰레드의 penalty 공간을 global 메모리에 모아둔 영역이고, 각 쓰레드는 `thid` 값만큼 떨어진 위치에 자신만의 `2 x (n+1)` 크기의 penalty 배열을 할당받은 셈이다. 이런 구조 덕분에 CUDA에서는 OpenMP와 동일한 DP 계산 로직을 유지하면서도, 쓰레드별로 독립적인 메모리 영역을 사용해 안전하게 병렬 처리를 수행할 수 있다.
 
 ---
+나머지 DTW 커널 내부 로직은 앞에서 작성했던 OpenMP 버전과 동일하고, CUDA에서는 이를 다음과 같이 커널로 호출한다.
 
+```c
+const uint64_t threads = 32; DTW_naive_kernel<<<SDIV(num_entries, threads), threads>>>(     Data, Data, Dist, Cache, num_entries, num_features );
+```
+
+여기서 `threads`는 한 블록당 스레드 수를 의미하고, `SDIV(num_entries, threads)`는 `num_entries`를 32로 나눈 뒤 올림(ceiling)한 값을 block 개수로 사용한다. 
+
+즉, 전체적으로 보면 **총 `num_entries`개의 시계열에 대해, 32개 스레드씩 묶인 여러 개의 블록이 실행되는 구조**가 된다. 각 스레드는 커널 내부에서 자신의 전역 스레드 ID(`thid`)를 계산한 뒤, 그 ID를 기준으로 하나의 데이터셋(하나의 time series)을 전담해서 DTW를 수행한다. 쉽게 말해서, **“스레드 하나가 시계열 하나를 맡는다”**라고 생각하면 된다.
+
+---
+### 결과 보기
+
+실행 결과를 보니 Titan X 기준으로 약 30초가 걸렸고, 이는 32코어에서 돌린 OpenMP 코드에 비해 대략 10배 정도 느린 성능이다. 왜 이렇게 느려졌는지 생각해 보면, 가장 큰 이유는 **메모리 접근이 coalescing(병합)되지 않았기 때문**이다.
+
+현재 구현에서는 **각 스레드가 하나의 데이터 셋(하나의 시계열)** 을 통째로 담당하도록 구성되어 있다. 하지만 실제로 GPU에서는 스레드가 개별로 움직이는 것이 아니라, **32개 스레드가 하나의 warp 단위로 묶여 동시에 실행**된다. 즉, 한 번에 실행되는 단위는 “스레드 1개”가 아니라 “warp에 속한 32개 스레드 묶음”이다.
+
+그런데 지금 구조에서는 warp 안의 32개 스레드가 각각 서로 다른 데이터 셋을 들고 있기 때문에, 예를 들어 Query나 Subject를 읽을 때:
+
+- 스레드 0은 데이터셋 0의 `subject[0]`
+- 스레드 1은 데이터셋 1의 `subject[0]`
+- 스레드 2는 데이터셋 2의 `subject[0]`
+- …
+
+이런 식으로 **서로 멀리 떨어진 위치**를 동시에 읽게 된다. 즉, 메모리 주소가 `num_features` 간격으로 점프하는 **stride access**가 되고, 이 때문에 warp 입장에서는 원래 한 번에 인접한 데이터를 쫙 가져올 수 있는 coalesced access를 제대로 활용하지 못한다. 겉으로 보면 각 스레드가 자기 데이터에 “정상적으로” 접근하는 것 같지만, 하드웨어 관점에서는 32개 스레드가 전부 떨어진 주소를 찔러대는 셈이라 매우 비효율적인 접근 패턴이 되는 것이다.
+
+그래서 이 비효율을 줄이기 위해 데이터 저장 방식을 **의도적으로 바꾼다**. 즉, thread들이 동시에 읽는 값들이 **메모리에서도 서로 인접하도록 layout을 재배치하는 것**이다. 이렇게 하면 warp에서 thread들이 parallel하게 접근할 때 하드웨어는 필요한 데이터를 한 번에 연속적으로 가져올 수 있고, 결과적으로 메모리 접근이 병합(coalesced)되어 성능이 크게 개선된다. 요약하면, “thread는 dataset 단위로 계산하지만, GPU 실행 단위가 warp라는 점 때문에 여러 thread가 동시에 접근하는 위치가 서로 붙어 있도록 데이터 저장 구조를 바꾼다”는 개념이다.
+
+---
