@@ -2,6 +2,50 @@ ARP가 실제로 어떻게 구현되었는지 살펴보자.
 
 ![](../../images/Pasted%20image%2020251205133449.png)
 
-ARP 는 3개의 module로 구성되어 있는데 Output module input module cache control modul 그리고 Cache table과 Queue 도 포함한다. 여기서 Cache table이 지금까지 말햇던 ARP 테이블을 말한다. 각 모듈을 쉽게 설명하면 Output 모듈은 MAC 주소가 나각 모듈에서 어떤 일을 하는지 pseudo 코드를 통해 알아봐자
+ARP는 **Output module, Input module, Cache Control module** 이렇게 세 개의 모듈로 구성되어 있으며, 여기에 **Cache table** 과 **Queue** 도 포함된다. 여기서 Cache table이 바로 지금까지 말했던 ARP 테이블을 의미한다. 
 
+각 모듈의 역할을 간단히 설명하자면, Output 모듈은 MAC 주소가 필요한 상황에서 이를 처리하는 기능을 맡고, Input 모듈은 ARP 패킷을 수신했을 때 내부 정보를 해석하고 반영하는 역할을 한다. 그리고 Cache Control 모듈은 캐시의 상태를 관리하면서 오래된 항목을 정리하거나 유효 시간을 조절하는 기능을 담당한다. 이제 각 모듈에서 어떤 일을 하는지 pseudo 코드를 통해 더 자세히 알아보자.
 
+---
+## Cache Table
+
+모듈을 알아보기 전에 먼저 **ARP 테이블 구조**를 보면, 헤더에는 state, queue, attempt, timeout, protocol 주소, 하드웨어 주소 등이 포함되어 있는 것을 볼 수 있다.
+
+![](../../images/Pasted%20image%2020251205134516.png)
+
+우선 **State** 값은 R, P, F로 표현되는데, 각각 다음을 의미한다.
+
+- **R(Resolved)**: 해당 프로토콜 주소에 대응되는 MAC 주소가 이미 해결되어 테이블에 저장된 상태를 뜻한다. 즉, 매핑이 완성된 경우이다.
+    
+- **P(Pending)**: 아직 MAC 주소가 없어 ARP Request를 보낸 상태를 의미한다. 원래 캐시에 MAC 주소가 없었고, 이를 알아내기 위해 ARP Request를 보냈지만 아직 Reply를 받지 못한 상황이다.
+    
+- **F(Free)**: 단순히 그 엔트리가 비어 있는 상태, 즉 사용 가능한 빈 슬롯을 의미한다.
+
+Pending 상태에서는 ARP Request를 **한 번만 보내는 것이 아니라 여러 번 시도할 수 있다**. 이때 몇 번까지 재시도할 것인지를 정한 값이 **Attempt**이다. 또한 **Timeout**은 ARP 테이블의 용량이 한정적이기 때문에, 너무 오래 사용되지 않은 엔트리를 삭제하기 위한 타이머를 의미한다. 일정 시간이 지나면 해당 정보를 제거하고 다시 사용할 수 있도록 한다.
+
+그다음으로 **Queue**는 임시 저장소와 같은 역할을 한다. 예를 들어 A에서 B로 패킷을 보내려는 상황에서, TCP는 패킷을 하나만 보내는 것이 아니라 여러 개를 연속적으로 보낸다. 그런데 MAC 주소가 없는 상태라면, 첫 번째 패킷을 보내려는 순간 ARP Request를 보내고 ARP Reply를 기다려야 한다. 이 동안에도 위 계층에서는 계속 패킷이 내려올 수 있으므로, MAC 주소가 확보될 때까지 이 패킷들을 임시로 저장해둘 공간이 필요한데, 그 역할을 하는 것이 바로 **Queue**이다.
+
+---
+## Output module 
+
+이제 기본 개념을 이해했으니까 각 모듈에 대해 알아보자. 먼저 IP 패킷이 Output module로 도착한다. 그러면 Output module은 cache table을 확인하여 해당 IP에 대한 엔트리가 존재하는지부터 검사한다. 만약 엔트리가 이미 있다면, 그 상태가 resolved인지 pending인지 확인한다. **resolved 상태라면**, 해당 IP에 매핑된 MAC 주소가 이미 존재하므로 그 MAC 주소를 프레임에 넣어 바로 전송하면 된다. **pending 상태라면**, 이미 ARP request를 보낸 상황이기 때문에 MAC 주소를 아직 알 수 없으며, 따라서 새로 전송하려는 패킷은 단순히 queue에 넣어 임시로 보관하기만 하면 된다.
+
+반면, cache table에 해당 IP 주소에 대한 엔트리가 **존재하지 않는 경우**, 새로운 엔트리를 만들어주어야 한다. 테이블에 새 entry를 생성하고 상태를 pending으로 설정한 뒤, Attempt 값을 1로 초기화한다. 그리고 이 엔트리에 연결될 queue를 새로 만들어 이 IP로 향하는 패킷들을 임시로 저장할 수 있도록 한다. 물론 이때는 MAC 주소를 전혀 모르는 상황이므로, 상대의 MAC 주소를 알아내기 위한 ARP request를 전송하게 된다.
+
+---
+## Input module 
+
+이 모듈에서는 ARP 패킷이 들어온 상황에서 동작한다. 이때 들어온 ARP 패킷은 내가 보낸 ARP request에 대한 reply일 수도 있고, 반대로 상대가 나에게 ARP request를 보낸 경우일 수도 있다.
+
+우선 entry를 확인하고, 현재 state가 **pending**이라면 이는 내가 보낸 요청에 대한 응답이 도착했다는 의미이다. 이 경우 state를 **R(resolved)** 로 변경하고, attempts 값은 삭제한다. 그리고 timeout은 기본값으로 재설정해준다. 그 후 queue에 쌓아두었던 패킷들을 꺼내어 순차적으로 전송한다. 또한 state가 이미 **R**인 경우에도 timeout을 다시 초기화해주는데, 이는 최근에 사용된 엔트리를 더 오래 유지하고, 오랫동안 사용되지 않은 엔트리부터 제거하기 위함이다.
+
+만약 entry가 **존재하지 않는 경우**라면, 단순히 table에 새로운 entry를 추가해준다.
+
+그리고 들어온 ARP 패킷이 **나에게 요청(request)을 보낸 상황**이라면, 그에 대한 **reply를 보내주면 된다.**
+
+---
+## Cache Control Module
+
+이 모듈에서는 Cache table의 전반적인 관리를 담당한다. 특정 시간마다, 이 예제에서는 60초마다 cache table을 한 번 훑게 되는데, 우선 state가 **P(pending)** 인 경우를 확인한다. pending 상태라는 것은 이미 ARP request를 보낸 상황인데 아직 reply가 오지 않았다는 의미이므로, 먼저 시도 횟수를 1 증가시킨다. 그리고 시도 횟수가 미리 정해둔 최대값에 도달했다면 해당 entry는 삭제한다. 반대로 아직 최대값에 도달하지 않았다면 다시 ARP request를 전송한다.
+
+또한 이 모듈은 각 entry의 **timeout 값을 감소시키는 역할**도 한다. 앞에서 설명했듯이 ARP 테이블은 크기가 한정되어 있기 때문에, timeout을 계속 감소시키다가 0에 도달하면 그 entry도 삭제하여 공간을 확보한다.
