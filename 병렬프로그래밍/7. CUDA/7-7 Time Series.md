@@ -7,7 +7,7 @@
 하지만 시계열 데이터는 상황이 다르다. 같은 파형이라도 **언제 피크가 발생했는지**, 즉 **시간이 얼마나 빨리 혹은 늦게 흐르는지**에 따라 모양이 어긋날 수 있다. 예를 들어 두 사람이 같은 단어를 말하더라도 한 사람은 조금 더 천천히 말하고, 다른 사람은 더 빠르게 말할 수 있다. 이럴 때 단순히 같은 시점(time index)의 값을 빼서 거리를 계산해버리면, 실제로는 유사한 두 신호가 서로 다르게 보일 수 있다.
 
 ## Dynamic Time Warping (DTW)
-그래서 이번에는 이러한 시간 차이를 보정해가며 유사도를 계산할 수 있는 방법, 즉 **Dynamic Time Warping(DTW)** 을 적용해볼 것이다. 쉽게 말하면, DTW는 두 시계열의 특정 시점들이 꼭 일대일로 대응하지 않더라도, **시간 축을 자유롭게 늘였다 줄였다 하면서 가장 잘 맞는 정렬(alignment)을 찾아주는 방법**이다. 다시 말해, “이 두 시계열이 서로 얼마나 비슷하게 생겼는가?”를 **시간의 왜곡을 허용한 상태에서 계산**할 수 있게 해주는 알고리즘이다.
+그래서 이번에는 이러한 시간 차이를 보정해가며 유사도를 계산할 수 있는 방법, 즉 **Dynamic Time Warping(DTW)** 을 적용해볼 것이다. 쉽게 말하면, DTW는 두 시계열의 특정 시점들이 꼭 일대일로 대응하지 않더라도, **시간 축을 자유롭게 늘였다 줄였다 하면서 가장 잘 맞는 정렬을 찾아주는 방법**이다. 다시 말해, “이 두 시계열이 서로 얼마나 비슷하게 생겼는가?”를 **시간의 왜곡을 허용한 상태에서 계산**할 수 있게 해주는 알고리즘이다.
 
 DTW를 이해하기 위해서는 먼저, 두 시계열을 어떻게 “정렬”하는지를 그래프로 표현한 DAG(Directed Acyclic Graph) 구조를 살펴볼 필요가 있다. 아래 그림은 길이가 각각 4인 두 시계열에 대해 DTW 거리 계산 과정에서 등장하는 DAG의 한 예시이다. 이 그래프의 각 노드는 두 시계열의 특정 시점 조합 $(i,j)$을 나타내며, DTW는 이 노드들을 연결하는 경로 중 비용이 최소가 되는 경로를 찾는 과정이라고 볼 수 있다.
 
@@ -65,3 +65,45 @@ DP matrix를 채울 때는 DTW의 이동 규칙을 따라, 특정 칸에 도달�
 ---
 ## DTW: Naive Sequential Implementation
 
+가장 먼저 naive한 방식으로 연속적이게 돌아가도록 구현한 코드부터 보자
+
+### 전체 코드
+
+```c
+template <typename index_t, typename value_t> __host__
+value_t plain_dtw(value_t * query, value_t * subject, index_t num_features) {
+	const index_t lane = num_features+1;
+	value_t * penalty = new value_t[lane*lane];
+	
+	for (index_t index = 1; index < lane; index++) // initialize the matrix M
+		penalty[index] = penalty[index*lane] = INFINITY;
+		
+	penalty[0] = 0;
+	
+	for (index_t row=1; row<lane; row++) { // traverse graph in row-major order
+		const value_t q_value = query[row-1];
+		for (index_t col=1; col<lane; col++) {
+			// determine contribution from incoming edges
+			const value_t diag = penalty[(row-1)*lane+col-1];
+			const value_t abve = penalty[(row-1)*lane+col+0];
+			const value_t left = penalty[(row+0)*lane+col-1];
+			// compute residue between query and subject
+			const value_t residue = q_value - subject[col-1];
+			// relax node by greedily picking minimum edge
+			penalty[row*lane + col] = residue*residue + min(diag, min(abve, left));
+		}
+	}
+	
+	const value_t result = penalty[lane*lane-1]; // report the lower right cell
+	delete[] penalty;
+	return result;
+}
+```
+
+
+```c
+const index_t lane = num_features+1;
+value_t * penalty = new value_t[lane*lane];
+```
+
+가장 먼저 lane을 설정했는데, 위에서 정했듯이 같은 행렬 2개를 곱하는 연산이니까 결과 행렬이 나올텐데 거기에 padding을 넣어주기 위해 1을 더해서 한 선을 만들고 , 그 선을 곱해서 전체 penalty 행렬을 생성했다. 이 행렬 안에 이제 point point 비교도 하고 그 비교를 통한 결과에 최단 경로도 기록학
