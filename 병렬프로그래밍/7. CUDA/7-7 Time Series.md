@@ -559,6 +559,222 @@ const uint64_t threads = 32; DTW_naive_kernel<<<SDIV(num_entries, threads), thre
 
 이런 식으로 **서로 멀리 떨어진 위치**를 동시에 읽게 된다. 즉, 메모리 주소가 `num_features` 간격으로 점프하는 **stride access**가 되고, 이 때문에 warp 입장에서는 원래 한 번에 인접한 데이터를 쫙 가져올 수 있는 coalesced access를 제대로 활용하지 못한다. 겉으로 보면 각 스레드가 자기 데이터에 “정상적으로” 접근하는 것 같지만, 하드웨어 관점에서는 32개 스레드가 전부 떨어진 주소를 찔러대는 셈이라 매우 비효율적인 접근 패턴이 되는 것이다.
 
+![](../../images/Pasted%20image%2020251205160713.png)
+
 그래서 이 비효율을 줄이기 위해 데이터 저장 방식을 **의도적으로 바꾼다**. 즉, thread들이 동시에 읽는 값들이 **메모리에서도 서로 인접하도록 layout을 재배치하는 것**이다. 이렇게 하면 warp에서 thread들이 parallel하게 접근할 때 하드웨어는 필요한 데이터를 한 번에 연속적으로 가져올 수 있고, 결과적으로 메모리 접근이 병합(coalesced)되어 성능이 크게 개선된다. 요약하면, “thread는 dataset 단위로 계산하지만, GPU 실행 단위가 warp라는 점 때문에 여러 thread가 동시에 접근하는 위치가 서로 붙어 있도록 데이터 저장 구조를 바꾼다”는 개념이다.
 
 ---
+## DTW: CUDA Kernel with Thread-Local Memory
+
+이번에는 이전 naive CUDA 커널에서 `Cache`라는 글로벌 메모리 버퍼를 쓰던 부분을 없애고,  
+각 쓰레드가 **자기만의 penalty 배열을 로컬(스레드 전용) 배열로 들고 있게** 만드는 버전이다.
+
+### 커널 코드
+
+먼저 커널 전체를 채워 보면 이렇게 된다:
+
+```c++
+template <typename index_t, typename value_t, index_t const_num_features>
+__global__ void DTW_static_kernel(
+    value_t * Query,   // pointer to the query
+    value_t * Subject, // pointer to the database
+    value_t * Dist,    // pointer to the distance
+    index_t num_entries,   // number of time series (m)
+    index_t num_features)  // number of time ticks (n)
+{
+    // compute global thread identifier, lane length and offset
+    const index_t thid = blockDim.x * blockIdx.x + threadIdx.x;
+    const index_t lane = num_features + 1;
+    const index_t base = thid * num_features;
+
+    if (thid < num_entries) {
+        // 스레드 로컬 penalty 버퍼: 2 x (const_num_features+1) 크기
+        // (각 스레드마다 독립된 DP 2-row 버퍼를 갖게 됨)
+        value_t penalty[2 * (const_num_features + 1)];
+
+        // --- 초기화: 첫 행을 [0, INF, INF, ..., INF]로 세팅 ---
+        penalty[0] = 0;
+        
+        for (index_t index = 0; index < lane; ++index) {
+            penalty[index + 1] = INFINITY;
+        }
+
+        // --- DP 완화(relaxation): 행(row) 기준 순회 ---
+        for (index_t row = 1; row < lane; ++row) {
+            // 이 스레드가 담당하는 query의 row-1 위치 값
+            const value_t q_value = Query[base + row - 1];
+
+            // 2줄 롤링 버퍼: 홀짝을 이용해 source/target 결정
+            const index_t target_row = row & 1;
+            const index_t source_row = !target_row;
+
+            // 두 번째 행부터는 (0,0)에 남아 있던 0을 INF로 리셋
+            if (row == 2) {
+                penalty[target_row * lane] = INFINITY;
+            }
+
+            const index_t src_off = source_row * lane;
+            const index_t trg_off = target_row * lane;
+
+            // 열(col)을 순회하며 전형적인 DTW 점화식 적용
+            for (index_t col = 1; col < lane; ++col) {
+                const value_t diag = penalty[src_off + col - 1]; // 좌상단
+                const value_t abve = penalty[src_off + col];     // 위
+                const value_t left = penalty[trg_off + col - 1]; // 왼쪽
+
+                const value_t s_value = Subject[base + col - 1]; // subject 값
+                const value_t residue = q_value - s_value;
+
+                penalty[trg_off + col] =
+                    residue * residue + min(diag, min(abve, left));
+            }
+        }
+
+        // 마지막 행 인덱스(짝/홀)에 따라 결과 위치 선택 후 Dist에 기록
+        const index_t last_row = num_features & 1;
+        Dist[thid] = penalty[last_row * lane + num_features];
+    }
+}
+
+
+```
+
+```c
+value_t penalty[2 * (const_num_features + 1)];
+```
+
+쉽게 말하면 이번 최적화의 핵심은 **DTW 계산 중 사용되는 penalty 테이블을 기존처럼 global memory에 두지 않고, thread-local memory로 옮겨 사용하는 것**이다. thread-local 메모리는 각 스레드가 독립적으로 가지는 전용 공간이며, 물리적으로는 여전히 global memory 위에 존재한다. 그렇다면 물리 주소가 동일한데 왜 이것이 최적화가 될까?
+
+그 이유는 **컴파일러와 하드웨어가 이 공간을 다루는 방식이 달라지기 때문**이다. 이전 구현에서는 penalty 배열이 “큰 global 배열에 대한 포인터 연산” 형태였기 때문에, 컴파일러 입장에서는 이 데이터가 언제 어떻게 바뀔지 확신할 수 없었다. 그래서 penalty 접근을 **절대 register에 올릴 수 없다고 판단했으며**, 결국 DP 연산 시 penalty 값을 읽고 쓰는 모든 연산이 **매번 global memory 왕복**이 발생하게 되었다.
+
+반면 thread-local memory에 penalty를 선언하면 상황이 달라진다. 이 공간은 **각 스레드만 접근하고 다른 스레드가 건드릴 수 없다는 것이 명확히 보장되기 때문에**, 컴파일러는 이 데이터를 안전하게 **레지스터나 L1 캐시에 올려둘 수 있다.** 그 결과 penalty 접근 비용이 global memory 접근 대신 **register/cache hit 수준으로 떨어지고**, DTW의 반복 계산 부분이 훨씬 빨라지게 된다.
+
+요약하면, **물리적인 저장 위치는 global memory 기반이라 동일하지만, 접근 방식이 thread-private 구조로 바뀌면서 컴파일러가 register-level 최적화를 할 수 있게 된 것이 성능 향상의 진짜 원인**이라고 볼 수 있다.
+
+이제 최적화한 커널을 실제로 실행해보면, 코드는 다음과 같이 호출된다.
+
+```c++
+const uint64_t threads = 32;
+DTW_static_kernel<uint64_t, float, num_features>
+<<<SDIV(num_entries,threads),threads>>>(Data,Data,Dist,num_entries,num_features); 
+```
+
+한 블록당 32개의 스레드를 사용하고, `SDIV(num_entries, threads)`를 통해 전체 데이터 개수를 32로 나눈 뒤 올림값을 블록 개수로 사용한다. 여전히 **스레드 하나가 시계열 하나를 맡는 구조**는 그대로 유지된다.
+
+이렇게 thread-local penalty를 사용하는 static 커널을 Pascal 기반 Titan X에서 돌려 보면, 실행 시간은 약 **2.7초**로 측정되며, 이는 이전 `DTW_naive_kernel` 대비 약 **11배 정도 빠른 속도**이다. 즉, penalty를 global memory 대신 thread-local로 옮겨서 레지스터/캐시를 적극 활용하게 만든 최적화 효과는 꽤 크게 나타난 셈이다.
+
+다만, 이 속도는 여전히 **32코어 OpenMP CPU 코드와 비교하면 ‘조금 빠르거나 비슷한 수준’** 에 그친다. 그 이유는 아직도 `Query`와 `Subject`에 대한 접근 패턴이 warp 입장에서 **non-coalesced** 인 상태로 남아 있기 때문이다. 
+
+---
+## Thread and Memory Hierarchy
+
+non-coalesced 문제를 이해하려면 먼저 GPU의 스레드 구조와 메모리 계층을 정리할 필요가 있다.
+
+![](../../images/Pasted%20image%2020251205162441.png)
+
+각 쓰레드는 **자신만의 register와 local memory를** 가지고 있으며, 이 영역은 쓰레드 외부에서 접근할 수 없는 전용 공간이다.  
+
+그 위 계층에는 **shared memory가 있는데, 이는 thread block 내부에서 여러 스레드가 함께 사용하는 빠른 저장 공간**이다. 마지막으로 **global memory는 GPU 전체 스레드가 접근 가능한 가장 큰 메모리 공간**으로, 속도는 상대적으로 느리다. 이 구조 때문에 **shared memory는 메모리 병목을 줄이는 데 매우 효과적**이며, 특히 데이터 접근 패턴을 스레드들이 재사용하거나 접근 순서를 조정할 때 성능을 크게 향상시킨다. 
+
+정리하면, **local memory는 논리적으로는 각 thread의 고유 공간이지만 실제로는 global memory 위에 위치하기 때문에 절대적인 접근 속도는 느린 편**이다. 반면 **shared memory는 한 block 내부의 여러 thread가 함께 사용하는 공간이지만, 접근 대상이 block 단위로 제한되기 때문에 global memory보다 훨씬 빠르게 동작한다.**
+
+즉, local memory는 thread 전용이라는 점에서 안전성과 독립성을 제공하지만 속도면에서는 global memory 특성을 그대로 가지는 반면, shared memory는 범위가 좁은 대신 **많은 thread가 빠르게 데이터를 재사용하고 협력할 수 있도록 설계된 고속 저장 공간**이라고 이해할 수 있다.
+
+---
+## DTW: CUDA Kernel with Shared Memory
+
+shared memory 를 사용한 버전이다. 전체 DTW 로직 자체는 이전과 동일하고, 여기서는 **메모리 공간을 어떻게 할당해서 쓰는지**에 집중해서 보자.
+
+```c++
+template <typename index_t,typename value_t> __global__
+void DTW_shared_kernel(value_t * Query, value_t * Subject, value_t * Dist,
+                       index_t num_entries, index_t num_features) {
+
+    const index_t thid = blockDim.x * blockIdx.x + threadIdx.x; 
+    const index_t lane = num_features + 1;      // DP 테이블의 열 개수
+    const index_t base = thid * num_features;   // 이 스레드가 담당하는 시계열 시작 위치
+    
+    extern __shared__ value_t Cache[];          // 동적 shared memory 선언
+    
+    if (thid < num_entries) {
+        // 이 블록의 shared memory(Cache) 중에서
+        // threadIdx.x 에 해당하는 스레드가 쓸 구간을 penalty로 사용
+        value_t * penalty = Cache + threadIdx.x * (2 * lane); 
+        
+        // DP 테이블 초기화: 첫 행 [0, INF, INF, ...]
+        penalty[0] = 0;
+        for (index_t index = 0; index < lane; index++)
+            penalty[index + 1] = INFINITY;
+        
+        // 나머지 로직은 이전과 동일한 DTW 점화식
+        for (index_t row = 1; row < lane; row++) { 
+            const value_t q_value = Query[base + row - 1];
+            const index_t target_row = row & 1;
+            const index_t source_row = !target_row;
+            
+            if (row == 2) 
+                penalty[target_row * lane] = INFINITY;
+            
+            const index_t src_off = source_row * lane;
+            const index_t trg_off = target_row * lane;
+            
+            for (index_t col = 1; col < lane; col++) {
+                const value_t diag = penalty[src_off + col - 1];
+                const value_t abve = penalty[src_off + col];
+                const value_t left = penalty[trg_off + col - 1];
+                const value_t s_value = Subject[base + col - 1];
+                const value_t residue = q_value - s_value;
+                
+                penalty[trg_off + col] =
+                    residue * residue + min(diag, min(abve, left));
+            }
+        }
+        
+        const index_t last_row = num_features & 1;
+        Dist[thid] = penalty[last_row * lane + num_features];
+    }
+}
+```
+
+여기서 핵심은 이 한 줄이다:
+
+```c++
+extern __shared__ value_t Cache[]; 
+```
+
+`Cache`라는 이름의 배열을 선언했는데, `__shared__` 키워드가 붙어 있으므로 이 공간은 **shared memory 영역**에 위치한다. 그리고 `extern` 으로 선언했기 때문에, 크기를 컴파일 시점이 아니라 **커널을 호출할 때 동적으로 지정하겠다**는 의미가 된다. 즉, “shared memory 를 쓸 건데, 정확한 크기는 나중에 런치(launch)할 때 알려줄게”라는 선언이다.
+
+실제로 커널 호출부에서는 다음과 같이 shared memory 크기를 함께 넘겨준다.
+
+```c++
+uint64_t threads = 32;
+uint64_t sh_mem = 2 * (num_features + 1) * threads * sizeof(float);
+
+DTW_shared_kernel<uint64_t, float>
+    <<<SDIV(num_entries, threads), threads, sh_mem>>>(
+        Data, Data, Dist, num_entries, num_features
+    );
+```
+
+여기서 `threads`는 한 블록당 스레드 수(32), `lane = num_features + 1`, 
+각 스레드가 필요한 penalty 버퍼 크기는 `2 * lane` 이고,  
+이걸 `threads` 개만큼 써야 하므로 전체 shared memory 크기는:
+
+> `2 * (num_features + 1) * threads * sizeof(float)`
+
+가 된다. 이 값을 `<<<... , threads, sh_mem>>>` 의 세 번째 인자로 넘겨주면, 그 크기만큼의 shared memory 가 **블록마다 동적으로 할당**되고, 커널 내부에서 `extern __shared__ value_t Cache[];` 로 그 공간을 사용할 수 있게 되는 것이다.
+
+정리하면 이렇게 **penalty 테이블을 global / local 이 아니라 shared memory에 올려서**,  
+같은 블록 안의 스레드들이 빠른 on-chip 메모리를 활용해 DTW 연산을 수행하도록 최적화한 버전이라고 볼 수 있다.
+
+### 결과 정리
+
+• Runtime on a Titan X: 0.63 sec (4.3x faster than OpenMP DTW_static_kernel)
+• Disadvantage: cannot use this approach for longer time series 
+• Shared memory size (n = 128, 32 threads): 2(n+1)blockDim.xsizeof(float) = 2(128+1)324 
+32.25KB
+
+이 방식으로 하면 global d에서 loacl로 바꿀 때 문제점과 똑같지 않나? 
+
+
+shared memory 크기가 작기 때문에 만약 길이가 긴 경우 shared memoryㄹ르 넘어가게 된다. 근데 SM 에 block을 할당할 때 shared memory 공간도 같이 할당하는데, 이 공간이 없으면 block 자체가 할당이 안된다.
