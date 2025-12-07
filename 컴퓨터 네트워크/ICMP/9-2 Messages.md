@@ -68,8 +68,9 @@ ICMP 오류 보고 중 가장 먼저 살펴볼 수 있는 형식이 바로 **Des
 
 ### 5) 단편화 필요 / DF 비트 설정 (Code 4)
 
-라우터가 패킷을 전달하려고 하는데, 링크의 MTU보다 패킷이 커서 **단편화(fragmentation)** 가 필요하다.  
-그러나 IP 헤더의 DF(Don’t Fragment) 비트가 설정되어 있다면 단편화를 할 수 없으므로 패킷을 폐기하고 송신자에게 이 사실을 통보한다.  
+라우터가 패킷을 전달하려고 하는데, 링크의 MTU보다 패킷이 커서 **fragmentation** 가 필요하다.  
+그러나 IP 헤더의 DF(Don’t Fragment) 비트가 설정되어 있다면 단편화를 할 수 없으므로 패킷을 폐기하고 송신자에게 이 사실을 통보한다. 
+
 이 오류는 Path MTU Discovery 과정에서도 중요한 역할을 한다.
 
 ### 6) 통신이 관리적으로 금지됨 (Code 13)
@@ -77,6 +78,7 @@ ICMP 오류 보고 중 가장 먼저 살펴볼 수 있는 형식이 바로 **Des
 정책적인 이유로 목적지와의 통신이 금지되어 있는 상황에서 발생한다.  
 예를 들어 방화벽이나 보안 장비가 정책 위반 패킷을 차단하는 경우가 대표적이다.  
 이 오류 메시지는 보안 정책에 따라 송신자에게 전달될 수도 있고, 그냥 내부적으로 폐기될 수도 있다.
+
 
 2번과 3번 오류는 목적지 호스트가 직접 생성하는 경우이고, 그 외의 코드들은 일반적으로 **중간 라우터**에서 발생한다. 하지만 라우터가 모든 문제를 감지할 수 있는 것은 아니다. 그 이유는 **IP 프로토콜 자체가 단순한 비연결형 서비스**이기 때문이다.
 
@@ -122,7 +124,7 @@ Source Quench 메시지는 네트워크 상에서 **혼잡(congestion)** 이 발
 
 time exceeded 메세지를 보내는 경우는 2가지가 있다. 
 
-라우터는 time to live 값을 하나씩 감소하게 되는데, 이게 0이 되면 datagram은 버리게 되고 원래 source에게 time exceed message를 보내개ㅔ 된다.
+라우터는 time to live 값을 하나씩 감소하게 되는데, 이게 0이 되면 datagram은 버리게 되고 원래 source에게 time exceed message를 보내게 된다.
 
 마지막 목적지에서 설정한 시간 안에 나뉜 값들을 모두 받지 못한다면 받은 fragments는 전부 머리고 원래 source에게 tiem exceeded message를 보내게 된다. 
 
@@ -130,7 +132,7 @@ time exceeded message에서 code 0 이 ttl이 0이 된 경우를 나타내고, c
 
 ---
 ## Parameter-problem message format
-다음은 데이터그램을 받은 라우터나 목적지의 host에게서 생성되는데, 자신이 받은 데이터그램 안에 내용물이 이상하니까 버릴게! 하고 알려주는 거싱다. 
+다음은 데이터그램을 받은 라우터나 목적지의 host에게서 생성되는데, 자신이 받은 데이터그램 안에 내용물이 이상하니까 버릴게! 하고 알려주는 것이다. 
 
 ---
 ## Redirection concept
@@ -191,7 +193,7 @@ RTT(Round-Trip Time)를 측정할 때는 보통 패킷을 보내고, 상대방�
 
 ![](../../images/Pasted%20image%2020251201211927.png)
 
-**Timestamp Request/Reply 메시지**는 바로 이 **처리 시간(processing time)**을 따로 구분할 수 있도록 설계된 메시지다.
+**Timestamp Request/Reply 메시지**는 바로 이 **처리 시간(processing time)** 을 따로 구분할 수 있도록 설계된 메시지다.
 
 - 송신자는 패킷에 **보낸 시간(Originate Timestamp)** 을 기록해 보낸다.
     
