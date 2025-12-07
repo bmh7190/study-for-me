@@ -1096,7 +1096,6 @@ index_t num_features) { // number of time ticks (n)
 ```
 
 
-
 이를 위해 Query는 kernel 인자로 넘기지 않고 다음과 같이 전역 constant 메모리 변수로 선언할 수 있다.
 
 ```c++
@@ -1138,19 +1137,9 @@ void DTW_wavefront_const_kernel(
 }
 ```
 
-즉,
-
 > Query를 kernel 인자로 전달하지 않고,  
 > 전역 constant 메모리에 두어 kernel 전체가 공유하는 read-only 데이터처럼 사용할 수 있다.
 
 이 방식은 constant cache를 활용하게 되어, 모든 thread가 동일한 query 값을 broadcast 방식으로 빠르게 가져올 수 있다는 장점이 있다.
 
 ---
-
-원하면 이어서👇
-
-🔥 왜 constant cache가 broadcast 최적화에 강한지  
-🔥 언제 constant memory가 오히려 안 좋고 shared memory가 더 빠른지  
-🔥 wavefront + constant memory 버전의 coalescing 특성 분석
-
-같은 것도 이어서 설명해줄 수 있어!
