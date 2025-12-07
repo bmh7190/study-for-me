@@ -793,48 +793,214 @@ shared memory는 빠른 대신 공간이 매우 작기 때문에 시계열 길�
 ```c++
 template <typename index_t, typename value_t> __global__
 void DTW_wavefront_kernel(
-value_t * Query, // pointer to the query
-value_t * Subject, // pointer to the database
-value_t * Dist, // pointer to the distance
-index_t num_entries, // number of time series (m)
-index_t num_features) { // number of time ticks (n)
-// compute block and local thread identifier
-const index_t blid = blockIdx.x;
-const index_t thid = threadIdx.x;
-// calculate lane length and time series offset
-const index_t lane = num_features+1;
-const index_t base = blid*num_features;
-extern __shared__ value_t Cache[]; // define score matrix in shared memory
-value_t * penalty = Cache;
-for (index_t l=thid; l<lane; l+=blockDim.x) {
-// initialize score matrix with infinity
-penalty[0*lane+l] = INFINITY;
-penalty[1*lane+l] = INFINITY;
-penalty[2*lane+l] = INFINITY;
-}
-penalty[0*lane+0] = 0; // upper left corner set to zero
-__syncthreads(); // force all threads within a block to synchronize
 
-// Main computation in the wavefront DTW kernel utilizing shared memory
-for (index_t k=2; k<2*lane-1; k++) { // relax diagonals
-const index_t target_row = k%3; // compute cyclic lane indices
-const index_t before_row = target_row == 2 ? 0 : target_row+1;
-const index_t source_row = before_row == 2 ? 0 : before_row+1;
-for (index_t l=thid; l<lane; l+=blockDim.x) { // each thread updates one cell
-const index_t j = k-l; // compute traditional indices (j,j') from (k,l)
-const index_t J = l;
-const bool outside = k<=l || J==0 || j>=lane; // determine if indices are outside of score matrix
-// compute the residue Q_{j-1} - S^{(i)}_{j'-1}
-const value_t residue = outside ? INFINITY : Query[j-1] - Subject[base+J-1];
-const index_t bfr_off = before_row*lane; // concurrently relax the cells
-const index_t src_off = source_row*lane;
-const index_t trg_off = target_row*lane;
-penalty[trg_off+l] = outside ? INFINITY: residue*residue +
-min(penalty[bfr_off+l-1], min(penalty[src_off+l+0], penalty[src_off+l-1]));
-}
-__syncthreads(); // force all threads within a block to synchronize
-}
-const index_t last_diag = (2*num_features)%3;
-Dist[blid] = penalty[last_diag*lane + num_features];
+	value_t * Query, // pointer to the query
+	value_t * Subject, // pointer to the database
+	value_t * Dist, // pointer to the distance
+	index_t num_entries, // number of time series (m)
+	index_t num_features) { // number of time ticks (n)
+	
+	// compute block and local thread identifier
+	const index_t blid = blockIdx.x;
+	const index_t thid = threadIdx.x;
+	
+	// calculate lane length and time series offset
+	const index_t lane = num_features+1;
+	const index_t base = blid*num_features;
+	
+	extern __shared__ value_t Cache[]; // define score matrix in shared memory
+	value_t * penalty = Cache;
+	
+	for (index_t l=thid; l<lane; l+=blockDim.x) {
+	// initialize score matrix with infinity
+		penalty[0*lane+l] = INFINITY;
+		penalty[1*lane+l] = INFINITY;
+		penalty[2*lane+l] = INFINITY;
+	}
+	
+	penalty[0*lane+0] = 0; // upper left corner set to zero
+	__syncthreads(); // force all threads within a block to synchronize
+	
+	// Main computation in the wavefront DTW kernel utilizing shared memory
+	for (index_t k=2; k<2*lane-1; k++) { // relax diagonals
+		const index_t target_row = k%3; // compute cyclic lane indices
+		const index_t before_row = target_row == 2 ? 0 : target_row+1;
+		const index_t source_row = before_row == 2 ? 0 : before_row+1;
+		for (index_t l=thid; l<lane; l+=blockDim.x) { 
+			const index_t j = k-l; // compute traditional indices (j,j') from (k,l)
+			const index_t J = l;
+			const bool outside = k<=l || J==0 || j>=lane; 
+			
+			const value_t residue 
+				= outside ? INFINITY : Query[j-1] - Subject[base+J-1];
+			
+			const index_t bfr_off = before_row*lane; 
+			const index_t src_off = source_row*lane;
+			const index_t trg_off = target_row*lane;
+			
+			penalty[trg_off+l] 
+				= outside ? INFINITY: residue*residue +
+			min(penalty[bfr_off+l-1], min(penalty[src_off+l+0], penalty[src_off+l-1]));
+		}
+		__syncthreads(); // force all threads within a block to synchronize
+	}
+	
+	const index_t last_diag = (2*num_features)%3;
+	Dist[blid] = penalty[last_diag*lane + num_features];
 }
 ```
+
+
+---
+
+### 커널 구조 훑기
+
+```c++
+template <typename index_t, typename value_t> __global__
+void DTW_wavefront_kernel(
+    value_t * Query,
+    value_t * Subject,
+    value_t * Dist,
+    index_t num_entries,
+    index_t num_features) {
+
+    // block 하나가 time series 하나 담당
+    const index_t blid = blockIdx.x;
+    const index_t thid = threadIdx.x;
+
+    const index_t lane = num_features + 1;   // DP 테이블의 열 개수
+    const index_t base = blid * num_features; // 이 block이 맡은 시계열 시작 위치
+
+    extern __shared__ value_t Cache[]; 
+    value_t * penalty = Cache;              // shared memory에 DP 테이블 일부 저장
+```
+
+- **blockIdx.x (blid)** : 시계열 index (dataset index)
+    
+- **threadIdx.x (thid)** : 그 block 안에서 대각선 위의 “열 인덱스(l)”를 나눠 갖는 스레드
+    
+- 한 block이 **시계열 1개를 통째로 담당**하고, 그 block 안의 여러 thread가 같은 DP 테이블을 협력해서 채운다.
+
+여기까지는 동일하다. 
+
+---
+
+### 3줄짜리 롤링 버퍼 (shared memory)
+
+```c++
+for (index_t l = thid; l < lane; l += blockDim.x) {
+    penalty[0*lane + l] = INFINITY;
+    penalty[1*lane + l] = INFINITY;
+    penalty[2*lane + l] = INFINITY;
+}
+penalty[0*lane + 0] = 0;
+__syncthreads();
+```
+
+- `penalty` 크기는 `3 x lane` (3행짜리)로 사용한다.
+    
+- 이전 2줄 롤링에서는 “행 방향”으로 굴렸는데, 여기서는 **대각선(k)** 을 굴릴 때 필요한 **3개의 “가상 행”** 을 돌려 쓰는 구조라서 3줄이 필요하다.
+    
+- `for (l = thid; l < lane; l += blockDim.x)` 는  
+    “여러 thread가 열 방향을 나눠서 초기화한다”는 뜻.
+
+`__syncthreads()` 로 모든 thread가 초기화를 끝낼 때까지 block 단위로 동기화.
+
+---
+
+### 대각선(k)을 따라 wavefront 계산
+
+```c++
+for (index_t k = 2; k < 2*lane - 1; k++) { // 각 k가 하나의 대각선
+    const index_t target_row = k % 3;
+    const index_t before_row = target_row == 2 ? 0 : target_row + 1;
+    const index_t source_row = before_row == 2 ? 0 : before_row + 1;
+```
+
+- `k` : “대각선 번호” (i + j 느낌)
+    
+- 3줄만 돌려 쓰기 위해 `k % 3` 를 써서
+    
+    - `target_row` : 현재 대각선이 쓸 row
+        
+    - `source_row`, `before_row` : 참조해야 할 이전 대각선들이 쓴 row 
+
+즉, **대각선 단위로 전개하면서도 메모리는 3행만 유지**한다.
+
+---
+
+### 한 대각선에서 각 thread가 맡는 셀
+
+```c++
+    for (index_t l = thid; l < lane; l += blockDim.x) { // l이 J 역할
+        const index_t j = k - l; // j = k - J
+        const index_t J = l;
+
+        const bool outside = k <= l || J == 0 || j >= lane;
+```
+
+여기서 `(j, J)` 가 실제 DP 테이블 상의 `(row, col)` 에 대응하는 좌표다.
+
+- `k = j + J` → `j = k - J`
+    
+- 반복문에서는 `l`을 `J`로 쓰고 있음.
+
+
+`outside`는 말 그대로 “지금 계산하려는 (j, J)가 DP 테이블 범위 밖인가?” 체크.
+
+---
+
+### residue 및 점화식 계산
+
+```c++
+        const value_t residue = outside
+            ? INFINITY
+            : Query[j - 1] - Subject[base + J - 1];
+
+        const index_t bfr_off = before_row * lane;
+        const index_t src_off = source_row * lane;
+        const index_t trg_off = target_row * lane;
+
+        penalty[trg_off + l] = outside ? INFINITY
+            : residue * residue +
+              min(penalty[bfr_off + l - 1],
+                  min(penalty[src_off + l + 0],
+                      penalty[src_off + l - 1]));
+    }
+    __syncthreads();
+}
+```
+
+- `outside`면 그냥 `INF`로 채워 넣고 스킵.
+    
+- 아니면:
+    
+    - `Query[j-1]` : 현재 대각선에서 해당 row의 query 값
+        
+    - `Subject[base + J - 1]` : 이 block이 담당하는 시계열의 col 위치
+        
+- DP 점화식도 똑같이 **좌상단 / 위 / 왼쪽** 쓰는데,
+    
+    - `before_row` / `source_row` / `target_row` 를 이용해  
+        “이전 대각선들에 있던 값들을 3줄짜리 버퍼에서 참조”하는 방식으로 구현돼 있다.
+        
+- 각 대각선을 끝낼 때마다 `__syncthreads()`  
+    → 같은 block 안의 모든 thread가 이 대각선 계산을 마칠 때까지 기다린 다음,  
+    다음 대각선(k+1)으로 넘어감.
+    
+
+---
+
+### 마지막 결과 쓰기
+
+```c++
+const index_t last_diag = (2 * num_features) % 3;
+Dist[blid] = penalty[last_diag * lane + num_features];
+}
+```
+
+- 마지막 셀 `(n, n)` 이 있는 대각선 번호는 `k = 2 * num_features`.
+    
+- 이 때 그 대각선을 저장한 row index가 `last_diag = (2 * num_features) % 3`.
+
+- 결과는 `penalty[last_diag][num_features]` 에 들어 있으니 이를 `Dist[blid]` 로 기록.   
