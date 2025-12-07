@@ -826,9 +826,11 @@ void DTW_wavefront_kernel(
 		const index_t target_row = k%3; // compute cyclic lane indices
 		const index_t before_row = target_row == 2 ? 0 : target_row+1;
 		const index_t source_row = before_row == 2 ? 0 : before_row+1;
+		
 		for (index_t l=thid; l<lane; l+=blockDim.x) { 
-			const index_t j = k-l; // compute traditional indices (j,j') from (k,l)
-			const index_t J = l;
+			const index_t j = k-l; //row
+			const index_t J = l; //col
+			
 			const bool outside = k<=l || J==0 || j>=lane; 
 			
 			const value_t residue 
@@ -1004,3 +1006,151 @@ Dist[blid] = penalty[last_diag * lane + num_features];
 - 이 때 그 대각선을 저장한 row index가 `last_diag = (2 * num_features) % 3`.
 
 - 결과는 `penalty[last_diag][num_features]` 에 들어 있으니 이를 `Dist[blid]` 로 기록.   
+
+---
+## 결과 정리
+
+```c++
+uint64_t threads = 32;
+uint64_t sh_mem = 3 * (num_features + 1) * sizeof(float);
+DTW_wavefront_kernel
+    <<<num_entries, threads, sh_mem>>>(Data, Data, Dist, num_entries, num_features);
+```
+
+Pascal 기반 Titan X에서 이 wavefront 버전의 실행 시간은 약 **0.94초**로 측정되었다. 이전 shared-memory 버전(스레드별 2줄 penalty 사용, 약 0.63초)에 비해서는 다소 느려졌지만, 이 방식의 의미는 **순수한 속도보다 “구조적인 한계를 해결했다”는 데에 있다.**
+
+이전 shared 버전에서는 _thread당_ `2 × (n+1)` 크기의 penalty 버퍼를 shared memory에 올렸기 때문에, 
+
+block 당 shared memory 사용량이
+
+> `2 × (n+1) × blockDim.x × sizeof(float)`
+
+로 커질 수밖에 없었다. 반면 wavefront 버전에서는 **block 하나가 시계열 하나를 담당하고**, 그 안의 thread들이 **대각선(anti-diagonal)을 나눠 계산**하면서 shared memory에는 **block당 3줄짜리 롤링 버퍼만 유지**한다. 
+
+즉, shared memory 사용량이
+
+> `3 × (n+1) × sizeof(float)`
+
+로 줄어들어, 시계열 길이를 훨씬 더 길게 가져갈 수 있다. 실제로 이 방식은 **n ≈ 4095 길이까지 처리 가능**하다는 장점이 있다.
+
+물론, 기존 방식은 “thread 하나 = 데이터셋 하나”였고, 지금은 “block 하나 = 데이터셋 하나”로 바뀌었기 때문에 얼핏 보면 병렬성이 줄어든 것처럼 느껴질 수 있다. 하지만 실제 GPU 하드웨어에서는 **하나의 SM에 여러 block이 동시에 매핑될 수 있고**, SM 자체도 여러 개가 존재한다. 따라서 block 단위로 일을 나눠준다고 해서 곧바로 병렬성이 크게 손해 보는 구조는 아니다. 오히려 shared memory 사용량을 줄여서 **한 SM에 더 많은 block을 동시에 올릴 수 있게 되면**, 전체적인 occupancy가 유지되거나 오히려 좋아질 수도 있다.
+
+정리하자면, wavefront 버전은 이전 shared 버전에 비해 절대적인 런타임은 약간 느려졌지만, **shared memory 사용량을 thread 단위가 아닌 block 단위 3줄로 줄임으로써 “긴 시계열에도 적용 가능한 구조”로 확장했다는 점**에서 의미가 있는 최적화라고 볼 수 있다.
+
+---
+## Access Pattern for Query
+
+이 예제에서는 하나의 Query 시계열을 기준으로 여러 Subject 시계열과 거리를 계산하고 있다.  
+즉 Query는 **read-only 데이터이고 모든 thread/block이 동일한 방식으로 참조한다.**  
+또한 Query의 크기는 비교적 작기 때문에 이를 GPU의 **constant memory**에 배치해 사용하는 최적화가 가능하다.
+
+일반적인 global/local memory 접근은 L1/L2 캐시를 사용하지만, constant memory는 **전용 캐시를 갖고 있고 broadcast 특화를 가지고 있어** 동일 값을 여러 thread가 동시에 읽어야 하는 경우 훨씬 효율적이다.
+
+---
+
+## Constant Memory & Caching
+
+CUDA 아키텍처에서 각 SM은 **자신만의 L1 캐시를 가진다**. 하지만 SM끼리 L1을 공유하지 않기 때문에 한 kernel에서 발생한 읽기가 다른 SM 캐시에 영향을 줄 수 없다. 즉, kernel이 값을 수정하지 않는 read-only 데이터라면 별도의 constant 캐시를 활용하는 것이 최적이다.
+
+이를 위해 CUDA는 다음과 같은 constant 메모리 선언을 제공한다:
+
+```c++
+__constant__ float cQuery[12 * 1024];
+```
+
+그리고 host 측에서는 Query 데이터를 다음처럼 복사한다:
+
+```c++
+cudaMemcpyToSymbol(cQuery, Data, sizeof(value_t) * num_features);
+```
+
+즉, `__constant__`로 선언된 변수는 **전역적으로 존재하지만 kernel에서 수정되지 않는 데이터**이며, `cudaMemcpyToSymbol`은 “이 값을 GPU가 read-only 상수로 사용한다”는 사실을 디바이스에 알려 constant cache를 활용할 수 있게 만들어준다.
+
+결과적으로 constant memory는
+
+- read-only 특성
+    
+- 모든 thread가 동일한 값 set을 참조하는 패턴
+    
+- 데이터 크기가 비교적 작음
+
+이라는 조건을 만족하는 Query 같은 경우에 매우 효과적인 캐시 최적화 수단이 된다.
+
+---
+
+기존 wavefront DTW 커널에서는 `Query`를 함수 인자로 전달했고, 각 thread가 필요할 때 `Query[j-1]` 형태로 global memory에서 값을 읽었다. 그러나 Query 데이터는 read-only이고 모든 thread에서 동일하게 참조하므로, 이를 **constant memory에 저장해 두면 더 효율적인 접근이 가능하다.**
+
+
+```c
+//Wavefront DTW kernel utilizing constant memory
+template <typename index_t, typename value_t> __global__
+void DTW_wavefront_const_kernel(
+value_t * Subject, // pointer to the subject
+value_t * Dist, // pointer to the distance
+index_t num_entries, // number of time series (m)
+index_t num_features) { // number of time ticks (n)
+// basically the wavefront kernel with the exception
+// that we substitute the expression in Line 58
+// Query[j-1] with cQuery[j-1]
+}
+```
+
+
+
+이를 위해 Query는 kernel 인자로 넘기지 않고 다음과 같이 전역 constant 메모리 변수로 선언할 수 있다.
+
+```c++
+__constant__ float cQuery[12 * 1024];
+```
+
+host 측에서 데이터를 복사할 때는:
+
+```c++
+cudaMemcpyToSymbol(cQuery, Data, sizeof(value_t) * num_features);
+```
+
+이렇게 전달하면 된다.
+
+그 후 커널에서는 기존 코드의
+
+```c++
+Query[j-1]
+```
+
+대신
+
+```c++
+cQuery[j-1]
+```
+
+을 사용하면 되고, 커널 선언 자체에도 Query 인자를 제거할 수 있다:
+
+```c++
+template <typename index_t, typename value_t> __global__
+void DTW_wavefront_const_kernel(
+    value_t * Subject,
+    value_t * Dist,
+    index_t num_entries,
+    index_t num_features)
+{
+    // 기존 wavefront DTW와 동일하되
+    // Query[j-1] → cQuery[j-1] 로 변경하여 상수 캐시를 이용
+}
+```
+
+즉,
+
+> Query를 kernel 인자로 전달하지 않고,  
+> 전역 constant 메모리에 두어 kernel 전체가 공유하는 read-only 데이터처럼 사용할 수 있다.
+
+이 방식은 constant cache를 활용하게 되어, 모든 thread가 동일한 query 값을 broadcast 방식으로 빠르게 가져올 수 있다는 장점이 있다.
+
+---
+
+원하면 이어서👇
+
+🔥 왜 constant cache가 broadcast 최적화에 강한지  
+🔥 언제 constant memory가 오히려 안 좋고 shared memory가 더 빠른지  
+🔥 wavefront + constant memory 버전의 coalescing 특성 분석
+
+같은 것도 이어서 설명해줄 수 있어!
