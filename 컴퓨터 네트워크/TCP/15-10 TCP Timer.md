@@ -6,7 +6,7 @@
 ## Persistence Timer 
 
 교착 상태를 해결하기 위하여 사용
-영속타머가 만료되면, probe 세그먼트 전송
+영속타이머가 만료되면, probe 세그먼트 전송
 
 ## Keepalive Timer
 
@@ -22,7 +22,7 @@
 
 ---
 ## RTO timer
-### 2. SRTT (Smoothed RTT) 계산
+### Smoothed RTT 계산
 
 초기에는 Smoothed RTT 값이 없다.
 
@@ -46,7 +46,7 @@ RTTs = (1 - α) · RTTs + α · RTTm
 
 ---
 
-### 3. RTTVAR (RTT Deviation) 계산
+### RTT Deviation 계산
 
 초기에는 편차 값도 없다.
 
@@ -70,7 +70,7 @@ RTTd = (1 - β) · RTTd + β · | RTTs - RTTm |
 
 ---
 
-### 4. RTO 계산
+### RTO 계산
 
 초기 상태에서는 구현마다 지정된 **초기값**을 사용한다.
 
