@@ -83,7 +83,7 @@ ARP 메시지의 구조는 다음과 같다.
 
 ##### MAC 주소와 각 필드의 크기
 
-- **MAC 주소(MAC Address)** 는 **6바이트(48비트)** 로 구성되어 있다. 따라서 Destination MAC(6B) + Source MAC(6B) = 총 12바이트이다.
+- **MAC 주소** 는 **6바이트(48비트)** 로 구성되어 있다. 따라서 Destination MAC(6B) + Source MAC(6B) = 총 12바이트이다.
     
 - **Type 필드** 는 **2바이트**(16비트)이다.
     
