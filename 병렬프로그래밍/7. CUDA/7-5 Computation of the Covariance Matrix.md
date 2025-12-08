@@ -37,6 +37,7 @@ const auto j = blockDim.y*blockIdx.y + threadIdx.y;
 const auto J = blockDim.x*blockIdx.x + threadIdx.x;
 const auto j = blockDim.y*blockIdx.y + threadIdx.y;
 ```
+
 이 두 줄은 **2차원 블록과 2차원 스레드 구조**에서 각각의 스레드가 공분산 행렬의 `(j, J)` 위치를 담당하도록 하기 위해, 전역 인덱스를 계산하는 과정이다.
 
 먼저 `J`를 보면,
@@ -44,11 +45,10 @@ const auto j = blockDim.y*blockIdx.y + threadIdx.y;
 - `blockDim.x` → 블록 한 줄(가로) 안에 있는 스레드 개수
 - `blockIdx.x` → 현재 블록이 그리드 전체에서 몇 번째 가로 줄(block column)인지
 - `threadIdx.x` → 블록 내부에서 스레드가 가로로 몇 번째인지
-    
 
-따라서 **J는 “그리드 전체를 가로 방향으로 펼쳤을 때, 내가 몇 번째 스레드인지”에 해당한다.**
+따라서 **J는 “그리드 전체를 가로 방향으로 펼쳤을 때, 내가 몇 번째 쓰레드인지”에 해당한다.**
 
-즉, `blockDim.x * blockIdx.x` 로 “이 블록이 시작하는 전역 x-좌표”가 정해지고 거기에 `threadIdx.x` 를 더해서 블록 내부에서 자신의 위치를 반영하여 최종적으로 전체 좌표계에서 이 스레드의 **열 인덱스 J**가 된다.
+즉, `blockDim.x * blockIdx.x` 로 “이 블록이 시작하는 전역 x-좌표”가 정해지고 거기에 `threadIdx.x` 를 더해서 블록 내부에서 자신의 위치를 반영하여 최종적으로 전체 좌표계에서 이 쓰레드의 **열 인덱스 J**가 된다.
 
 `j` 역시 같은 원리다.
 
@@ -57,9 +57,6 @@ const auto j = blockDim.y*blockIdx.y + threadIdx.y;
 - `threadIdx.y` → 블록 내부에서 스레드의 세로 위치
 
 그래서 **j는 공분산 행렬에서 스레드가 담당하는 행(row)의 전역 인덱스가 된다.**
-
-좋아, 이제 공분산을 실제로 계산하는 CUDA 커널을 한 줄씩 뜯어서 보자.  
-코드는 그대로 두고, 그 의미만 자연스럽게 설명해볼게.
 
 ```c++
 // CUDA kernel performing naive covariance matrix computation
@@ -87,7 +84,7 @@ void covariance_kernel(
 ```
 
 이 커널은 **공분산 행렬 $C$의 한 원소 $C_{jJ}$ 를 하나의 스레드가 계산하는 구조다.  
-그래서 스레드마다 `(j, J)`라는 두 개의 인덱스를 갖게 되는데, 이걸 위해 **2차원 그리드/블록**을 사용한다.
+그래서 스레드마다 `(j, J)`라는 두 개의 인덱스를 갖게 되는데, 이걸 위해 **2차원 그리드/블록** 을 사용한다.
 
 - `J = blockDim.x * blockIdx.x + threadIdx.x`  
     → 공분산 행렬에서 **열 인덱스** 역할
@@ -145,7 +142,7 @@ covariance_kernel<<<blocks,threads>>>(Data,Cov,imgs,rows*cols);
 ---
 ## Sysmmetric Covariance Matrix Computation
 
-공분산은 결국 같은 행렬 DDD와 그 전치 행렬 DTD^TDT를 곱해서 $C = \frac{1}{m} D^T D$ 를 구하는 것이라서, 결과로 나오는 공분산 행렬 CCC는 항상 **대칭 행렬**이 된다.  
+공분산은 결국 같은 행렬 $D$와 그 전치 행렬 $D^T$를 곱해서 $C = \frac{1}{m} D^T D$ 를 구하는 것이라서, 결과로 나오는 공분산 행렬 $C$는 항상 **대칭 행렬**이 된다.  
 
 즉, $C_{jJ} = C_{Jj}$ 이고, 위·아래 삼각형에 **똑같은 값이 두 번씩** 들어가는 구조다.  
 그래서 굳이 모든 원소를 다 따로 계산하면 계산량을 절반은 그냥 버리는 셈이 된다.
@@ -157,6 +154,7 @@ covariance_kernel<<<blocks,threads>>>(Data,Cov,imgs,rows*cols);
 template <typename index_t, typename value_t> __global__
 void symmetric_covariance_kernel(
 value_t * Data, value_t * Cov, index_t num_entries, index_t num_features) {
+	
 	// indices as before
 	const auto J = blockDim.x*blockIdx.x + threadIdx.x;
 	const auto j = blockDim.y*blockIdx.y + threadIdx.y;
@@ -197,7 +195,7 @@ if (j < num_features && J <= j)
 
 라고 보면, `J <= j`인 위치는 **대각선과 그 아래 삼각형 영역**에 해당한다.  
 
-즉, 공분산 행렬의 **아랫부분(포함 대각)**만 직접 계산하고, 위쪽 삼각형은 아예 루프를 돌지 않으므로 연산을 건너뛰게 된다.
+즉, 공분산 행렬의 **아랫부분(포함 대각)** 만 직접 계산하고, 위쪽 삼각형은 아예 루프를 돌지 않으므로 연산을 건너뛰게 된다.
 
 연산 자체(누적하고 나눠주는 계산)는 나이브 버전과 완전히 동일하다. 다만 결과를 행렬에 쓸 때 이렇게 한 번에 처리한다.
 

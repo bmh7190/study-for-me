@@ -28,7 +28,7 @@ __shared__ value_t cache_x[chunk_size][chunk_size]; __shared__ value_t cache_y[c
 
 이 중복 접근을 줄이기 위해, CUDA에서는 **shared memory**를 사용하여  
 자주 재사용되는 열 데이터들을 **한 번만 global memory에서 읽어와**  
-스레드 블록 내부에서 함께 공유할 수 있다.
+쓰레드 블록 내부에서 함께 공유할 수 있다.
 
 그림처럼  j~j+7 범위에 해당하는 열 타일 / J~J+7 범위에 해당하는 열 타일을 각각 shared memory에 위한 공간 두 개를 만들어 두고:
 
@@ -58,19 +58,18 @@ shared memory의 용량은 제한적이기 때문에 전체 200,000행을 한 �
 
 ![](../../images/Pasted%20image%2020251204141853.png)
 
-그래서 CUDA에서는 더 능동적으로 메모리를 제어하기 위해  
-**shared memory**를 활용한다.
+그래서 CUDA에서는 더 능동적으로 메모리를 제어하기 위해 **shared memory**를 활용한다.
 
-shared memory는 같은 SM에 있는 스레드들(block 내 스레드들)이 함께 접근하고 재사용할 수 있는, 개발자 관리형의 고속 메모리다. 한 번 shared memory에 데이터를 올려두면, 블록 내 모든 스레드가 추가적인 global 접근 없이 같은 데이터를 읽고 사용할 수 있다.
+shared memory는 같은 SM에 있는 쓰레드들(block 내 쓰레드들)이 함께 접근하고 재사용할 수 있는, 개발자 관리형의 고속 메모리다. 한 번 shared memory에 데이터를 올려두면, 블록 내 모든 스레드가 추가적인 global 접근 없이 같은 데이터를 읽고 사용할 수 있다.
 
 이 과정은 다음과 같이 진행된다.
 
 1. 먼저 global memory에서 일정 크기의 **chunk(타일)** 만큼 데이터를 읽어온다.  
     이 chunk 크기는 shared memory 크기에 맞게 잘라낸 것이다.
     
-2. 읽어온 데이터를 shared memory에 복사한 뒤 블록 내의 모든 스레드는 이 shared memory에서 데이터를 가져와 연산을 수행한다.
+2. 읽어온 데이터를 shared memory에 복사한 뒤 블록 내의 모든 쓰레드는 이 shared memory에서 데이터를 가져와 연산을 수행한다.
     
-3. 모든 스레드가 해당 chunk에 대한 계산을 마치면, 다음 chunk를 global memory에서 shared memory로 불러오고 다시 연산을 반복한다.
+3. 모든 쓰레드가 해당 chunk에 대한 계산을 마치면, 다음 chunk를 global memory에서 shared memory로 불러오고 다시 연산을 반복한다.
 
 **global memory 접근은 chunk 단위로 딱 한 번씩**, **연산 중 쓰레드들은 shared memory만 접근**,
 **캐시를 예측하거나 기다릴 필요 없이 재사용 필터를 직접 관리**할 수 있다.
