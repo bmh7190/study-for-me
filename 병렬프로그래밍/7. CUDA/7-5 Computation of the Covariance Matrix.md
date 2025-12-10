@@ -22,6 +22,7 @@ index_t num_features) { // number of pixels (n)
 // determine row and column indices of Cov (j and j' <-> J)
 const auto J = blockDim.x*blockIdx.x + threadIdx.x;
 const auto j = blockDim.y*blockIdx.y + threadIdx.y;
+
 	if (j < num_features && J < num_features) { // check range of indices
 		value_t accum = 0; // store scalar product in a register
 		
@@ -42,9 +43,9 @@ const auto j = blockDim.y*blockIdx.y + threadIdx.y;
 
 먼저 `J`를 보면,
 
-- `blockDim.x` → 블록 한 줄(가로) 안에 있는 스레드 개수
+- `blockDim.x` → 블록 한 줄(가로) 안에 있는 쓰레드 개수
 - `blockIdx.x` → 현재 블록이 그리드 전체에서 몇 번째 가로 줄(block column)인지
-- `threadIdx.x` → 블록 내부에서 스레드가 가로로 몇 번째인지
+- `threadIdx.x` → 블록 내부에서 쓰레드가  가로로 몇 번째인지
 
 따라서 **J는 “그리드 전체를 가로 방향으로 펼쳤을 때, 내가 몇 번째 쓰레드인지”에 해당한다.**
 
@@ -83,8 +84,8 @@ void covariance_kernel(
 }
 ```
 
-이 커널은 **공분산 행렬 $C$의 한 원소 $C_{jJ}$ 를 하나의 스레드가 계산하는 구조다.  
-그래서 스레드마다 `(j, J)`라는 두 개의 인덱스를 갖게 되는데, 이걸 위해 **2차원 그리드/블록** 을 사용한다.
+이 커널은 **공분산 행렬 $C$의 한 원소 $C_{jJ}$ 를 하나의 쓰레드** 가  계산하는 구조다.  
+그래서 스레드마다 `(j, J)`라는 두 개의 인덱스를 갖게 되는데, 이걸 위해 **2차원 그리드/블록**을 사용한다.
 
 - `J = blockDim.x * blockIdx.x + threadIdx.x`  
     → 공분산 행렬에서 **열 인덱스** 역할

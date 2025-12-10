@@ -9,10 +9,11 @@ template <typename index_t, typename value_t> __global__
 void correction_kernel(value_t * Data, value_t * Mean, index_t num_entries, index_t num_features) {
 	const auto thid = blockDim.x*blockIdx.x + threadIdx.x;
 		if (thid < num_features) {
-		const value_t value = Mean[thid];
-	for (index_t entry = 0; entry < num_entries; entry++)
-		Data[entry*num_features + thid] -= value;
-	}
+			const value_t value = Mean[thid];
+			
+			for (index_t entry = 0; entry < num_entries; entry++)
+				Data[entry*num_features + thid] -= value;
+		}
 }
 ```
 
@@ -73,12 +74,13 @@ correction_kernel_ortho<<<SDIV(images, 32),32>>>(Data, Mean, imgs, rows*cols)
 위의 두 방식이 메모리 접근을 어떻게 하고 있는지 살펴보자
 
 먼저 **thread 하나가 픽셀 하나를 담당하는 경우**를 생각해보면, 커널 내부의 루프는 다음과 같다.
+
 ```c++
 for (index_t entry = 0; entry < num_entries; entry++)
 	Data[entry*num_features + thid] -= value;
 ```
 
-여기서 `thid`는 픽셀 인덱스를 의미하고, `entry`는 이미지 인덱스를 의미한다. 따라서 이 코드는 “여러 이미지에 대해, 항상 같은 위치의 픽셀을 하나의 스레드가 순회하면서 평균 값을 빼주는” 형태가 된다.
+여기서 `thid`는 픽셀 인덱스를 의미하고, `entry`는 이미지 인덱스를 의미한다. 따라서 이 코드는 “여러 이미지에 대해, 항상 같은 위치의 픽셀을 하나의 쓰레드가 순회하면서 평균 값을 빼주는” 형태가 된다.
 
 ![](../../images/Pasted%20image%2020251203222328.png)
 
@@ -103,7 +105,7 @@ for (index_t feat = 0; feat < num_features; feat++)
 ```
 ![](../../images/Pasted%20image%2020251203223012.png)
 
-이 방식에서는 쓰레드 하나가 이미지 전체의 픽셀을 순회하며 평균값을 빼주기 때문에, 스레드 단독으로만 보면 데이터가 **연속적인 메모리 구간**을 차례대로 읽게 된다. 즉, 한 스레드 입장에서 보면 이 방식이 훨씬 효율적으로 보일 수 있다.
+이 방식에서는 쓰레드 하나가 이미지 전체의 픽셀을 순회하며 평균값을 빼주기 때문에,  단독으로만 보면 데이터가 **연속적인 메모리 구간**을 차례대로 읽게 된다. 즉, 한 쓰레드 입장에서 보면 이 방식이 훨씬 효율적으로 보일 수 있다.
 
 하지만 실제 GPU에서는 쓰레드가 개별적으로 실행되는 것이 아니라 **warp(32개 스레드) 단위로 동시에 실행**된다. 따라서 쓰레드 하나만 보고 판단하면 GPU의 실제 메모리 접근 패턴을 잘못 이해하게 된다.
 
