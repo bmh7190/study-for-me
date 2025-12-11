@@ -27,9 +27,7 @@ __shared__ value_t cache_y[chunk_size][chunk_size];
 
 이 블록의 64개 원소는 각각 $D$의 **j~j+7 번째 픽셀 열**, $D$의 **J~J+7 번째 픽셀 열**이 만들어내는 모든 조합 $8×8 = 64개$의 내적이다. 즉, 이 작은 블록을 계산하는 동안 **같은 열 데이터가 여러 번 반복해서 사용된다**는 점이 자연스럽게 드러난다.
 
-이 중복 접근을 줄이기 위해, CUDA에서는 **shared memory**를 사용하여  
-자주 재사용되는 열 데이터들을 **한 번만 global memory에서 읽어와**  
-쓰레드 블록 내부에서 함께 공유할 수 있다.
+이 중복 접근을 줄이기 위해, CUDA에서는 **shared memory**를 사용하여 자주 재사용되는 열 데이터들을 **한 번만 global memory에서 읽어와** 쓰레드 블록 내부에서 함께 공유할 수 있다.
 
 그림처럼  j~j+7 범위에 해당하는 열 타일 / J~J+7 범위에 해당하는 열 타일을 각각 shared memory에 위한 공간 두 개를 만들어 두고:
 
@@ -394,8 +392,8 @@ $$\text{CGMA} = \frac{8\ \text{FLOPs}}{8 \times 4\text{byte}} = 0.25 \text{ flop
 - 각 블록의 global memory load 수: **2 × 64 = 128loads = 512 bytes**
     
 - 각 블록이 수행하는 연산 수: 
-	- **스레드당 연산 = 8 FLOPs**
-	- 전체 스레드 64개 = **64 × 8 = 512 FLOPs**
+	- **쓰레드당  연산 = 8 FLOPs**
+	- 전체 쓰레드 64개 = **64 × 8 = 512 FLOPs**
     
 $$\text{CGMA} = \frac{512\ \text{FLOPs}}{128 \times 4\text{byte}} = 1 \text{ flop/byte}$$
 
