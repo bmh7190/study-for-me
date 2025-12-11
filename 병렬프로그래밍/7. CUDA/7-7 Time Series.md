@@ -690,7 +690,7 @@ void DTW_shared_kernel(value_t * Query, value_t * Subject, value_t * Dist,
 
     const index_t thid = blockDim.x * blockIdx.x + threadIdx.x; 
     const index_t lane = num_features + 1;      // DP 테이블의 열 개수
-    const index_t base = thid * num_features;   // 이 스레드가 담당하는 시계열 시작 위치
+    const index_t base = thid * num_features;   // 이 쓰레드가 담당하는 시계열 시작 위치
     
     extern __shared__ value_t Cache[];          // 동적 shared memory 선언
     
