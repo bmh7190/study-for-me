@@ -4,8 +4,6 @@
 
 ## 목차
 
-- [Database](<Database.md>)
-  - 데이터베이스 과목의 전체 목차와 주제 흐름을 정리한 인덱스입니다.
 - [Intro](<Intro.md>)
   - 데이터베이스와 DBMS의 기본 개념, SQL과 Vector DB 같은 입문 주제를 간단히 다룹니다.
 - [1. Relational Model](<1. Relational Model.md>)

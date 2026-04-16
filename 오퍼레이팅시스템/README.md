@@ -4,8 +4,6 @@
 
 ## 목차
 
-- [Operating System](<Operating System.md>)
-  - 운영체제 과목의 전체 목차와 학습 흐름을 정리한 인덱스입니다.
 - [1. Introduction to OS](<1. Introduction to OS.md>)
   - 운영체제의 역할, 목적, 역사, 시스템 자원 관리 개념을 소개합니다.
 - [2. OS Structure](<2. OS Structure.md>)

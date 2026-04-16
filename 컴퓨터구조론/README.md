@@ -4,8 +4,6 @@
 
 ## 목차
 
-- [Computer Architecture](<Computer Architecture.md>)
-  - 컴퓨터구조론 과목의 전체 목차와 주제 흐름을 정리한 인덱스입니다.
 - [1. Computer Abstractions and Technology](<1. Computer Abstractions and Technology.md>)
   - 컴퓨터 시스템의 계층적 추상화, 성능 지표, 응답 시간과 처리량의 차이를 다룹니다.
 - [2. Instructions_Language of the Computer](<2. Instructions_Language of the Computer.md>)
