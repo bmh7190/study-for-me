@@ -18,7 +18,7 @@ MNIST 데이터셋은 손글씨 숫자(0~9) 이미지를 모은 대표적인 머
 
 이제 65,000장 중 임의의 두 이미지를 골랐을 때, “얼마나 같은가/다른가”를 **거리(distance)** 로 정의하자.
 
-### Seqeuntial 한 방법
+### Sequential 한 방법
 
 ```c++
 template <typename index_t, typename value_t>

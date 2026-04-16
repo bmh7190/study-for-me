@@ -8,7 +8,7 @@
 
 - [2-2. The OSI Model](<7 Layers/2-2 The OSI Model.md>)
   - OSI 7계층의 역할과 hop-to-hop, source-to-destination 관점의 데이터 전달 방식을 정리합니다.
-- [2-3. TCP IP Proocol suite](<7 Layers/2-3 TCP IP Proocol suite.md>)
+- [2-3. TCP IP Protocol suite](<7 Layers/2-3 TCP IP Protocol suite.md>)
   - TCP/IP protocol suite의 계층별 통신 방식과 encapsulation 흐름을 다룹니다.
 - [2-4. Addressing](<7 Layers/2-4 Addressing.md>)
   - logical address, port number 등 계층별 주소 체계와 라우터를 지날 때 주소가 어떻게 쓰이는지 정리합니다.
@@ -22,11 +22,11 @@
 
 ### Delivery and Forwarding
 
-- [6-1. Delivery](<Delivery Forwading/6-1 Delivery.md>)
+- [6-1. Delivery](<Delivery Forwarding/6-1 Delivery.md>)
   - direct delivery와 indirect delivery를 통해 패킷이 목적지까지 전달되는 기본 흐름을 다룹니다.
-- [6-2. Forwarding](<Delivery Forwading/6-2 Forwarding.md>)
+- [6-2. Forwarding](<Delivery Forwarding/6-2 Forwarding.md>)
   - routing table을 기반으로 next hop을 결정하고 packet을 forwarding하는 과정을 정리합니다.
-- [6-3. MPLS](<Delivery Forwading/6-3 MPLS.md>)
+- [6-3. MPLS](<Delivery Forwarding/6-3 MPLS.md>)
   - MPLS의 label 기반 forwarding 개념과 기존 IP forwarding과의 차이를 다룹니다.
 
 ### IP
@@ -75,19 +75,19 @@
   - TCP segment header의 port, sequence number, ACK number, control field, checksum을 다룹니다.
 - [15-4. A TCP Connection](<TCP/15-4 A TCP Connection.md>)
   - three-way handshake, data transfer, connection termination, half-close 흐름을 정리합니다.
-- [15-5. State Transtion Diagram](<TCP/15-5 State Transtion Diagram.md>)
+- [15-5. State Transition Diagram](<TCP/15-5 State Transition Diagram.md>)
   - TCP connection이 SYN, ESTABLISHED, FIN 계열 상태를 거쳐 변하는 과정을 다룹니다.
 - [15-6. Windows In TCP](<TCP/15-6 Windows In TCP.md>)
   - TCP window의 의미와 sliding window를 통해 송수신량을 제어하는 방식을 정리합니다.
 - [15-7. Flow Control](<TCP/15-7 Flow Control.md>)
   - receiver window를 이용해 수신 측 buffer overflow를 막는 TCP flow control을 다룹니다.
-- [15-7-1. Sily Window Syndrome](<TCP/15-7-1 Sily Window Syndrome.md>)
+- [15-7-1. Silly Window Syndrome](<TCP/15-7-1 Silly Window Syndrome.md>)
   - 작은 window update나 작은 segment 전송으로 효율이 떨어지는 silly window syndrome을 정리합니다.
 - [15-7-2. SYN Flooding](<TCP/15-7-2 SYN Flooding.md>)
   - TCP handshake 특성을 악용한 SYN flooding 공격과 그 배경을 다룹니다.
 - [15-8. Error Control](<TCP/15-8 Error Control.md>)
   - ACK 규칙, fast retransmission, ACK 유실 등 TCP의 오류 제어와 재전송 동작을 정리합니다.
-- [15-9. Congestion Controll](<TCP/15-9 Congestion Controll.md>)
+- [15-9. Congestion Control](<TCP/15-9 Congestion Control.md>)
   - slow start, congestion avoidance, fairness, UDP와 TCP의 혼잡 제어 차이를 다룹니다.
 - [15-10. TCP Timer](<TCP/15-10 TCP Timer.md>)
   - persistence timer, keepalive timer, RTO 계산, Karn's algorithm 등 TCP timer 동작을 정리합니다.

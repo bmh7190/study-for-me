@@ -6,14 +6,14 @@
 
 ### Theoretical Background
 
-- [1. Theroretical Background](<2. Theroretical Background/1. Theroretical Background.md>)
+- [1. Theoretical Background](<2. Theoretical Background/1. Theoretical Background.md>)
   - 병렬화가 필요한 이유와 성능 분석에 필요한 기본 이론을 정리합니다.
 
 ### C++ 11 Multithreading
 
 - [4-1. C++11 Multithreading](<4. C++ 11 Multithreading/4-1 C++11 Multithreading.md>)
   - C++11 thread API와 thread 생성, join, detach 등 기본적인 멀티스레딩 사용법을 다룹니다.
-- [4-2. Matrix-Vector Multiplicaton](<4. C++ 11 Multithreading/4-2 Matrix-Vector Multiplicaton.md>)
+- [4-2. Matrix-Vector Multiplication](<4. C++ 11 Multithreading/4-2 Matrix-Vector Multiplication.md>)
   - 행렬-벡터 곱을 예제로 block, cyclic, block-cyclic 분할 방식의 병렬화를 정리합니다.
 - [4-3. The MNIST Dataset](<4. C++ 11 Multithreading/4-3 The MNIST Dataset.md>)
   - MNIST 데이터셋을 이용해 all-pairs distance matrix와 동적 작업 분배 방식을 다룹니다.

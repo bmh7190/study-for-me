@@ -18,7 +18,7 @@
   - entity, relationship, attribute, cardinality를 통해 데이터베이스 설계의 개념적 모델링을 다룹니다.
 - [5. Relational DB Design](<5. Relational DB Design.md>)
   - functional dependency, lossless decomposition, BCNF, 3NF 등 관계형 스키마 정규화를 정리합니다.
-- [6. Sotrage and File Structure](<6. Sotrage and File Structure.md>)
+- [6. Storage and File Structure](<6. Storage and File Structure.md>)
   - storage hierarchy, file organization, record 구조, buffer manager와 replacement policy를 다룹니다.
 - [7. Indexing](<7. Indexing.md>)
   - index의 필요성, ordered index, B+ tree, hashing 등 검색 성능을 높이는 자료구조를 정리합니다.
