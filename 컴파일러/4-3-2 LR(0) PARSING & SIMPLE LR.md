@@ -118,7 +118,7 @@ SLR 파서를 이해하기 위해서는 **LR(0) Item**이라는 새로운 개념
 # Constructing SLR Parsing Tables
 SLR 파싱 테이블을 구성하기 위해서는 먼저 문법을 **확장(augment)** 해야 한다. 이는 새로운 시작 기호 $S'$를 추가하여 $S' \rightarrow S$와 같은 생산 규칙을 만드는 과정으로, 파싱의 종료 조건을 명확히 하기 위함이다. 그 다음, **Closure**와 **Goto 연산**을 이용하여 LR(0) 아이템들의 집합 $C = \{ I_0, I_1, \dots, I_n \}$을 생성하고, 이를 통해 **LR(0) DFA**를 구성한다. 이때 초기 상태 $I_0$는 아이템 $[S' \rightarrow \bullet S]$를 포함하는 집합이 된다.
 
-이후 생성된 각 상태에 대해 **Action**과 **Goto 테이블**을 채워 나간다. 어떤 상태 $I_i$에 아이템 $[A \rightarrow \alpha \bullet a \beta]$가 존재하고, `goto(I_i, a) = I_j`일 경우, 입력 기호 `a`에 대해 **shift j**를 Action 테이블에 기록한다. 또한, 상태 IiI_iIi에 아이템 $[A \rightarrow \alpha \bullet]$가 포함되어 있다면, 비단말 $A$의 **FOLLOW(A)** 에 속하는 모든 터미널 $a$에 대해 **reduce A→αA** 를 Action 테이블에 기록한다. 단, $A = S'$인 경우는 제외한다 
+이후 생성된 각 상태에 대해 **Action**과 **Goto 테이블**을 채워 나간다. 어떤 상태 $I_i$에 아이템 $[A \rightarrow \alpha \bullet a \beta]$가 존재하고, `goto(I_i, a) = I_j`일 경우, 입력 기호 `a`에 대해 **shift j**를 Action 테이블에 기록한다. 또한, 상태 $I_i$에 아이템 $[A \rightarrow \alpha \bullet]$가 포함되어 있다면, 비단말 $A$의 **FOLLOW(A)** 에 속하는 모든 터미널 $a$에 대해 **reduce A→αA** 를 Action 테이블에 기록한다. 단, $A = S'$인 경우는 제외한다 
 
 만약 상태 $I_i$에 아이템 $[S' \rightarrow S \bullet]$가 포함되어 있다면, 입력 기호 `$`에 대해 **accept**를 Action 테이블에 기록한다. 그리고 `goto(I_i, A) = I_j`인 경우에는 비단말 $A$에 대해 **goto[i, A] = j**를 Goto 테이블에 기록한다. 이러한 과정을 더 이상 추가할 항목이 없을 때까지 반복하면 SLR 파싱 테이블이 완성된다.
 
