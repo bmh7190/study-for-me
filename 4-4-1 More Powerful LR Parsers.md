@@ -70,3 +70,98 @@ LR(1) item `[A → α • β, a]`는 현재까지 α를 읽은 상태이며, 앞
 
 ---
 # The Closure Operation for LR(1) Items
+LR(1) closure 연산은 단순히 nonterminal을 확장하는 것이 아니라, **lookahead까지 함께 계산하여 확장하는 과정**이다.
+
+기본적으로 어떤 item이 다음과 같은 형태일 때:
+
+```
+[A → α • B β, a]
+```
+
+이는 현재 α까지 읽었고, 앞으로 B를 처리한 뒤 β가 나오고, 그 이후에는 a가 올 것으로 예상된다는 의미이다.
+
+이때 점 뒤에 nonterminal B가 있으므로, B의 모든 production을 확장해야 한다. 
+즉, B → γ 형태의 모든 규칙에 대해 새로운 item을 추가하게 된다.
+
+하지만 LR(1)에서는 단순히 `[B → • γ]`를 추가하는 것이 아니라, **lookahead를 함께 계산해서 붙여야 한다.** 이 lookahead는 다음과 같이 계산된다:
+
+```
+b ∈ FIRST(βa)
+```
+
+즉, B 뒤에 오는 β와 기존 lookahead a를 이어붙인 문자열 βa에서, **가장 앞에 올 수 있는 terminal들을 구한 것**이 새로운 lookahead가 된다.
+
+따라서 closure에 추가되는 item은 다음과 같은 형태가 된다:
+
+```
+[B → • γ, b]
+```
+
+이 과정을 더 이상 새로운 item이 추가되지 않을 때까지 반복한다.
+
+---
+# The Goto Operation for LR(1) Items
+LR(1)에서 `goto(I, X)`는 상태 III에서 기호 XXX를 읽었을 때 이동하는 새로운 상태를 만드는 연산이다.
+
+어떤 상태 $I$에 다음과 같은 item이 있다고 하자:
+
+```
+[A → α • X β, a]
+```
+
+이는 현재 α까지 읽었고, 다음에 X를 읽을 수 있는 상태라는 의미이다.
+
+이때 $X$를 실제로 하나 읽으면, 점이 오른쪽으로 이동하게 된다:
+
+```
+[A → α X • β, a]
+```
+이렇게 점을 이동시킨 item들을 모은 뒤, 그 결과에 대해 다시 closure를 적용한 것이 바로 `goto(I, X)`가 된다.
+
+즉, 전체 과정은 다음과 같다:
+
+```
+goto(I, X) = closure({ [A → α X • β, a] })
+```
+
+---
+# Constructing the set of LR(1) Items of a Grammar
+LR(1) 파서는 결국 **DFA(상태 그래프)** 를 만드는 과정이고, 이 DFA의 각 상태가 바로 **LR(1) item 집합**이다.
+
+#### Step 1. 문법 확장 (Augment)
+
+```
+S' → S
+```
+
+- 시작 상태를 명확하게 만들기 위한 것  
+- accept 조건 만들려고 필요
+
+#### Step 2. 시작 상태 만들기
+
+```
+I₀ = closure({ [S' → • S, $] })
+```
+
+- 아직 아무것도 안 읽음
+- 마지막 입력은 `$` (끝)
+- 이게 DFA 시작 상태
+
+#### Step 3. 모든 이동 경우 만들기
+
+각 상태 $I$에 대해 가능한 모든 기호 $X$ (terminal + nonterminal)에 대해 계산한다.
+
+```
+goto(I, X)
+```
+
+이때 goto(I,X) 이게 값이 있다면 새로운 상태로 추가한다.
+
+#### Step 4. 반복
+새로운 상태가 계속 생기니까 더 이상 상태가 안 생길 때까지 반복한다.
+
+---
+# Example Grammar and LR(1) Items
+
+![](../images/Pasted%20image%2020260417151654.png)
+![](../images/Pasted%20image%2020260417151710.png)
