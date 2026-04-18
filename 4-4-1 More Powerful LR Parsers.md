@@ -165,3 +165,58 @@ goto(I, X)
 
 ![](../images/Pasted%20image%2020260417151654.png)
 ![](../images/Pasted%20image%2020260417151710.png)
+
+---
+# LALR(1) Grammars
+LR(1) 의 경우에는 production의 진행위치, lookahead로 다음에 올거 까지 같이 들고 있다. 그래서 겉보기에는 같은 상황이어도 loockahdead가 다르면 서로 다른 stae로 분리된다. 그러다 보니 conflict 를 잘 피할 수느 있지만 관리해야 하는 state가 많아지게 된다.
+
+그래서 이를 해결하기 위해서 조금 state를 더 적게 관리할수 없을까?
+
+LALR(1) 의 경우에는 LR(1) state 중에서 비슷한거 끼리 묶는다. 그니까 production rule도 같고 진행 위치 dot 도 같은데, lookahead 가 다른 경우를 하나로 치환하는 것이ㅏㄷ.
+
+예를 들어
+
+- $[L \to * \bullet R, =]$
+- $[L \to * \bullet R, \$]$
+
+이 둘은 dot 위치와 production이 같고 lookahead만 다르다.
+이런 것들을 한 state로 묶어서
+
+- $[L \to * \bullet R, =/\$]$
+
+처럼 합쳐버린다.  그래서 **state 수가 크게 줄어든다.**
+
+---
+# Constructing LALR(1) Parsing Tables
+
+사실 LALR(1) parsing table을 만드는 과정은 비교적 단순하다. 먼저 canonical LR(1) item set을 모두 생성한 뒤, 각 상태에서 **production과 dot 위치가 동일한 item들(즉, 같은 core를 가지는 상태들)**을 하나로 묶는다. 그리고 이때 서로 다른 상태에 존재하던 **lookahead 집합은 합집합으로 병합**한다.
+
+![](../images/Pasted%20image%2020260418152608.png)
+
+----
+# Example LALR(1) Grammar
+
+다음과 같은 produciton rule을 가지는 예시가 있다.
+
+- S → L = R | R
+- L → * R | id
+- R → L
+
+
+![](../images/Pasted%20image%2020260418152922.png)
+
+이 예시에서 네모 칸을 보면 원래는 저 상태에서 2개의 item 이 있었는데, 이걸 하나로 합친 것을 볼 수 있다.
+
+![](../images/Pasted%20image%2020260418153135.png)
+
+
+---
+# LR SLR LALR Summary
+
+![](../images/Pasted%20image%2020260418153328.png)
+
+LL 파싱 테이블과 LR 파싱 테이블의 차이는 “무엇을 기준으로 다음 행동을 결정하느냐”에 있다. LL은 비단말과 다음 입력 토큰을 기준으로 어떤 production을 사용할지를 바로 결정하는 방식이다. 그래서 테이블의 형태도 “Nonterminal × Terminal → Production”이 되고, 이를 채우기 위해 FIRST와 FOLLOW를 사용한다. 즉, 문법 자체의 성질을 분석해서 테이블을 구성하는 구조다.
+
+반면 LR은 상태 기반이다. 여기서 상태는 LR item들의 집합으로 이루어진 DFA의 한 노드라고 보면 된다. LR 테이블은 두 부분으로 나뉘는데, ACTION과 GOTO다. ACTION은 “현재 상태와 입력 토큰”을 보고 shift할지, reduce할지, accept할지를 결정하고, GOTO는 reduce 이후 비단말로 이동할 다음 상태를 정한다. 그래서 구조는 “State × Terminal → action”, “State × Nonterminal → next state”가 된다. LL이 문법 규칙 선택 문제라면, LR은 상태 전이 기반의 자동자 실행 문제라고 보면 정확하다.
+
+마지막으로 문법의 성질도 테이블로 판단한다. LL(1) 문법이라는 것은 LL 테이블을 만들었을 때 어떤 셀에도 두 개 이상의 production이 들어가지 않는 경우를 말한다. 마찬가지로 SLR, LALR(1), LR(1)도 각각 해당 방식으로 테이블을 만들었을 때 conflict가 없으면 그 문법에 속한다고 한다. 여기서 conflict라는 것은 같은 입력 상황에서 두 가지 이상의 행동을 선택해야 하는 경우를 의미한다.
