@@ -21,7 +21,7 @@ Bottom-up parsing에서는 reduction이라는 개념이 핵심인데, 이는 현
 ![](../images/Pasted%20image%2020260416162009.png)
 
 
-여기서 **핸들(handle)**이라는 개념이 등장한다. 핸들은 **오른쪽 문장형(right-sentential form)**에서 **생산 규칙의 오른쪽 부분(RHS)**과 일치하는 부분 문자열로, 이를 해당 생산 규칙의 **왼쪽 부분(LHS)**으로 축약(reduction)하면 **rightmost derivation의 이전 단계로 되돌릴 수 있는 문자열**을 의미한다.
+여기서 **핸들(handle)** 이라는 개념이 등장한다. 핸들은 **오른쪽 문장형(right-sentential form)** 에서 **생산 규칙의 오른쪽 부분(RHS)** 과 일치하는 부분 문자열로, 이를 해당 생산 규칙의 **왼쪽 부분(LHS)** 으로 축약(reduction)하면 **rightmost derivation의 이전 단계로 되돌릴 수 있는 문자열**을 의미한다.
 
 즉, 그림에서 볼 수 있듯이 전체 문자열 중에서 **그래머의 생산 규칙을 적용하여 하나의 non terminal 기호로 치환할 수 있는 부분 문자열**을 핸들이라고 한다. 이러한 핸들을 순차적으로 축약해 나가면, 입력 문자열을 시작 기호로 환원할 수 있으며, 이는 **bottom-up parsing(하향식 파싱)**의 핵심 개념이다.
 
