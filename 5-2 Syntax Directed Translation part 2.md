@@ -43,3 +43,7 @@ synsthesized attribute는 맨 뒤에 그리고 inheried attribute 는 필요한 
 
 ---
 # Implemeting L-attributed SDD's
+
+투 패스 컴파일러를 쓴다
+중간 단계 파일을 dump 그걸 다시 읽어서 백엔드로 보낸다
+조금 더 낫게 할 수 있는 방법은 중간중간에 계속 dump 하자
