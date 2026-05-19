@@ -59,3 +59,23 @@ gen(t3 := t1 + t2)
 # Example a = b + - c
 
 ![](../images/Pasted%20image%2020260519134835.png)
+
+---
+# Example While
+
+![](../images/Pasted%20image%2020260519141850.png)
+
+`while E do S1`은 단순 계산식보다 구조가 있다. 반복문의 시작 위치와 끝 위치가 필요하기 때문에 `S.begin`, `S.after` 같은 label 속성을 사용한다.
+
+흐름은 이렇게 정리할 수 있다.
+
+```
+begin:
+    E.code
+    if E.addr = 0 goto after
+    S1.code
+    goto begin
+after:
+```
+
+즉, 조건식을 먼저 계산하고, 조건이 거짓이면 반복문 뒤로 빠져나간다. 참이면 본문을 실행하고 다시 시작 label로 돌아간다.
