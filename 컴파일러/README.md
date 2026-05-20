@@ -4,7 +4,7 @@
 
 ## 목차
 
-- [Compiler Construction](<../Compiler Construction.md>)
+-[Compiler Construction](<Compiler Construction.md>))
   - syntax와 grammar의 구성 요소인 terminal, non-terminal, production, start symbol을 정리합니다.
 - [4-3-1. Bottom-up Parsing](<4-3-1 Bottom-up Parsing.md>)
   - handle, shift, reduce를 중심으로 bottom-up parsing과 shift-reduce conflict를 다룹니다.
