@@ -77,16 +77,12 @@ While there are fringe vertices:
 
 ---
 ## 시간 복잡도
-Prim 알고리즘은 minimum spanning tree를 만들기 위해 vertex를 하나씩 tree에 추가한다.
-
-그래프에 vertex가 `n`개 있다면, 최종적으로 모든 vertex가 tree에 포함되어야 하므로 vertex는 총 `n`번 추가된다.
+Prim 알고리즘은 minimum spanning tree를 만들기 위해 vertex를 하나씩 tree에 추가한다. 그래프에 vertex가 `n`개 있다면, 최종적으로 모든 vertex가 tree에 포함되어야 하므로 vertex는 총 `n`번 추가된다.
 
 처음에는 임의의 시작 vertex 하나를 tree에 넣고, 이후에는 매 단계마다 fringe vertex 중에서 현재 tree와 가장 작은 가중치로 연결되는 vertex를 하나 선택한다.
 
 ### vertex 하나를 추가할 때 하는 일
-어떤 vertex `v`가 새롭게 tree에 추가되었다고 하자.
-
-그러면 `v`와 연결된 다른 vertex들을 확인해야 한다. 왜냐하면 `v`가 tree에 들어오면서, 바깥 vertex로 가는 더 싼 edge가 새롭게 발견될 수 있기 때문이다.
+어떤 vertex `v`가 새롭게 tree에 추가되었다고 하자. 그러면 `v`와 연결된 다른 vertex들을 확인해야 한다. 왜냐하면 `v`가 tree에 들어오면서, 바깥 vertex로 가는 더 싼 edge가 새롭게 발견될 수 있기 때문이다.
 
 예를 들어 어떤 vertex `E`가 원래는 가중치 10짜리 edge로 tree와 연결될 수 있었다고 하자. 그런데 새로 추가된 vertex `v`를 통해 `E`로 가는 edge의 가중치가 4라면, `E`의 최소 연결 비용을 10에서 4로 갱신해야 한다.
 
@@ -101,28 +97,17 @@ Prim 알고리즘은 minimum spanning tree를 만들기 위해 vertex를 하나�
 
 그래서 vertex 하나를 추가할 때 드는 시간은 크게 두 부분이다.
 
-```text
 1. 최소 가중치를 가진 fringe vertex 찾기: O(n)
 2. 새로 추가된 vertex v의 인접 edge 갱신하기: O(|N(v)|)
-```
 
 따라서 한 번의 반복에서 드는 시간은 $O(n + |N(v)|)$이다.
 
 ### 전체 시간 복잡도
-이 과정을 모든 vertex에 대해 반복한다.
-
-먼저, 최소 fringe vertex를 찾는 작업은 매번 `O(n)`이고, vertex를 총 `n`번 추가하므로
-
-$$  
-O(n) \times n = O(n^2)  
-$$
-
-이다.
+이 과정을 모든 vertex에 대해 반복한다. 먼저, 최소 fringe vertex를 찾는 작업은 매번 `O(n)`이고, vertex를 총 `n`번 추가하므로 $O(n) \times n = O(n^2)$ 이다.
 
 다음으로, 각 vertex가 tree에 추가될 때마다 그 vertex에서 나가는 edge들을 확인한다.
 
 모든 vertex에 대해 `|N(v)|`를 다 더하면 전체 edge 수와 관련된다.
-
 무방향 그래프라면 각 edge가 양쪽 vertex의 인접 리스트에 한 번씩 들어가므로
 
 $$  
@@ -131,35 +116,138 @@ $$
 
 이다.
 
-그래서 edge 갱신 전체 비용은
+그래서 edge 갱신 전체 비용은 $O(m)$으로 볼 수 있다. 정확히는 무방향 그래프에서 `O(2m)`이지만, 상수는 생략하므로 `O(m)`이다. 따라서 전체 시간 복잡도는 $O(n^2 + m)$ 이다.
 
-$$  
-O(m)  
-$$
+---
+# Kruskal’s algorithm
+Kruskal 알고리즘도 **minimum spanning tree**를 구하는 greedy algorithm이다. Prim 알고리즘이 하나의 tree를 점점 확장해 나가는 방식이라면, Kruskal 알고리즘은 **가중치가 작은 edge부터 하나씩 선택하면서 여러 개의 작은 tree들을 점점 합쳐 나가는 방식**이다.
 
-으로 볼 수 있다. 정확히는 무방향 그래프에서 `O(2m)`이지만, 상수는 생략하므로 `O(m)`이다.
+처음에는 모든 vertex가 각각 독립된 tree라고 생각한다. 즉, vertex가 `n`개라면 처음에는 tree도 `n`개 있는 상태이다.
 
-따라서 전체 시간 복잡도는 $O(n^2 + m)$ 이다.
+그 다음 그래프의 모든 edge를 가중치가 작은 순서대로 확인한다. 이때 어떤 edge를 선택했을 때 cycle이 생기지 않으면 그 edge를 MST에 추가한다. 반대로 그 edge를 선택했을 때 cycle이 생기면 추가하지 않고 넘어간다.
+
+#### 왜 cycle을 피해야 할까?
+Spanning tree는 모든 vertex를 연결해야 하지만, tree이기 때문에 cycle이 있으면 안 된다.
+
+예를 들어 이미 `A`, `B`, `C`가 하나의 tree로 연결되어 있다고 하자. 이 상태에서 `A-C` edge를 추가하면 `A-B-C-A`처럼 cycle이 생길 수 있다.
+
+이런 edge는 추가해도 새로운 vertex를 연결하는 데 도움이 되지 않는다. 이미 같은 tree 안에 있는 vertex끼리를 다시 연결하는 것이기 때문이다. 따라서 Kruskal 알고리즘은 edge를 추가하기 전에, 해당 edge의 양 끝 vertex가 **이미 같은 tree에 속해 있는지** 확인한다.
+
+#### Disjoint Set을 사용하는 이유
+Kruskal 알고리즘에서는 여러 개의 tree가 만들어지고, edge를 선택할 때마다 두 tree가 하나로 합쳐질 수 있다. 이때 각각의 tree를 하나의 집합으로 생각할 수 있다.
+
+예를 들어 처음에는 다음과 같이 모든 vertex가 따로 있다.
+
+```
+{A}, {B}, {C}, {D}, {E}
+```
+
+만약 edge `A-B`를 선택하면 `A`와 `B`가 하나의 tree가 된다.
+
+```
+{A, B}, {C}, {D}, {E}
+```
+
+그 다음 edge `C-D`를 선택하면 다음과 같다.
+
+```
+{A, B}, {C, D}, {E}
+```
+
+이후 edge `B-C`를 선택하면 `{A, B}`와 `{C, D}`가 합쳐진다.
+
+```
+{A, B, C, D}, {E}
+```
+
+이처럼 Kruskal 알고리즘에서는 계속해서 **서로 다른 집합을 합치는 과정**이 발생한다.  
+그래서 Disjoint Set 자료구조를 사용한다.
+
+#### find와 union
+Disjoint Set에서는 주로 `find`와 `union` 연산을 사용한다.
+
+```
+find(u)
+```
+
+`find(u)`는 vertex `u`가 현재 어떤 집합에 속해 있는지 알려준다.  
+즉, `u`가 어떤 tree에 포함되어 있는지 확인하는 연산이다.
+
+```
+union(u, v)
+```
+
+`union(u, v)`는 `u`가 속한 집합과 `v`가 속한 집합을 하나로 합치는 연산이다.  
+즉, 서로 다른 두 tree를 하나의 tree로 합치는 과정이라고 보면 된다.
+
+#### Edge를 선택할 때 판단 기준
+어떤 edge `(u, v)`를 확인한다고 하자. 먼저 `find(u)`와 `find(v)`를 실행한다.
+
+만약 `find(u) = find(v)` 라면 `u`와 `v`는 이미 같은 tree에 속해 있다는 뜻이다. 이 edge를 추가하면 cycle이 생기므로 선택하지 않는다.
+
+반대로 `find(u) ≠ find(v)` 라면 `u`와 `v`는 서로 다른 tree에 속해 있다는 뜻이다. 이 edge를 추가해도 cycle이 생기지 않으므로 MST에 추가한다. 그리고 두 tree를 하나로 합치기 위해 `union(u, v)` 를 수행한다.
+
+---
+## 의사 코드
+
+```c
+KruskalMST(G, n)
+
+R = E
+F = ∅
+
+while R is not empty
+    Remove the lightest edge vw from R
+
+    if vw does not make a cycle in F
+        Add vw to F
+
+return F
+```
+
+> Kruskal 알고리즘은 모든 edge를 가중치가 작은 순서대로 확인하면서, cycle을 만들지 않는 edge만 선택하는 알고리즘이다. 처음에는 선택된 edge가 없으므로 각 vertex가 하나의 독립된 tree이고, 전체 구조는 forest로 볼 수 있다. 가장 작은 edge를 하나씩 확인하면서, 그 edge의 양 끝 vertex가 서로 다른 tree에 속해 있으면 edge를 추가하고 두 tree를 합친다. 반대로 이미 같은 tree에 속해 있다면 그 edge를 추가했을 때 cycle이 생기므로 선택하지 않는다. 이 과정을 반복하면 최종적으로 모든 vertex를 연결하면서 전체 edge weight의 합이 최소인 minimum spanning tree를 얻을 수 있다.
+
+---
+## 시간 복잡도
+Kruskal 알고리즘은 모든 edge를 가중치가 작은 순서대로 확인하면서 MST를 만든다. 따라서 가장 먼저 해야 하는 일은 edge들을 weight 기준으로 정렬하는 것이다.
+
+그래프의 edge 개수를 `m`이라고 하면, edge를 정렬하는 데 걸리는 시간은 다음과 같다.
+
+$$O(m \log m)$$
+
+정렬이 끝난 뒤에는 edge를 작은 것부터 하나씩 확인한다. 각 edge `uv`에 대해 `u`와 `v`가 이미 같은 tree에 속해 있는지 확인해야 한다.
+
+이때 사용하는 자료구조가 **Union-Find**, 즉 **Disjoint Set**이다.
+
+각 edge마다 수행하는 작업은 다음과 같다.
+
+```
+find(u)
+find(v)
+if find(u) != find(v)
+    union(u, v)
+```
+
+`find(u)`와 `find(v)`를 통해 두 vertex가 같은 set에 있는지 확인한다. 만약 같은 set에 있다면 이미 같은 tree 안에 있다는 뜻이므로, 그 edge를 추가하면 cycle이 생긴다. 따라서 선택하지 않는다.
+
+반대로 서로 다른 set에 있다면, 그 edge를 추가해도 cycle이 생기지 않는다. 그래서 edge를 MST에 넣고, `union(u, v)`를 통해 두 tree를 하나로 합친다.
+
+Union-Find를 효율적으로 구현하면 `find`와 `union`은 거의 상수 시간에 가깝게 처리된다. 그래서 전체 edge를 한 번씩 확인하는 비용은 대략 $O(m)$ 정도로 볼 수 있다.
+
+따라서 Kruskal 알고리즘의 전체 시간 복잡도는 $O(m \log m) + O(m)$ 이고, 더 큰 항만 남기면 $O(m \log m)$ 이 된다. 여기서 `m`은 edge의 개수이다.
 
 ---
 
-정리하면 이렇게 쓰면 돼.
+Prim 알고리즘과 비교하면 그래프가 sparse한지 dense한지에 따라 차이가 생긴다.
 
-> Prim 알고리즘은 MST를 만들기 위해 vertex를 총 `n`번 tree에 추가한다. 배열 기반 구현에서는 매 단계마다 fringe vertex 중 최소 가중치로 연결되는 vertex를 찾기 위해 최대 `n`개의 vertex를 확인하므로 `O(n)` 시간이 걸린다. 또한 새로 tree에 추가된 vertex `v`와 인접한 edge들을 확인하면서 fringe 정보를 갱신해야 하므로 `O(|N(v)|)` 시간이 추가된다. 따라서 vertex 하나를 추가할 때 `O(n + |N(v)|)` 시간이 걸리고, 이를 전체 vertex에 대해 반복하면 `O(n^2 + m)` 시간이 된다.
+Prim 알고리즘을 배열 기반으로 구현하면 시간 복잡도는 보통 $O(n^2 + m)$ 이고, dense graph에서는 보통 $O(n^2)$ 로 본다.
 
-조금 더 짧게 말하면,
+반면 Kruskal 알고리즘은 $O(m \log m)$ 이다. 만약 그래프가 sparse graph라면, 즉 edge 수 `m`이 vertex 수 `n`에 비해 훨씬 적다면 Kruskal이 유리할 수 있다.
 
-```text
-최소 후보 선택 비용: n번 × O(n) = O(n²)
-인접 edge 갱신 비용: 전체 edge를 한 번씩 확인 = O(m)
+예를 들어 $m = o(n^2)$ 이면 edge가 가능한 최대 개수인 `n^2`보다 훨씬 적다는 뜻이다. 이 경우 `m log m`이 `n^2`보다 작아질 수 있으므로, Kruskal 알고리즘이 Prim 알고리즘보다 빠를 수 있다.
 
-따라서 Prim 알고리즘의 시간 복잡도 = O(n² + m)
-```
+반대로 dense graph라면 edge 수가 거의 최대에 가깝다 $m = \Theta(n^2)$ 이면 Kruskal의 시간 복잡도는 $O(m \log m) = O(n^2 \log n^2)$ 이다.
 
-보통 단순 배열 기반 Prim 알고리즘에서는 `m ≤ n²`이므로
+그런데 $\log n^2 = 2 \log n$ 이므로, $O(n^2 \log n^2) = O(n^2 \log n)$ 이 된다.
 
-$$  
-O(n^2 + m) = O(n^2)  
-$$
-
-으로 정리하기도 한다.
+이때 배열 기반 Prim 알고리즘은 $O(n^2)$ 이므로, dense graph에서는 Kruskal이 Prim보다 대략 `log n`만큼 더 느릴 수 있다.
