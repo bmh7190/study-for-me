@@ -146,33 +146,10 @@ Dijkstra 알고리즘은 시작 vertex `s`에서 출발해서, 다른 vertex들�
 
 다음으로 인접 edge를 확인하는 작업을 전체 vertex에 대해 모두 더하면, 결국 그래프의 모든 edge를 한 번씩 확인하는 것과 같다. 따라서 전체 edge 갱신 비용은 $O(m)$ 이다.
 
-결국 배열 기반 Dijkstra 알고리즘의 전체 시간 복잡도는
-
-$O(n^2 + m)$
-
-이다.
-
-보통 단순 그래프에서는 `m ≤ n^2`이므로, 이를 간단히
-
-$O(n^2)$
-
-로 정리하기도 한다.
+결국 배열 기반 Dijkstra 알고리즘의 전체 시간 복잡도는 $O(n^2 + m)$ 이다. 보통 단순 그래프에서는 `m ≤ n^2`이므로, 이를 간단히 $O(n^2)$ 로 정리하기도 한다.
 
 ---
-# Heap 기반 구현
+### Heap 기반 구현
+Dijkstra 알고리즘을 heap, 즉 priority queue를 이용해 구현하면 최소 거리 vertex를 더 빠르게 찾을 수 있다. 배열 기반에서는 매번 최소 거리 vertex를 찾기 위해 `O(n)` 시간이 걸렸지만, heap을 사용하면 최소 거리 vertex를 꺼내는 작업을 $O(\log n)$ 시간에 할 수 있다.
 
-Dijkstra 알고리즘을 heap, 즉 priority queue를 이용해 구현하면 최소 거리 vertex를 더 빠르게 찾을 수 있다.
-
-배열 기반에서는 매번 최소 거리 vertex를 찾기 위해 `O(n)` 시간이 걸렸지만, heap을 사용하면 최소 거리 vertex를 꺼내는 작업을
-
-$O(\log n)$
-
-시간에 할 수 있다.
-
-또한 edge를 확인하면서 거리 값이 더 작아지는 경우 priority queue의 값을 갱신해야 하므로, edge마다 최대 `O(log n)` 비용이 발생한다고 볼 수 있다.
-
-따라서 heap 기반 Dijkstra 알고리즘의 시간 복잡도는 보통
-
-$O(m \log n)$
-
-으로 정리한다.
+또한 edge를 확인하면서 거리 값이 더 작아지는 경우 priority queue의 값을 갱신해야 하므로, edge마다 최대 `O(log n)` 비용이 발생한다고 볼 수 있다. 따라서 heap 기반 Dijkstra 알고리즘의 시간 복잡도는 보통 $O(m \log n)$ 으로 정리한다.
