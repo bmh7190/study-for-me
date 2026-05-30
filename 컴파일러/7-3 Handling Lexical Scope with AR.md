@@ -27,6 +27,17 @@ i := 0;i := i + 1;
 
 처음에는 `i`의 storage에 `0`이 저장되고, 그 다음에는 그 값을 읽어서 `1`을 더한 뒤 다시 같은 storage에 저장한다. 이 관계를 **state**라고 보면 된다. State는 “현재 storage 안에 어떤 값이 들어 있는가”를 나타낸다.
 
+- **compile time:** `i`라는 이름이 어느 scope의 변수이고, AR 안의 어느 offset에 있는지 결정한다.  
+- **run time:** 실제 AR이 만들어지고, 그 안의 `i` 저장공간에 값이 들어가고 바뀐다.
+
+---
+# Static and Dynamic Notions of Bindings
+Static notion은 **코드에 작성된 구조**이고, dynamic notion은 **실행 중 실제로 만들어지는 것**이다.
+
+![](../images/Pasted%20image%2020260530153152.png)
+
+Procedure 정의는 하나지만 activation은 호출마다 생기고, 이름 선언은 하나지만 binding은 실행 중 activation마다 생길 수 있다. Scope는 코드상 보이는 범위이고, lifetime은 실행 중 저장공간이 살아 있는 시간이다.
+ 
 ---
 # Scope Rules
 같은 이름의 변수가 여러 번 등장할 때, 그 이름이 정확히 무엇을 가리키는지 어떻게 확인할까?
