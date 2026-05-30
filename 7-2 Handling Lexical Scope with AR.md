@@ -1,6 +1,33 @@
 # Mapping Names to Values
+프로그램에서 변수 이름이 실제 값으로 바로 연결되는 게 아니라, 중간에 **storage**가 있다.
 
+![](../images/Pasted%20image%2020260530152817.png)
 
+먼저 compile time에는 `name → storage` 관계를 정한다.  
+예를 들어 `i`라는 변수가 나오면, 컴파일러는 symbol table을 보고 이 `i`가 어느 scope에 선언된 변수인지 확인한다. 그리고 그 변수의 lexical depth와 offset을 결정한다.
+
+즉 컴파일 시점에는 이런 정보가 정해진다.
+
+```
+i는 depth 몇의 변수인가?i는 해당 AR 안에서 offset이 얼마인가?
+```
+
+이 관계를 **environment**라고 보면 된다.  
+Environment는 “이 이름이 어떤 저장공간을 의미하는가”를 정하는 역할이다.
+
+그 다음 run time에는 실제 저장공간에 값이 들어간다.  
+
+예를 들어
+
+```
+i := 0;i := i + 1;
+```
+
+이 실행되면, 컴파일 시점에 정해둔 `i`의 storage를 찾아가서 값을 읽고 쓴다.
+
+처음에는 `i`의 storage에 `0`이 저장되고, 그 다음에는 그 값을 읽어서 `1`을 더한 뒤 다시 같은 storage에 저장한다. 이 관계를 **state**라고 보면 된다. State는 “현재 storage 안에 어떤 값이 들어 있는가”를 나타낸다.
+
+---
 # Scope Rules
 같은 이름의 변수가 여러 번 등장할 때, 그 이름이 정확히 무엇을 가리키는지 어떻게 확인할까?
 
@@ -382,4 +409,132 @@ partition AR
 
 ---
 # Display
-access link가 여러 개로 연결되고, 많아질텐데 점프를 하기 위해서 three address code 관점에서 중간 단계 코드가 너무 많아지낟. 성능 높이기 위해서 displayf라는 것을 사용한다.
+Access link 방식에서는 non-local variable을 찾을 때, 현재 AR에서 access link를 여러 번 따라가야 한다.
+
+예를 들어 `partition`이 depth 3이고, `sort`의 변수 `a`가 depth 1에 있다면,
+
+```text
+partition AR
+→ quicksort AR
+→ sort AR
+```
+
+이렇게 access link를 2번 따라가야 한다.
+
+만약 depth 차이가 더 크면 access link를 3번, 4번, 그 이상 따라가야 한다. 그러면 변수 하나를 접근할 때마다 중간 AR을 계속 거쳐야 해서 시간이 오래 걸릴 수 있다.
+
+그래서 성능을 높이기 위해 **display**를 사용한다.
+
+Display는 쉽게 말하면 **각 lexical depth에 해당하는 최신 activation record의 주소를 배열로 저장해두는 구조**다.
+
+```text
+d[1] → 현재 실행 중인 depth 1의 AR
+d[2] → 현재 실행 중인 depth 2의 AR
+d[3] → 현재 실행 중인 depth 3의 AR
+```
+
+이렇게 해두면 depth 1에 있는 변수 `a`를 찾기 위해 access link를 여러 번 따라갈 필요가 없다.
+
+예를 들어 `partition`에서 `sort`의 변수 `a`를 접근해야 하면, 원래는 access link를 2번 따라가야 하지만 display를 쓰면 바로
+
+```text
+d[1] → sort AR
+```
+
+로 접근하면 된다.
+
+그리고 `quicksort`의 변수 `v`를 접근해야 하면
+
+```text
+d[2] → quicksort AR
+```
+
+을 보면 된다.
+
+즉 display의 장점은 **non-local variable 접근을 여러 번 link chasing하는 방식에서, 한 번의 배열 접근으로 줄이는 것**이다.
+
+## Display를 유지하는 방법
+
+procedure가 새로 호출되면, 해당 procedure의 depth를 `i`라고 하자.  
+그러면 새 AR이 만들어질 때 다음 작업을 한다.
+
+먼저 기존 `d[i]` 값을 새 AR 안에 저장해 둔다.  
+왜냐하면 나중에 이 procedure가 끝나면 이전 display 상태로 복구해야 하기 때문이다.
+
+그 다음 `d[i]`가 새 AR을 가리키도록 바꾼다.
+
+```text
+old d[i] 저장
+d[i] = new AR
+```
+
+그리고 procedure 실행이 끝나기 직전에는, 새 AR 안에 저장해두었던 기존 `d[i]` 값을 다시 복구한다.
+
+```text
+d[i] = saved old d[i]
+```
+
+이렇게 해야 재귀 호출이나 같은 depth의 procedure 호출이 끝났을 때, display가 이전 상태로 정상적으로 돌아간다.
+
+---
+## Example
+사실 이해가 안되기 때문에 예시를 통해 알아보자
+
+![](../images/Pasted%20image%2020260530150451.png)
+
+`sort`는 lexical depth가 1이다. 그래서 display 배열의 `d[1]`이 `sort`의 activation record를 가리키고 있다.
+
+`sort` 안에는 변수 `a`, `x`가 있으니까, 만약 어떤 안쪽 procedure에서 `sort`의 변수 `a`나 `x`를 접근해야 한다면 access link를 따라 올라갈 필요 없이 바로 `d[1]`을 보면 된다.
+
+![](../images/Pasted%20image%2020260530150459.png)
+
+`sort`가 먼저 실행되었기 때문에 `d[1]`은 `sort`의 AR을 가리킨다.  
+그다음 `quicksort(1,9)`가 호출되면서 새로운 AR이 stack에 쌓이고, `quicksort`는 depth 2이므로 `d[2]`가 이 새로운 `quicksort(1,9)` AR을 가리키게 된다.
+
+![](../images/Pasted%20image%2020260530150437.png)
+
+`quicksort(1,3)`도 depth 2에 해당하므로 display의 `d[2]`를 갱신해야 한다. 하지만 기존 `d[2]`는 `quicksort(1,9)`를 가리키고 있었기 때문에, 이 값을 새로 생성된 `quicksort(1,3)` AR 안에 `saved d[2]`로 저장해 둔다. 그 후 `d[2]`가 `quicksort(1,3)` AR을 가리키도록 변경한다. 나중에 `quicksort(1,3)`이 종료되면 저장해 둔 `saved d[2]`를 이용해 `d[2]`를 다시 `quicksort(1,9)`로 복구한다.
+
+![](../images/Pasted%20image%2020260530150513.png)
+
+`partition`은 `quicksort` 안에 선언된 함수이므로 depth가 3이다. 따라서 새로 `partition`의 AR이 만들어지면 display의 `d[3]`이 이 `partition` AR을 가리키도록 설정된다.
+
+![](../images/Pasted%20image%2020260530150528.png)
+
+`exchange`가 실행되면, `exchange`는 lexical depth 2에 해당하므로 display의 `d[2]`가 `exchange`의 AR을 가리키도록 갱신된다. 기존에 `d[2]`는 `quicksort(1,3)`의 AR을 가리키고 있었기 때문에, 이 값을 새로 생성된 `exchange` AR 안에 `saved d[2]`로 저장해 둔다. 이후 `exchange`가 종료되면 저장해둔 `saved d[2]`를 이용해 `d[2]`를 다시 `quicksort(1,3)`으로 복구한다.
+
+![](../images/Pasted%20image%2020260530150542.png)
+
+#### 만약에 exchange 안에서 sort 함수의 변수를 사용하고자 한다면?
+`exchange` 안에서 `sort`의 변수를 사용하는 상황이라면, 컴파일 시점에 먼저 symbol table을 통해 해당 변수가 어느 scope에 선언된 변수인지 확인한다. 예를 들어 `exchange` 안에서 `a`나 `x`를 찾으면, `exchange`의 symbol table에는 해당 이름이 없기 때문에 바깥 scope인 `sort`의 symbol table로 올라가게 된다. 이 과정에서 컴파일러는 `a`와 `x`가 `sort`에 선언된 변수라는 것을 알 수 있다.
+
+그리고 실행 시점에는 display를 이용해 해당 scope의 AR로 바로 접근한다. `sort`는 depth 1에 해당하므로 display의 `d[1]`이 `sort`의 AR을 가리키고 있다. 따라서 `exchange` 안에서 `a`나 `x`를 사용할 때는 `d[1]`을 통해 `sort`의 AR로 이동한 뒤, symbol table에 저장된 offset을 이용해 실제 변수 위치에 접근한다.
+
+즉, **symbol table은 컴파일 시점에 변수가 어느 scope에 속하는지 결정하고, display는 실행 시점에 그 scope의 AR을 빠르게 찾아가기 위해 사용된다.**
+
+![](../images/Pasted%20image%2020260530150549.png)
+
+`exchange` 함수의 실행이 끝나면, `exchange`가 시작될 때 자신의 AR 안에 저장해두었던 기존 `d[2]` 값을 다시 display에 복구한다. 이 기존 값은 `quicksort(1,3)`의 AR을 가리키고 있었으므로, `d[2]`는 다시 `quicksort(1,3)`의 AR을 가리키게 된다.
+
+이런 식으로 각 함수가 실행될 때는 자신의 lexical depth에 해당하는 display 값을 새 AR로 갱신한다. 이때 기존에 display에 저장되어 있던 값은 나중에 복구할 수 있도록 새 AR 안에 임시로 저장해 둔다.
+
+그리고 함수 실행이 끝나면, 자신이 저장해두었던 기존 display 값을 다시 원래 위치에 복구한다. 즉 `exchange`가 종료되면 `exchange`가 저장해두었던 기존 `d[2]` 값을 다시 `d[2]`에 넣어 display를 이전 상태로 되돌린다.
+
+정리하면, **display는 함수가 호출될 때 최신 AR을 가리키도록 갱신되고, 함수가 종료될 때 저장해둔 이전 값을 복구하면서 원래 상태로 돌아간다.**
+
+---
+#### display를 사용한다면 access link는 어떻게 되는거지?
+변수 접근 시에는 display가 있으면 access link를 타고 올라가지 않고, display 배열을 통해 바로 해당 depth의 AR로 간다. 대신 호출/종료 시 display를 저장·갱신·복구하는 비용이 생긴다.
+
+#### display는 하나인가?
+display는 “현재 실행 중인 각 lexical depth의 대표 AR”을 저장하는 하나의 배열이다.
+그래서 같은 depth의 함수가 여러 개 실행될 수 있어도 display에는 그 depth의 **가장 최근 활성화된 AR 하나만** 들어간다. 대신 이전 값은 새 AR 안에 저장해두고, 함수 종료 시 다시 돌려놓는다.
+
+#### 모든 함수가 하나의 display 배열만 봐도 괜찮은건가?
+**어떤 함수가 실행될 때, 그 함수가 접근할 수 있는 바깥 scope들은 현재 call stack 안에 살아 있어야 한다.**   
+
+그리고 display는 각 depth마다 그 “현재 살아 있는 올바른 AR”을 가리키도록 유지된다.
+
+그래서 하나의 display 배열만으로 충분하다.
+
+단, display 방식은 같은 depth에 여러 AR이 동시에 있을 때 모든 AR을 display에 다 넣지 않는다. display에는 최신 AR 하나만 들어간다. 대신 이전 AR 주소는 새 AR 안에 저장해두고, 함수가 끝나면 복구한다.
