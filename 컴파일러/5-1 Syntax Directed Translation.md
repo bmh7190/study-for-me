@@ -328,3 +328,205 @@ A.a → Y.y
 
 ---
 # Evaluation Order
+Dependency graph에 cycle이 없다면, 이 그래프는 DAG가 되고 **topological sort**를 통해 attribute 계산 순서를 정할 수 있다. 
+
+Topological sort는 방향 그래프의 노드들을 나열할 때, `mi → mj`라는 edge가 있으면 항상 `mi`가 `mj`보다 먼저 오도록 정렬하는 것이다.
+
+즉, dependency graph에서 들어오는 edge가 없는 attribute부터 계산하고, 그 attribute에서 나가는 edge를 제거한 뒤 다시 계산 가능한 attribute를 찾는 방식으로 순서를 만든다. 들어오는 edge가 없다는 것은 그 attribute를 계산하기 위해 먼저 필요한 값이 없다는 뜻이므로 바로 계산할 수 있다.
+
+따라서 dependency graph의 topological sort 결과는 semantic rule을 실행할 수 있는 올바른 evaluation order가 된다. 예를 들어 `1, 3, 5, 2, 4, 6, 7, 8, 9`와 같은 순서는 가능한 evaluation order 중 하나가 될 수 있다.
+
+---
+# Example Annotated Parse Tree
+
+![](../images/Pasted%20image%2020260601011639.png)
+
+먼저 `T → real` 때문에 `T.type = 'real'` 이 만들어진다.
+
+그다음 `D → T L`에서 `L.in = T.type` 이므로 오른쪽 `L`은 다음 값을 받는다.
+
+```
+L.in = 'real'
+```
+
+이제 이 `L.in` 값이 변수 목록 안으로 계속 전달된다.
+
+
+그림은 결국 이런 선언을 처리하는 과정이다.
+
+```
+real id1, id2, id3
+```
+
+컴파일러 입장에서는 `real`을 보고 타입을 만든 다음, symbol table에 각각의 identifier를 다음처럼 등록해야 한다.
+
+```
+id1 : real
+id2 : real
+id3 : real
+```
+
+그래서 semantic action은 대략 이런 느낌이 된다.
+
+```
+addtype(id1.entry, real)
+addtype(id2.entry, real)
+addtype(id3.entry, real)
+```
+
+## 왜 inherited attribute인가
+
+`id1`, `id2`, `id3`는 자기 자신만 봐서는 타입을 모른다.
+얘네만 보면 그냥 identifier일 뿐이고, 타입이 `int`인지 `real`인지 알 수 없다.
+
+타입 정보는 왼쪽에 있는 `T.type = 'real'`에서 온다.
+
+그래서 그 정보를 `L.in`이라는 inherited attribute로 아래쪽 `L`들에게 전달하는 것이다.
+
+---
+# Cycle free evaluation order
+
+앞에서 dependency graph를 만들고, cycle이 없으면 topological sort로 evaluation order를 정할 수 있다고 했다. 그런데 문제는 매번 모든 parse tree에 대해 dependency graph를 만들고, cycle이 있는지 검사하는 것이 현실적으로 번거롭다는 점이다.
+
+그래서 실제 컴파일러 설계에서는 **처음부터 cycle이 생기지 않는 형태의 SDD**를 사용하려고 한다.
+
+그 대표적인 두 종류가 S-attributed SDD, L-attributed SDD 이다.
+
+## S-attributed SDD란?
+S-attributed SDD는 **모든 attribute가 synthesized attribute인 SDD**이다.
+즉, 모든 semantic rule이 오른쪽 자식들의 값을 이용해서 왼쪽 부모의 attribute를 계산하는 형태다.
+
+예를 들면 여기서 `E.val`은 자식 `E1.val`, `T.val`로부터 계산된다.
+
+```
+E → E1 + T
+E.val = E1.val + T.val
+```
+
+#### 왜 cycle-free가 보장되는가
+S-attributed SDD에서는 값이 항상 아래에서 위로만 올라간다. 
+즉, 어떤 부모 attribute를 계산하려면 자식 attribute들이 먼저 필요하고, 자식 attribute들은 다시 그 아래 자식들로부터 계산된다.
+
+이 구조에서는 값이 다시 아래로 내려가거나 옆으로 돌아가는 흐름이 없다. 그래서 dependency graph에 cycle이 생기지 않는다. 쉽게 말하면 `leaf → 내부 노드 → root` 방향으로만 계산이 진행된다.
+
+#### 계산 순서
+S-attributed SDD는 **bottom-up order**로 계산하면 된다. parse tree 기준으로는 **postorder traversal**과 잘 맞는다. Postorder traversal은 자식 먼저 방문 → 부모 나중에 방문하는 방식이다. 
+
+이게 synthesized attribute 계산과 정확히 맞다.
+
+예를 들어
+
+```
+E → E1 + T
+E.val = E1.val + T.val
+```
+
+이면 `E.val`을 계산하기 전에 `E1.val`, `T.val`이 먼저 계산되어 있어야 한다.
+Postorder traversal에서는 자식을 먼저 처리하므로 자연스럽게 이 순서가 만족된다.
+
+#### 왜 LR parser에 적합한가
+LR parser는 bottom-up parsing 방식이다. 즉, production의 오른쪽 body가 stack 위에 완성되면 그것을 왼쪽 nonterminal로 reduce한다.
+
+S-attributed SDD에서는 reduce 시점에 오른쪽 symbol들의 attribute가 이미 준비되어 있다. 그래서 reduce와 동시에 semantic rule을 실행해서 왼쪽 nonterminal의 attribute를 계산할 수 있다.
+
+예를 들어:
+
+```
+T → T * F
+T.val = T1.val * F.val
+```
+
+LR parser가 `T * F`를 `T`로 reduce하는 순간, stack에는 이미 `T.val`과 `F.val`이 있다.
+그래서 바로 `T.val = T1.val * F.val` 를 계산할 수 있다.
+
+---
+## L-attributed
+L-attributed definition은 dependency graph의 정보 흐름이 **left to right**, 즉 왼쪽에서 오른쪽으로 진행되는 SDD다.
+
+L-attributed definition은 dependency graph의 정보 흐름이 **left to right**, 즉 왼쪽에서 오른쪽으로 진행되는 SDD다.
+
+production이 다음과 같다고 하자.
+
+```
+A → X1 X2 ... Xn
+```
+
+여기서 어떤 오른쪽 symbol `Xi`의 inherited attribute `Xi.a`를 계산한다고 하면, `Xi.a`는 아무 attribute나 참조하면 안 된다.
+
+허용되는 것은 두 가지다.
+
+첫 번째, head인 `A`의 inherited attribute를 사용할 수 있다.
+
+```
+A의 attribute → Xi.a
+```
+
+두 번째, `Xi`보다 왼쪽에 있는 symbol들의 attribute를 사용할 수 있다.
+
+```
+X1, X2, ..., Xi-1의 attribute → Xi.a
+```
+
+즉 `Xi.a`를 계산할 때는 **부모 A의 정보** 또는 **자기보다 왼쪽에 있는 형제들의 정보**만 사용할 수 있다.
+
+## 왜 오른쪽 형제는 안 되는가
+
+예를 들어 production이:
+
+```
+A → X1 X2
+```
+
+라고 하자.
+
+`X2.x`를 계산할 때 `A.a`나 `X1.x`를 쓰는 건 괜찮다.
+
+```
+X2.x := f(A.a, X1.x)
+```
+
+왜냐하면 왼쪽에서 오른쪽으로 처리하면 `A.a`와 `X1.x`를 먼저 알고 나서 `X2.x`를 계산할 수 있기 때문이다.
+
+반대로 `X1.x`를 계산하는데 오른쪽 형제인 `X2.x`가 필요하면 문제가 된다.
+
+```
+X1.x := f(A.a, X2.x)
+```
+
+이러면 `X1`을 계산하려고 하는데 아직 오른쪽 `X2`를 보지도 않았거나 계산하지 않은 상태일 수 있다. 그래서 left-to-right 순서가 깨진다.
+
+즉, L-attributed에서는 **오른쪽에서 왼쪽으로 값을 전달하는 의존성은 허용하지 않는다.**
+
+## 그림 해석
+
+슬라이드 아래 그림은 대략 이런 구조다.
+
+```
+      A.a     /   \  X1.x   X2.x
+```
+
+`X2.x`를 계산할 때 `A.a`와 `X1.x`를 사용할 수 있다는 뜻이다.
+
+```
+X2.x := f(A.a, X1.x)
+```
+
+이건 왼쪽에서 오른쪽으로 자연스럽게 계산 가능하다.
+
+하지만 `X1.x`를 계산하는 데 `X2.x`를 사용하면 오른쪽에서 왼쪽으로 의존성이 생기므로 L-attributed 조건에 맞지 않는다.
+
+## S-attributed와 L-attributed 관계
+
+S-attributed는 모든 attribute가 synthesized인 경우다.
+
+L-attributed는 synthesized attribute도 허용하고, inherited attribute도 제한적으로 허용한다.
+
+그래서 관계를 보면:
+
+```
+S-attributed ⊂ L-attributed
+```
+
+즉, 모든 S-attributed definition은 L-attributed definition이기도 하다.
+
+왜냐하면 synthesized attribute는 자식에서 부모로 올라가는 값이라, L-attributed의 제한을 깨지 않기 때문이다.
