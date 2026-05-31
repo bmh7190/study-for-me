@@ -101,17 +101,16 @@ B.i = A.s + 1
 
 ![](../images/Pasted%20image%2020260601002824.png)
 
-## `3 * 5` 계산 흐름
-
+#### `3 * 5` 계산 흐름
 입력 `3 * 5`를 기준으로 보면 흐름은 이렇게 된다.
 
-먼저 `3`을 읽어서:
+먼저 `3`을 읽어서
 
 ```
 F.val = 3
 ```
 
-그다음 `T → F T'`에서:
+그다음 `T → F T'`에서
 
 ```
 T'.inh = F.val = 3
@@ -125,10 +124,12 @@ T'.inh = F.val = 3
 F.val = 5
 ```
 
-그리고:
+그리고
 
 ```
-T1'.inh = T'.inh * F.val        = 3 * 5        = 15
+T1'.inh = T'.inh * F.val
+        = 3 * 5
+        = 15
 ```
 
 이제 `T1' → ε`이므로 더 이상 곱셈이 없다.
@@ -140,11 +141,190 @@ T1'.syn = T1'.inh = 15
 그 값이 다시 위로 올라간다.
 
 ```
-T'.syn = T1'.syn = 15T.val = T'.syn = 15
+T'.syn = T1'.syn = 15
+T.val = T'.syn = 15
 ```
 
-결국 전체 결과는:
+결국 전체 결과는
 
 ```
 T.val = 15
 ```
+
+---
+# Evaluation Orders for SDD's
+앞에서 synthesized attribute만 있을 때는 쉬웠다. 예를 들어 `E.val := E1.val + T.val`처럼 자식 값을 이용해서 부모 값을 계산하면, 그냥 parse tree 아래에서 위로 올라가면 된다. 그래서 bottom-up 순서로 계산하면 됐다.
+
+그런데 inherited attribute가 섞이면 단순히 bottom-up만으로는 안 될 수 있다. 어떤 attribute는 부모에서 자식으로 내려가고, 어떤 attribute는 왼쪽 형제에서 오른쪽 형제로 전달되기 때문이다.
+
+그래서 필요한 게 **evaluation order**, 즉 “attribute들을 어떤 순서로 계산해야 하는가”이다.
+
+이 순서를 정하기 위해 사용하는 것이 **dependency graph**다.
+
+## Dependency graph가 하는 일
+Dependency graph는 parse tree 안에서 **attribute 값이 누구에게서 누구로 전달되는지**를 나타낸다. 쉽게 말하면 "어떤 값을 먼저 알아야 하는가?" 를 그래프로 표현하는 것이다.
+
+semantic rule이 이렇게 있다면
+
+```
+A.b := X.c
+```
+
+`A.b`를 계산하려면 `X.c`가 먼저 필요하다.
+
+그래서 dependency graph에서는
+
+```
+X.c → A.b
+```
+
+라고 표시한다.
+
+화살표의 의미는 `먼저 필요한 값 → 그 값을 이용해서 계산되는 값`이다.
+
+## Synthesized attribute의 경우
+
+예를 들어 production이 `A → X` semantic rule이 `A.b := X.c` 이면 `A.b`는 synthesized attribute다. 왜냐하면 오른쪽 자식 `X`의 값을 이용해서 왼쪽 부모 `A`의 값을 계산하기 때문이다.
+
+그래서 의존 관계는 `X.c → A.b` 이다.
+즉, 자식 attribute가 먼저 계산되고, 그다음 부모 attribute가 계산된다.
+
+## Inherited attribute의 경우
+
+반대로 production이 `A → B` semantic rule이 `B.c := A.a` 이면 `B.c`는 inherited attribute다.
+왜냐하면 오른쪽 자식 `B`가 부모 `A`의 정보를 전달받기 때문이다.
+
+이때도 계산 순서는 동일한 방식으로 판단한다. 
+`B.c`를 계산하려면 `A.a`가 먼저 필요하니까 `A.a → B.c` 가 된다.
+
+---
+# Acyclic Dependency Graphs for Attributed Parse Trees
+
+앞에서 **dependency graph**는 “어떤 attribute가 어떤 attribute에 의존하는지”를 나타내는 그래프라고 했다. 이제 조금 더 구체적으로 보자.
+
+![](../images/Pasted%20image%2020260601005109.png)
+
+#### `A.a := f(X.x, Y.y)`
+
+첫 번째는 이 규칙이다.
+
+```
+A.a := f(X.x, Y.y)
+```
+
+이 말은 `A.a`를 계산하려면 `X.x`와 `Y.y`가 필요하다는 뜻이다.
+
+따라서 dependency graph는 아래와 같다.
+
+```
+X.x → A.a
+Y.y → A.a
+```
+
+이건 자식 attribute를 이용해서 부모의 attribute를 계산하는 형태이다. 즉 A.a는 synthesized attribute이다. 
+
+---
+#### `X.x := f(A.a, Y.y)`
+
+이 말은 `X.x`를 계산하려면 `A.a`와 `Y.y`가 필요하다는 뜻이다.
+
+dependency graph는 아래와 같다.
+
+```
+A.a → X.x
+Y.y → X.x
+```
+
+여기서 `X.x`는 오른쪽 symbol `X`의 attribute다. 오른쪽 자식 attribute가 부모 `A.a`와 형제 `Y.y`의 정보를 받아 계산되는 것이다. 즉, `X.x`는 inherited attribute다.
+
+다만 이 형태는 조심해야 한다. `X`는 `Y`보다 왼쪽에 있는데, `X.x`를 계산하는 데 오른쪽 형제 `Y.y`가 필요하다. 이런 구조는 일반적인 left-to-right evaluation에서는 불편하다.
+
+즉, dependency graph 자체는 cycle이 없을 수 있지만, L-attributed 조건에는 맞지 않을 수 있다.
+
+---
+#### `Y.y := f(A.a, X.x)`
+
+이 말은 `Y.y`를 계산하려면 `A.a`와 `X.x`가 필요하다는 뜻이다.
+
+dependency graph는 아래와 같다.
+
+```
+A.a → Y.y
+X.x → Y.y
+```
+
+여기서 `Y.y`도 오른쪽 symbol `Y`의 attribute니까 inherited attribute다.
+
+그런데 이번에는 `Y`가 오른쪽에 있고, 필요한 값이 부모 `A.a`와 왼쪽 형제 `X.x`다.
+
+이건 자연스럽다. 왼쪽에서 오른쪽으로 계산할 때, `A.a`와 `X.x`를 먼저 알고 있으면 `Y.y`를 계산할 수 있기 때문이다.
+
+그래서 이런 구조는 L-attributed definition에서 허용되는 전형적인 형태다.
+
+---
+# Ex 5.4
+
+![](../images/Pasted%20image%2020260601005755.png)
+
+`E.val = E1.val + T.val`은 오른쪽 자식들의 attribute를 이용해서 왼쪽 부모 `E`의 attribute를 계산하는 것이므로 synthesized attribute이다.
+
+----
+# Ex 5.5
+
+![](../images/Pasted%20image%2020260601010546.png)
+
+![](../images/Pasted%20image%2020260601010540.png)
+
+---
+# Ordering the Evaluation of Attributes
+
+앞에서 dependency graph를 만들면 **어떤 attribute가 어떤 attribute에 의존하는지** 알 수 있었다.
+그다음 필요한 건 이것이다.
+
+> 의존 관계를 보고 실제로 어떤 순서로 attribute를 계산할 것인가?
+
+즉, `A.a`를 계산하려면 `X.x`가 먼저 필요하고, `X.x`를 계산하려면 `Y.y`가 먼저 필요하다면, 아무 순서로나 계산하면 안 된다. 그래서 dependency graph의 edge를 따라 **계산 순서 evaluation order**를 정해야 한다.
+
+### cycle이 없으면 topological sort 사용
+
+dependency graph에 cycle이 없으면, 계산 순서를 만들 수 있다.
+이때 사용하는 방법이 **topological sort**다.
+
+쉽게 말하면
+
+> 아직 계산되지 않은 attribute 중에서, 먼저 필요한 값이 없는 attribute부터 계산한다.
+
+즉, 들어오는 화살표가 없는 노드를 먼저 계산한다.
+
+예를 들어 어떤 노드에 들어오는 edge가 없다는 것은, 그 attribute를 계산하기 위해 먼저 필요한 다른 attribute가 없다는 뜻이다. 그래서 그 노드를 먼저 계산할 수 있다.
+
+그다음 그 노드에서 나가는 edge를 제거하고, 다시 들어오는 edge가 없는 노드를 찾는다. 이런 식으로 순서를 만든다.
+
+위 예시에서 `1, 3, 5, 2, 4, 6, 7, 8, 9`는 이런 방식으로 찾을 수 있는 가능한 evaluation order 중 하나다.
+
+### cycle이 있으면 왜 문제인가
+
+아래 예시를 보면 semantic rule이 이렇게 되어 있다.
+
+```
+A.a := f(X.x)
+X.x := f(Y.y)
+Y.y := f(A.a)
+```
+
+의존 관계는 이렇게 된다.
+
+```
+X.x → A.a
+Y.y → X.x
+A.a → Y.y
+```
+
+이걸 이어 보면 다시 자기 자신으로 돌아온다. 이 경우는 계산을 시작할 수 없다.
+
+`A.a`를 계산하려면 `X.x`가 필요하고,  `X.x`를 계산하려면 `Y.y`가 필요하고,  `Y.y`를 계산하려면 다시 `A.a`가 필요하다. 즉 서로가 서로를 기다리는 상태가 된다.
+
+그래서 cycle이 있으면 **cyclic dependence error**가 발생한다.
+
+---
+# Evaluation Order
