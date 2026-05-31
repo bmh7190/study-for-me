@@ -4,7 +4,9 @@ Syntax-Directed Translation은 **context-free grammar를 기반으로 프로그�
 예를 들어 parser가 `E → E1 + T`와 같은 문법 구조를 인식했다면, Syntax-Directed Translation에서는 이 구조를 이용해 덧셈 연산의 의미를 처리하거나, 해당 연산에 대한 중간 코드 또는 목적 코드를 생성할 수 있다.
 
 ## Syntax-Directed Translation의 목적
-Syntax-Directed Translation의 목적은 크게 두 가지로 볼 수 있다. 첫 번째는 **분석을 완성하는 것**이다. syntax analysis는 입력 프로그램이 문법적으로 올바른지만 판단하기 때문에, 문법만으로는 알 수 없는 정보가 존재한다. 예를 들어 `a = b / 0`과 같은 문장은 문법적으로는 올바를 수 있지만, 0으로 나누는 연산은 의미적으로 문제가 될 수 있다. 또한 `A = b + c`에서 `b`와 `c`가 서로 더할 수 없는 타입이라면, 이 역시 syntax analysis만으로는 판단하기 어렵다. 따라서 Syntax-Directed Translation은 이러한 **context-sensitive information**, 즉 문맥에 따라 결정되는 타입, 값, 선언 정보 등을 도출하여 분석 단계를 보완한다.
+Syntax-Directed Translation의 목적은 크게 두 가지로 볼 수 있다. 
+
+첫 번째는 **분석을 완성하는 것**이다. syntax analysis는 입력 프로그램이 문법적으로 올바른지만 판단하기 때문에, 문법만으로는 알 수 없는 정보가 존재한다. 예를 들어 `a = b / 0`과 같은 문장은 문법적으로는 올바를 수 있지만, 0으로 나누는 연산은 의미적으로 문제가 될 수 있다. 또한 `A = b + c`에서 `b`와 `c`가 서로 더할 수 없는 타입이라면, 이 역시 syntax analysis만으로는 판단하기 어렵다. 따라서 Syntax-Directed Translation은 이러한 **context-sensitive information**, 즉 문맥에 따라 결정되는 타입, 값, 선언 정보 등을 도출하여 분석 단계를 보완한다.
 
 두 번째 목적은 **synthesis를 시작하는 것**이다. 여기서 synthesis는 프로그램을 실제로 번역하여 intermediate representation, 즉 IR이나 target code를 생성하는 과정을 의미한다. 컴파일러의 중요한 역할 중 하나는 소스 프로그램을 다른 형태의 코드로 변환하는 것이므로, Syntax-Directed Translation은 문법 구조에 따라 중간 코드나 목적 코드를 생성하는 출발점이 된다.
 
@@ -23,7 +25,6 @@ SDD에서 terminal과 nonterminal은 각각 attribute를 가질 수 있다. 여�
 
 ![](../images/Pasted%20image%2020260506151114.png)
 
-
 SDD의 attribute 값은 parse tree를 순회하면서 계산된다. 일반적으로 parse tree를 depth-first traversal 방식으로 순회하며, 각 production에 연결된 semantic rule을 실행하여 attribute 값을 부여한다. 이 순회가 끝나면 parse tree의 각 노드에는 필요한 attribute 값이 채워지게 되고, 최종적으로 root node의 attribute에는 입력 프로그램을 번역한 결과나 의미 분석 결과가 담기게 된다. 따라서 SDD는 parse tree를 단순한 문법 구조가 아니라, 의미 정보가 포함된 annotated parse tree로 확장하는 역할을 한다.
 
 ![](../images/Pasted%20image%2020260506151211.png)
@@ -34,3 +35,16 @@ SDD에서 사용하는 attribute는 크게 **synthesized attribute**와 **inheri
 반면 inherited attribute는 어떤 노드의 attribute 값이 부모 노드, 자기 자신, 또는 형제 노드의 정보로부터 전달되어 계산되는 경우를 말한다. 즉, 정보가 반드시 자식에서 부모로만 올라가는 것이 아니라, 부모에서 자식으로 내려오거나 왼쪽 형제에서 오른쪽 형제로 전달될 수 있다. 예를 들어 선언문에서 `int a, b, c`와 같이 하나의 타입 정보가 여러 identifier에 적용되어야 할 때, `int`라는 타입 정보를 뒤쪽의 identifier들에게 전달해야 한다. 이런 경우에 inherited attribute를 사용한다.
 
 정리하면, synthesized attribute는 주로 계산 결과를 위로 올리는 데 사용되고, inherited attribute는 문맥 정보나 타입 정보처럼 주변 구조에서 전달받아야 하는 정보를 표현하는 데 사용된다. 따라서 SDD는 이 두 종류의 attribute를 이용하여 parse tree 위에서 프로그램의 의미 정보와 번역 결과를 체계적으로 계산할 수 있게 해준다.
+
+---
+# Bottom Up Evaluation
+
+![](../images/Pasted%20image%2020260601000408.png)
+
+Bottom-up parsing에서는 reduce가 일어나는 순간 semantic rule도 함께 실행할 수 있다. 
+
+그 이유는 synthesized attribute가 production의 오른쪽 symbol, 즉 자식들의 attribute를 이용해서 왼쪽 nonterminal, 즉 부모의 attribute를 계산하는 방식이기 때문이다. 
+
+Bottom-up parsing에서 reduce가 일어난다는 것은 이미 오른쪽 symbol들이 stack 위에 완성되어 있다는 뜻이므로, 그 symbol들의 attribute 값도 사용할 수 있다. 따라서 reduce 시점에 semantic rule을 실행하여 부모의 attribute 값을 바로 계산할 수 있다.
+
+---
