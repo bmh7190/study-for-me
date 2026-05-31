@@ -48,3 +48,103 @@ Bottom-up parsing에서는 reduce가 일어나는 순간 semantic rule도 함께
 Bottom-up parsing에서 reduce가 일어난다는 것은 이미 오른쪽 symbol들이 stack 위에 완성되어 있다는 뜻이므로, 그 symbol들의 attribute 값도 사용할 수 있다. 따라서 reduce 시점에 semantic rule을 실행하여 부모의 attribute 값을 바로 계산할 수 있다.
 
 ---
+# Evaluating an SDD of Parse Tree
+SDD를 평가해서 annotated parse tree를 만들려면 attribute 간 의존 관계를 파악해야 한다. 
+여기서 annotated parse tree는 단순히 parse tree에 attribute 값  까지 표시한 트리이다.
+
+
+#### attribute 계산에는 순서가 필요하다
+attribute는 아무 순서로나 계산할 수 있는 게 아니다.
+
+예를 들어 `E.val := E1.val + T.val` 이면 `E.val`을 계산하려면 먼저 `E1.val`, `T.val`이 있어야 한다. 그래서 계산 순서는 `E1.val, T.val → E.val` 순서로 해야한다.
+
+즉, 어떤 attribute가 다른 attribute에 의존하면, **의존되는 값이 먼저 계산되어야 한다.**
+
+#### synthesized attribute만 있으면 bottom-up 순서로 가능하다
+synthesized attribute는 자식의 값을 이용해서 부모의 값을 계산한다.
+
+```
+부모.val := 자식1.val + 자식2.val
+```
+
+그래서 parse tree 아래쪽부터 위쪽으로 올라오면 된다. 즉, bottom-up order로 계산하면 항상 자연스럽게 맞는다.
+
+#### inherited attribute까지 있으면 계산 순서가 복잡해진다
+inherited attribute는 부모나 형제에게서 내려오거나 옆으로 전달되는 값이다.
+
+예를 들어:
+
+```
+D → T L
+L.in := T.type
+```
+
+이면 `L.in`을 계산하려면 `T.type`이 먼저 있어야 한다.
+이 정도는 괜찮다. 왼쪽 형제 `T`를 먼저 계산하고 오른쪽 형제 `L`에게 넘기면 된다.
+
+그런데 inherited와 synthesized가 섞이면, 어떤 값은 위에서 내려오고, 어떤 값은 아래에서 올라오고, 어떤 값은 형제에게 전달된다. 그래서 단순히 “항상 bottom-up” 또는 “항상 top-down”으로 계산할 수 없는 경우가 생긴다.
+
+#### 순환 의존 문제 발생할 수도 있음
+이런 production과 semantic rule이 있다.
+
+```
+A → BA.s = B.i
+B.i = A.s + 1
+```
+
+이걸 보면 이상한 점이 있다. `A.s`를 계산하려면 `B.i`가 필요하다. 그런데 `B.i`를 계산하려면 `A.s`가 필요하다. 즉 서로가 서로를 필요로 한다.
+
+이런 관계를 **circular dependency**, 즉 순환 의존이라고 한다.
+
+---
+# Inherited attributes Example
+
+![](../images/Pasted%20image%2020260601002824.png)
+
+## `3 * 5` 계산 흐름
+
+입력 `3 * 5`를 기준으로 보면 흐름은 이렇게 된다.
+
+먼저 `3`을 읽어서:
+
+```
+F.val = 3
+```
+
+그다음 `T → F T'`에서:
+
+```
+T'.inh = F.val = 3
+```
+
+즉 `T'`에게 3을 넘긴다.
+
+이제 `T' → * F T1'`에서 `5`를 읽는다.
+
+```
+F.val = 5
+```
+
+그리고:
+
+```
+T1'.inh = T'.inh * F.val        = 3 * 5        = 15
+```
+
+이제 `T1' → ε`이므로 더 이상 곱셈이 없다.
+
+```
+T1'.syn = T1'.inh = 15
+```
+
+그 값이 다시 위로 올라간다.
+
+```
+T'.syn = T1'.syn = 15T.val = T'.syn = 15
+```
+
+결국 전체 결과는:
+
+```
+T.val = 15
+```
