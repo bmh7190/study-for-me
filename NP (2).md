@@ -100,7 +100,7 @@ $$(a ∨ ¬b ∨ c) ∧ (¬a ∨ d ∨ e) ∧ (b ∨ ¬c ∨ d)$$
 이게 왜 중요하냐면, 이후 많은 그래프 문제들을 증명할 때 일반 SAT보다 3-SAT에서 출발하는 경우가 많다. clause 크기가 3개로 고정되어 있어서 그래프로 변환하기가 더 편하기 때문이다.
 
 ---
-# CLIQUE 문제
+# CLIQUE
 
 Clique는 그래프에서 **서로 모두 연결되어 있는 꼭짓점들의 집합**이다.
 
@@ -123,7 +123,7 @@ CLIQUE가 NP에 속하는 이유는 간단하다. 누군가 정점 집합 S를 �
 즉, SAT의 “만족 가능한 변수 선택” 문제가 CLIQUE의 “서로 연결된 정점 선택” 문제로 변환되는 것이다.
 
 ---
-# INDEPENDENT SET 문제
+# INDEPENDENT SET
 
 Independent set은 clique와 반대 느낌이다.
 
@@ -150,7 +150,7 @@ G에 크기 k인 clique가 존재한다 ↔ complement graph에 크기 k인 inde
 그래서 INDEPENDENT SET은 CLIQUE로부터 환원되어 NP-complete이다.
 
 ---
-# VERTEX COVER 문제
+# VERTEX COVER
 
 Vertex cover는 그래프의 모든 edge를 “덮는” 정점 집합이다.
 
@@ -160,7 +160,7 @@ Vertex cover는 그래프의 모든 edge를 “덮는” 정점 집합이다.
 
 VERTEX COVER 문제는 다음과 같다.
 
-그래프 G와 정수 k가 주어졌을 때, 크기가 최대 k인 vertex cover가 존재하는가?
+>그래프 G와 정수 k가 주어졌을 때, 크기가 최대 k인 vertex cover가 존재하는가?
 
 여기서는 앞 문제들과 다르게 “최소 k”가 아니라 “최대 k”다. 왜냐하면 vertex cover는 보통 가능한 적은 수의 정점으로 모든 edge를 덮고 싶기 때문이다.
 
@@ -171,8 +171,7 @@ VERTEX COVER가 NP-complete인 이유는 INDEPENDENT SET으로부터 환원되�
 핵심 관계는 이거다.
 
 그래프 G의 정점 수가 n일 때,  
-G에 크기 k인 independent set이 존재한다  
-↔ G에 크기 n-k인 vertex cover가 존재한다.
+G에 크기 k인 independent set이 존재한다  ↔ G에 크기 n-k인 vertex cover가 존재한다.
 
 왜냐하면 independent set에 포함되지 않은 나머지 정점들이 모든 edge를 덮기 때문이다.
 
@@ -181,42 +180,15 @@ G에 크기 k인 independent set이 존재한다
 그래서 INDEPENDENT SET이 어렵다면 VERTEX COVER도 어렵고, VERTEX COVER는 NP에 속하므로 NP-complete이다.
 
 ---
-
-## Slide 10. Karp’s 21 problems
-
-이 슬라이드는 Karp’s 21 problems를 언급한다.
-
-Karp는 1972년에 SAT에서 출발해서 여러 대표적인 문제들이 NP-complete임을 보였다. 이때 제시된 21개 문제가 “Karp’s 21 NP-complete problems”로 알려져 있다.
-
-이 슬라이드의 의미는 “SAT 하나만 NP-complete인 게 아니라, 실제로 우리가 자주 보는 많은 조합 최적화 문제들이 NP-complete이다”라는 점을 보여주는 것이다.
-
-즉, NP-complete 이론은 단순히 논리식 SAT에만 머무는 게 아니라 그래프, 집합, 수열, 경로, 배낭 문제 같은 다양한 문제로 확장된다.
-
----
-
-## Slide 11. Garey and Johnson
-
-Garey and Johnson은 NP-completeness 분야에서 매우 유명한 책과 연구 흐름을 의미한다.
-
-이 슬라이드는 아마 “NP-complete 문제들이 이후에 체계적으로 정리되었다”는 맥락으로 보면 된다.
-
-Karp가 대표 문제들을 제시했고, Garey and Johnson은 NP-completeness 이론과 수많은 NP-complete 문제들을 정리한 대표적인 참고 문헌으로 유명하다.
-
-수업 맥락에서는 깊게 외울 필요는 없고, 다음 정도만 이해하면 된다.
-
-SAT에서 시작된 NP-complete 증명은 이후 수많은 문제로 확장되었고, 우리가 배우는 여러 문제들도 그 체계 안에 들어간다.
-
----
-
-## Slide 12. SET-COVER와 SUBSET-SUM
+#  SET-COVER와 SUBSET-SUM
 
 여기서는 두 가지 문제가 나온다.
 
-### SET-COVER
+## SET-COVER
 
 SET-COVER 문제는 다음과 같다.
 
-m개의 set들이 주어졌을 때, 그중 k개의 set만 골라서 전체 원소를 모두 덮을 수 있는가?
+>m개의 set들이 주어졌을 때, 그중 k개의 set만 골라서 전체 원소를 모두 덮을 수 있는가?
 
 예를 들어 전체 원소가 {1, 2, 3, 4, 5}라고 하자.
 
@@ -235,11 +207,12 @@ SET-COVER는 VERTEX COVER로부터 환원되어 NP-complete이다.
 
 즉, edge들을 전체 원소로 보고, 각 vertex를 “그 vertex가 덮는 edge들의 set”으로 보면 vertex cover 문제가 set cover 문제로 바뀐다.
 
-### SUBSET-SUM
+## SUBSET-SUM
 
 SUBSET-SUM 문제는 다음과 같다.
 
-정수들의 집합과 목표값 k가 주어졌을 때, 일부 정수들을 골라 합이 정확히 k가 되게 할 수 있는가?
+>정수들의 집합과 목표값 k가 주어졌을 때, 
+>일부 정수들을 골라 합이 정확히 k가 되게 할 수 있는가?
 
 예를 들어 숫자들이 {3, 5, 7, 10}이고 k = 15라면, 5 + 10 = 15이므로 yes다.
 
@@ -248,14 +221,14 @@ SUBSET-SUM도 NP-complete 문제다. 슬라이드에서는 VERTEX-COVER로부터
 이 문제의 핵심은 “선택한다 / 선택하지 않는다” 구조다. 각 숫자를 subset에 넣을지 말지 결정하는 것이고, 그 결과 합이 정확히 목표값이 되는지 본다. 이런 선택 구조 때문에 다른 NP-complete 문제를 숫자 선택 문제로 변환할 수 있다.
 
 ---
+# KNAPSACK과 HAMILTONIAN CYCLE
 
-## Slide 13. 0/1 KNAPSACK과 HAMILTONIAN CYCLE
-
-### 0/1 KNAPSACK
+## 0/1 KNAPSACK
 
 0/1 KNAPSACK 문제는 다음과 같다.
 
-각 item마다 weight와 benefit이 있을 때, 전체 weight이 W 이하이면서 benefit이 k 이상이 되도록 item 일부를 고를 수 있는가?
+>각 item마다 weight와 benefit이 있을 때, 
+>전체 weight이 W 이하이면서 benefit이 k 이상이 되도록 item 일부를 고를 수 있는가?
 
 여기서 0/1이라는 말은 각 item을 “넣거나 / 안 넣거나” 둘 중 하나만 선택한다는 뜻이다. 같은 item을 여러 번 넣을 수 없다.
 
@@ -269,11 +242,12 @@ SUBSET-SUM도 NP-complete 문제다. 슬라이드에서는 VERTEX-COVER로부터
 
 0/1 knapsack은 W에 대해 O(nW) 같은 DP 알고리즘이 있다. 하지만 이건 입력 크기에 대한 진짜 다항시간이라고 보기 어렵다. 왜냐하면 W가 이진수로 입력되면 W의 값은 입력 길이에 비해 매우 커질 수 있기 때문이다. 그래서 decision version의 0/1 knapsack은 NP-complete로 분류된다.
 
-### HAMILTONIAN CYCLE
+## HAMILTONIAN CYCLE
 
 Hamiltonian cycle 문제는 다음과 같다.
 
-그래프 G가 주어졌을 때, 모든 vertex를 정확히 한 번씩 방문하고 다시 시작점으로 돌아오는 cycle이 존재하는가?
+>그래프 G가 주어졌을 때, 
+>모든 vertex를 정확히 한 번씩 방문하고 다시 시작점으로 돌아오는 cycle이 존재하는가?
 
 이 문제는 “모든 정점을 한 번씩 방문하는 순환 경로”를 찾는 문제다.
 
@@ -289,10 +263,9 @@ Hamiltonian cycle은 모든 vertex를 한 번씩 방문하는 cycle이고, NP-co
 둘은 비슷해 보이지만 난이도가 완전히 다르다.
 
 ---
+# DIRECTED HAMILTONIAN CYCLE과 TSP
 
-## Slide 14. DIRECTED HAMILTONIAN CYCLE과 TSP
-
-### DIRECTED HAMILTONIAN CYCLE
+## DIRECTED HAMILTONIAN CYCLE
 
 Directed Hamiltonian cycle은 방향 그래프에서 Hamiltonian cycle이 존재하는지 묻는 문제다.
 
@@ -329,8 +302,7 @@ TSP는 “모든 정점을 한 번씩 방문하는 cycle 중 weight이 k 이하�
 Hamiltonian cycle을 TSP로 바꿀 때는 원래 그래프에 있던 edge는 작은 weight, 없던 edge는 큰 weight를 주는 식으로 만들 수 있다. 그러면 weight이 일정 기준 이하인 TSP 경로가 존재한다는 것은 원래 그래프에 Hamiltonian cycle이 존재한다는 뜻이 된다.
 
 ---
-
-## Slide 15. TSP 예시
+# TSP 예시
 
 마지막 슬라이드는 작은 complete graph에서 “weight at most 75인 Hamiltonian cycle이 있는가?”를 묻는 예시다.
 
