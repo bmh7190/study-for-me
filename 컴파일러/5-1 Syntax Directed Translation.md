@@ -443,8 +443,6 @@ LR parser가 `T * F`를 `T`로 reduce하는 순간, stack에는 이미 `T.val`�
 ## L-attributed
 L-attributed definition은 dependency graph의 정보 흐름이 **left to right**, 즉 왼쪽에서 오른쪽으로 진행되는 SDD다.
 
-L-attributed definition은 dependency graph의 정보 흐름이 **left to right**, 즉 왼쪽에서 오른쪽으로 진행되는 SDD다.
-
 production이 다음과 같다고 하자.
 
 ```
@@ -469,15 +467,9 @@ X1, X2, ..., Xi-1의 attribute → Xi.a
 
 즉 `Xi.a`를 계산할 때는 **부모 A의 정보** 또는 **자기보다 왼쪽에 있는 형제들의 정보**만 사용할 수 있다.
 
-## 왜 오른쪽 형제는 안 되는가
+#### 왜 오른쪽 형제는 안 되는가
 
-예를 들어 production이:
-
-```
-A → X1 X2
-```
-
-라고 하자.
+예를 들어 production이 `A → X1 X2` 라고 하자.
 
 `X2.x`를 계산할 때 `A.a`나 `X1.x`를 쓰는 건 괜찮다.
 
@@ -497,31 +489,37 @@ X1.x := f(A.a, X2.x)
 
 즉, L-attributed에서는 **오른쪽에서 왼쪽으로 값을 전달하는 의존성은 허용하지 않는다.**
 
-## 그림 해석
+#### Example
 
-슬라이드 아래 그림은 대략 이런 구조다.
+![](../images/Pasted%20image%2020260601014610.png)
 
-```
-      A.a     /   \  X1.x   X2.x
-```
+이 예시는 L-attributed 조건을 만족한다.
 
-`X2.x`를 계산할 때 `A.a`와 `X1.x`를 사용할 수 있다는 뜻이다.
+`X.i`는 부모 `A.i`만 사용한다.
 
 ```
-X2.x := f(A.a, X1.x)
+X.i := A.i
 ```
 
-이건 왼쪽에서 오른쪽으로 자연스럽게 계산 가능하다.
+`Y.i`는 왼쪽 형제 `X.s`만 사용한다.
 
-하지만 `X1.x`를 계산하는 데 `X2.x`를 사용하면 오른쪽에서 왼쪽으로 의존성이 생기므로 L-attributed 조건에 맞지 않는다.
+```
+Y.i := X.s
+```
 
-## S-attributed와 L-attributed 관계
+`A.s`는 오른쪽 자식 `Y.s`를 사용해서 부모로 올라가는 synthesized attribute다.
 
-S-attributed는 모든 attribute가 synthesized인 경우다.
+```
+A.s := Y.s
+```
 
-L-attributed는 synthesized attribute도 허용하고, inherited attribute도 제한적으로 허용한다.
+오른쪽 형제에서 왼쪽 형제로 가는 의존성이 없다. 즉 `X.i := Y.s` 같은 형태가 없다.
+그래서 left-to-right 순서로 계산 가능하다.
 
-그래서 관계를 보면:
+#### S-attributed와 L-attributed 관계
+S-attributed는 모든 attribute가 synthesized인 경우다. L-attributed는 synthesized attribute도 허용하고, inherited attribute도 제한적으로 허용한다.
+
+그래서 관계를 보면
 
 ```
 S-attributed ⊂ L-attributed
@@ -530,3 +528,187 @@ S-attributed ⊂ L-attributed
 즉, 모든 S-attributed definition은 L-attributed definition이기도 하다.
 
 왜냐하면 synthesized attribute는 자식에서 부모로 올라가는 값이라, L-attributed의 제한을 깨지 않기 때문이다.
+
+----
+# Using Translation Schemes for L-Attributed Definitions
+
+앞에서 L-attributed definition은 **부모나 왼쪽 형제의 정보를 이용해서 inherited attribute를 계산할 수 있다**고 했다.
+
+그런데 실제 parser가 동작할 때는 semantic rule을 아무 위치에서나 실행할 수 없다.  
+특히 inherited attribute는 **해당 nonterminal을 처리하기 전에 미리 값이 준비되어 있어야 한다.**
+
+그래서 SDD의 semantic rule을 production 안에 직접 끼워 넣어서, **언제 semantic action을 실행할지 명확하게 표시한 형태**가 필요하다.
+
+이게 바로 **translation scheme**이다.
+
+![](../images/Pasted%20image%2020260601015111.png)
+
+Translation Scheme은 semantic rule을 production 내부에 `{ }`로 끼워 넣은 형태다.
+
+```
+D → T { L.in := T.type } L
+```
+
+이렇게 쓴 이유는 `L`을 처리하기 전에 `L.in` 값이 먼저 계산되어야 하기 때문이다.
+
+흐름은 다음과 같다.
+
+1. 먼저 `T`를 처리한다.
+2. `T.type`이 계산된다.
+3. `L`을 처리하기 전에 `{ L.in := T.type }`을 실행한다.
+4. 그다음 `L`을 처리한다.
+
+즉 `{ L.in := T.type }`의 위치가 중요하다.
+
+만약 이 action을 `L` 뒤에 두면
+
+```
+D → T L { L.in := T.type }
+```
+
+이건 의미가 이상해진다. `L`을 처리할 때 이미 `L.in`이 필요했는데, `L` 처리가 끝난 뒤에야 값을 넣는 꼴이기 때문이다.
+
+---
+### 각 production 해석
+
+#### 1. `D → T { L.in := T.type } L`
+
+`T`에서 타입을 계산한 뒤, 그 타입을 `L`에게 넘긴다.
+
+```
+T.type → L.in
+```
+
+예를 들어 `T.type = integer`이면 `L.in = integer` 이 된다.
+
+---
+#### 2. `T → int { T.type := 'integer' }`
+
+`int`라는 타입 키워드를 보면 `T.type`을 `'integer'`로 만든다.
+
+```
+T.type = integer
+```
+
+이건 synthesized attribute다. `int`를 보고 부모 `T`의 type을 계산하기 때문이다.
+
+---
+#### 3. `T → real { T.type := 'real' }`
+
+`real`을 보면 `T.type`을 `'real'`로 만든다.
+
+```
+T.type = real
+```
+
+---
+#### 4. `L → { L1.in := L.in } L1 , id { addtype(id.entry, L.in) }`
+
+이게 조금 중요하다. `L → L1 , id`는 identifier 목록을 처리하는 production이다.
+
+예를 들어 `id1, id2, id3` 같은 목록을 처리할 때 사용된다.
+
+여기서 바깥쪽 `L`이 이미 타입 정보를 가지고 있다.
+
+```
+L.in = real
+```
+
+그런데 안쪽 `L1`도 같은 타입 정보를 알아야 한다.
+
+그래서 `L1`을 처리하기 전에:
+
+```
+{ L1.in := L.in }
+```
+
+을 실행한다.
+
+그다음 `L1`을 처리하고, 마지막 `id`에 대해서
+
+```
+addtype(id.entry, L.in)
+```
+
+을 실행한다. 즉 현재 id에도 같은 타입을 붙인다.
+
+---
+#### 5. `L → id { addtype(id.entry, L.in) }`
+
+identifier가 하나만 있는 경우다.
+
+예를 들어 `real id1` 이면 `L.in = real`을 이용해서 `addtype(id1.entry, real)` 을 실행한다.
+
+----
+# Ex 5.8 and 5.9
+
+앞에서 **L-attributed definition**은 inherited attribute를 허용하지만, 조건이 있다고 했다.
+production이 `A → X1 X2 ... Xn`일 때, 어떤 `Xi`의 inherited attribute는 다음 값만 사용할 수 있다.
+
+1. 부모 A의 inherited attribute
+2. Xi보다 왼쪽에 있는 symbol들의 attribute
+
+즉, **오른쪽 형제의 값을 이용해서 왼쪽 symbol의 inherited attribute를 계산하면 안 된다.**
+
+---
+####  `T → F T'`
+
+```
+T → F T'
+T'.inh = F.val
+```
+
+여기서 `T'.inh`는 오른쪽 symbol `T'`의 inherited attribute다.
+
+`T'.inh`를 계산할 때 사용하는 값은 `F.val`이다.
+
+```
+F.val → T'.inh
+```
+
+`F`는 `T'`보다 왼쪽에 있는 symbol이다. 따라서 `T'.inh = F.val`은 L-attributed 조건을 만족한다.
+
+즉, 앞에서 계산된 `F.val`을 오른쪽의 `T'`에게 넘기는 구조다.
+
+---
+#### `T' → * F T1'`
+
+```
+T' → * F T1'
+T1'.inh = T'.inh × F.val
+```
+
+여기서 `T1'.inh`는 오른쪽 끝에 있는 `T1'`의 inherited attribute다.
+
+이 값을 계산할 때 사용하는 값은 `T'.inh`, `F.val` 이다.
+
+`T'.inh`는 부모 `T'`의 inherited attribute이고, `F.val`은 `T1'`보다 왼쪽에 있는 symbol의 attribute다. 따라서 이것도 L-attributed 조건을 만족한다.
+
+즉, 지금까지 누적된 값 `T'.inh`와 현재 숫자 `F.val`을 곱해서 다음 `T1'`에게 넘기는 구조다.
+
+---
+#### `A → B C`
+
+이 grammar가 L-attributed인가?
+
+```
+A → B C
+A.s = B.b
+B.i = f(C.c, A.s)
+```
+
+먼저 `A.s = B.b`는 synthesized attribute 계산이다.
+
+```
+B.b → A.s
+```
+
+자식 `B`의 값을 이용해서 부모 `A`의 값을 계산하므로 이 자체는 문제 없다.
+
+그런데 문제는 `B.i = f(C.c, A.s)` 이다.
+
+`B.i`는 오른쪽 symbol `B`의 inherited attribute다. 그런데 이 값을 계산하기 위해 `C.c`를 사용하고 있다. 여기서 `C`는 `B`보다 오른쪽에 있는 symbol이다. 즉, `B.i`를 계산하려면 오른쪽 형제 `C.c`가 필요하다.
+
+이건 오른쪽에서 왼쪽으로 정보가 흐르는 구조다.
+
+L-attributed에서는 inherited attribute를 계산할 때 오른쪽 형제의 attribute를 사용할 수 없기 때문에, 이 grammar는 **L-attributed가 아니다.**
