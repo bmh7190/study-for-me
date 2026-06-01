@@ -208,6 +208,47 @@ E1 + T를 모두 인식함
 즉 postfix SDT는 **자식들이 모두 준비된 뒤 부모를 만들 때 action을 실행하는 구조**라고 보면 된다.
 
 ---
+# Parser-Stack Implementation은 뭔가
+
+LR parser는 stack을 쓴다. 그런데 stack에 grammar symbol만 있으면 semantic action을 실행할 수 없다.
+
+예를 들어 stack에 이렇게만 있으면 `E.val`, `T.val`을 알 수 없다.
+
+```
+E + T
+```
+
+그래서 실제로는 symbol과 attribute를 같이 저장한다.
+
+```
+E, E.val = 9
++
+T, T.val = 5
+```
+
+그러면 reduce할 때
+
+```
+E → E + T
+```
+
+를 적용하면서 stack에서 값을 꺼내 계산한다.
+
+```
+E.val = 9 + 5 = 14
+```
+
+그리고 새로 만들어진 `E`를 stack에 넣는다.
+
+```
+E, E.val = 14
+```
+
+이게 parser-stack implementation이다.
+
+즉 의미는 간단하다. **LR parser의 stack에 문법 기호뿐 아니라 attribute 값도 같이 저장해두고, reduce할 때 semantic action을 실행한다.**
+
+---
 ## LL parser + L-attributed SDD
 
 LL parser는 top-down 방식이다. 즉 start symbol에서 시작해서 왼쪽에서 오른쪽으로 production을 펼친다.
@@ -235,46 +276,540 @@ D() {
 즉 inherited attribute는 함수 인자처럼 넘기고, synthesized attribute는 return 값처럼 받을 수 있다.
 
 ---
-
-
----
-
-
----
 ## SDT with Actions inside Productions
 
-앞에서 본 것처럼 action이 production 중간에 들어갈 수도 있다.
+지금까지 postfix는 action이 맨 끝에 있는 경우였다.
 
 ```
-B → X {a} Y
+E → E1 + T { action }
 ```
 
-이 경우 `{a}`는 `X`를 처리한 뒤, `Y`를 처리하기 전에 실행되어야 한다.
+그런데 inherited attribute는 action이 맨 끝에 있으면 안 되는 경우가 많다.
 
-이게 필요한 이유는 보통 inherited attribute 때문이다.
+예를 들어 여기서 `L.in`은 `L`을 처리하기 전에 필요하다.
 
-예를 들어:
+```
+D → T L
+L.in = T.type
+```
+
+그런데 action을 맨 끝에 두면 늦어지게 된다.
+
+```
+D → T L { L.in = T.type }
+```
+
+왜냐하면 이미 `L`을 처리한 뒤에 `L.in`을 넣는 것이기 때문이다.
+
+그래서 action을 중간에 둔다.
 
 ```
 D → T { L.in = T.type } L
 ```
 
-여기서 `{ L.in = T.type }`는 `L`을 처리하기 전에 반드시 실행되어야 한다.
+이 말은 T 처리 후에 L 처리 전 L.in을 세팅한다 라는 뜻이다.
 
-그래서 action이 맨 끝에 있는 postfix 형태와 다르게, production 중간에 들어간다.
+이걸 **SDT with actions inside productions**라고 한다. 즉 action이 production 맨 끝이 아니라, 필요한 위치에 들어간다.
 
+>**LR parser에서는 reduce 시점에 자식들이 이미 준비되어 있어 action을 맨 뒤에서 실행하기 쉽지만, LL parser에서는 오른쪽 symbol을 처리하기 전에 inherited attribute를 넘겨야 하므로 action이 production 중간에 들어갈 수 있다.**
 
+----
+예시로 위의 방식들을 다뤄보자
 
+![](../images/Pasted%20image%2020260601154836.png)
 
+### Postfix Translation Schemes
 
+왼쪽 위는 action이 production의 **맨 뒤**에 붙어 있다.
 
+![](../images/Pasted%20image%2020260601155054.png)
 
+이 방식은 **S-attributed SDD**에 잘 맞는다.
 
+왜냐하면 모든 값이 자식에서 부모로 올라가기 때문이다.
 
+예를 들어 `E → E1 + T`를 보면, `E.val`을 계산하려면 `E1.val`과 `T.val`이 필요하다. 이 둘은 모두 오른쪽 body에 있는 자식들의 attribute다.
 
+그래서 `E1 + T`가 전부 처리된 뒤에 action을 실행하면 된다.
+
+이걸 postfix translation scheme이라고 부르는 이유는, semantic action이 production body의 뒤쪽에 오기 때문이다.
+
+---
+### SDT actions inside productions
+
+오른쪽 위는 action이 production의 **중간 또는 앞쪽**에 들어가 있다.
+
+![](../images/Pasted%20image%2020260601155136.png)
+
+여기서는 계산값을 저장하는 것이 아니라, parsing 중간에 특정 시점에 바로 출력하는 예시다.
+
+그런데 이 예시는 조금 주의해서 봐야 한다. 
+
+postfix scheme은 `E.val` 같은 attribute를 계산하는 방식이고, 오른쪽은 `print()` action을 production 중간에 배치한 방식이다.
+
+즉 목적이 약간 다르다.
+
+- 왼쪽은 값을 계산해서 attribute에 저장
+- 오른쪽은 parsing 중 특정 시점에 바로 출력
+
+예를 들어 `E → { print('+'); } E1 + T`는 `E` production을 선택하는 순간 `+`를 먼저 출력한다.
+
+이런 식으로 action을 production 중간이나 앞쪽에 넣으면, 단순히 reduce 시점에 실행하는 것보다 더 세밀하게 실행 시점을 조절할 수 있다.
+
+다만 LR parser에서는 이런 중간 action을 그대로 처리하기 어렵기 때문에, 나중에 marker nonterminal 같은 방식으로 바꿔서 구현할 수 있다.
+
+---
+### Parser-Stack Implementation
+
+LR parser에서 semantic attribute를 stack에 어떻게 저장하는지를 보여준다.
+
+![](../images/Pasted%20image%2020260601155307.png)
+
+LR parser는 stack을 사용한다. 그런데 단순히 grammar symbol만 저장하면 semantic action을 실행할 수 없다.
+
+예를 들어 `E → E1 + T`에서 action은 다음과 같다.
+
+```text
+E.val = E1.val + T.val
+```
+
+이걸 계산하려면 stack 안에 `E1.val`과 `T.val`이 같이 있어야 한다.
+그래서 symbol과 attribute를 한 쌍으로 저장한다.
+
+---
+#### `E → E1 + T`
+
+슬라이드 아래쪽에 이런 action이 있다.
+
+```text
+E → E1 + T {
+  stack[top - 2].val = stack[top - 2].val + stack[top].val;
+  top = top - 2;
+}
+```
+
+이걸 이해하려면 stack 상태를 이렇게 보면 된다.
+
+```text
+stack[top]     : T.val
+stack[top - 1] : '+'
+stack[top - 2] : E1.val
+```
+
+`E → E1 + T`로 reduce할 때, 실제로 필요한 값은 `E1.val`과 `T.val`이다.
+
+그래서 `stack[top - 2].val = stack[top - 2].val + stack[top].val`
+이 말은 `E.val = E1.val + T.val` 과 같은 의미다.
+
+그리고 reduce 후에는 `E1 + T` 세 칸이 하나의 `E`로 줄어든다.
+그래서 stack top 위치를 줄인다.
+
+```text
+top = top - 2
+```
+
+세 개가 하나로 줄어드니까 전체적으로 stack 크기가 2만큼 감소하는 것이다.
+
+---
+#### `T → T1 * F`도 똑같다
+
+```text
+T → T1 * F {
+  stack[top - 2].val = stack[top - 2].val * stack[top].val;
+  top = top - 2;
+}
+```
+
+stack 상태는 대략 이렇다.
+
+```text
+stack[top]     : F.val
+stack[top - 1] : '*'
+stack[top - 2] : T1.val
+```
+
+그래서 `T.val = T1.val * F.val` 를 계산하고, 세 칸을 하나의 `T`로 줄인다.
+
+---
+#### `F → ( E )`는 왜 `top - 1`인가
+
+```text
+F → ( E ) {
+  stack[top - 2].val = stack[top - 1].val;
+  top = top - 2;
+}
+```
+
+이 경우 stack에는 이렇게 있다.
+
+```text
+stack[top]     : ')'
+stack[top - 1] : E.val
+stack[top - 2] : '('
+```
+
+괄호 자체는 값이 없다. 실제 값은 가운데 있는 `E.val`이다.
+
+그래서 `F.val = E.val` 이 되어야 한다.
+
+이를 stack 기준으로 쓰면 `stack[top - 2].val = stack[top - 1].val` 이 된다.
+그리고 `( E )` 세 개가 `F` 하나로 reduce되므로 역시 `top = top - 2`가 된다.
+
+---
 # Eliminating Left Recursions from SDT
 
-실제로 값이 어떻게 전달되는지 체크해서 루틴을 만들 필요가 있음
+왜 left recursion을 제거해야 하는지 회상해보자. 예를 들어 이런 문법이 있다고 하자.
+
+```
+E → E + TE → T
+```
+
+이 문법은 left recursive하다. 왜냐하면 `E → E + T`처럼 오른쪽이 다시 `E`로 시작하기 때문이다.
+
+Top-down parser, 특히 recursive descent parser에서는 이런 문법을 그대로 쓰면 문제가 생긴다.
+
+```
+E()
+→ E()
+→ E()
+→ E()
+...
+```
+
+계속 자기 자신을 먼저 호출해서 무한 재귀에 빠질 수 있다.
+
+그래서 left recursion을 제거해서 보통 이런 형태로 바꾼다.
+
+```
+E → T R
+R → + T R
+R → ε
+```
+
+이제 `E`는 먼저 `T`를 읽고, 뒤에 `+ T`가 반복되는 구조가 된다.
+
+---
+## Simple case
+
+원래 SDT가 이렇게 있었다고 하자. 이건 postfix 출력 예제다.
+
+```text
+E → E + T { print('+'); }
+E → T
+```
+
+예를 들어 `a + b + c`를 처리하면, 연산자 `+`를 피연산자 뒤에 출력해서 postfix 형태를 만들 수 있다.
+
+원래 문법은 left recursive하니까, 문법을 이렇게 바꾼다.
+
+```text
+E → T R
+R → + T { print('+'); } R
+R → ε
+```
+
+여기서 중요한 건 `{ print('+'); }`의 위치다. 단순히 문법만 바꾸면 안 되고, 원래 `+`가 출력되던 시점과 같은 의미가 되도록 action을 배치해야 한다.
+
+```
+R → + T { print('+'); } R
+```
+
+이렇게 둔 이유는 `+ T`를 처리한 뒤에 `+`를 출력해야 postfix 순서가 맞기 때문이다.
+
+예를 들어 입력이 `a + b + c` 이면 postfix는 `a b + c +` 가 되어야 한다.
+
+그래서 첫 번째 `+ T`에서 `b`까지 처리한 다음 `+`를 출력하고, 두 번째 `+ T`에서 `c`까지 처리한 다음 `+`를 출력한다.
+
+흐름은 이렇게 된다.
+
+```text
+a 처리
+b 처리
+print('+')
+c 처리
+print('+')
+```
+
+즉 action을 terminal처럼 취급해서, 문법 변환 과정에서 같이 옮겨야 한다는 의미다.
+
+---
+### action을 terminal symbol처럼 취급해야 한다.
+
+문법을 변환할 때 `{ print('+'); }` 같은 action도 하나의 symbol처럼 보고 위치를 유지하라는 뜻이다.
+
+예를 들어 원래 오른쪽 body가 `E + T { print('+'); }` 였다면, `{ print('+'); }`도 그냥 body 안의 한 요소처럼 본다.
+
+```text
+E + T action
+```
+
+left recursion 제거를 할 때도 이 action이 원래 어떤 symbol 뒤에서 실행되어야 했는지 유지해야 한다. 이 경우 action은 `T` 뒤에 있어야 한다. 그래야 오른쪽 피연산자 `T`를 처리한 다음 `+`를 출력할 수 있다.
+
+그래서 변환 후에도 `R → + T { print('+'); } R` 이 된다.
+
+---
+# complex case
+
+두 번째 경우는 단순히 `print()`만 하는 게 아니라, attribute 값을 계산하는 경우다.
+
+![](../images/Pasted%20image%2020260601160735.png)
+
+이것도 left recursive하다. `A → A1 Y`에서 오른쪽이 다시 `A1`으로 시작하기 때문이다.
+
+
+![](../images/Pasted%20image%2020260601160959.png)
+
+처음에는 `X`에서 시작해서 값을 만든다.
+
+```text
+A.a = f(X.x)
+```
+
+그다음 `Y`가 하나씩 붙을 때마다 기존 값을 누적해서 갱신한다.
+
+```text
+A.a = g(이전 A.a, Y.y)
+```
+
+예를 들어 `X Y1 Y2`가 있다면 원래 의미는
+
+```text
+A.a = g(g(f(X.x), Y1.y), Y2.y)
+```
+
+가 되어야 한다. 즉 왼쪽에서 오른쪽으로 누적 계산하는 구조다.
+
+---
+### left recusion 제거하면?
+
+left recursion을 제거하면 문법 자체는 보통 이렇게 바뀐다.
+
+```text
+A → X R
+R → Y R
+R → ε
+```
+
+그런데 여기서 문제는 attribute 계산이다.
+
+원래는 `A.a`가 계속 누적되어야 한다.
+
+```text
+f(X.x)
+→ g(f(X.x), Y1.y)
+→ g(g(f(X.x), Y1.y), Y2.y)
+```
+
+이 누적값을 `R`에게 넘기면서 계산해야 한다.
+
+그래서 `R`에 inherited attribute와 synthesized attribute를 둔다.
+
+```text
+R.i : 지금까지 누적된 값
+R.s : 최종 결과값
+```
+
+---
+
+# 6. 변환된 SDT 해석
+
+슬라이드의 변환 결과는 다음과 같다.
+
+```text
+A → X { R.i := f(X.x) } R { A.a := R.s }
+
+R → Y { R1.i := g(R.i, Y.y) } R1 { R.s := R1.s }
+
+R → ε { R.s := R.i }
+```
+
+하나씩 보면 된다.
+
+---
+
+## `A → X { R.i := f(X.x) } R { A.a := R.s }`
+
+먼저 `X`를 처리한다.
+
+그러면 `X.x`가 생긴다.
+
+원래 base case였던:
+
+```text
+A → X { A.a := f(X.x) }
+```
+
+의 의미를 살려서, 첫 누적값을 만든다.
+
+```text
+R.i := f(X.x)
+```
+
+그런 다음 `R`이 뒤에 오는 `Y`들을 처리한다.
+
+`R` 처리가 끝나면 최종 결과가 `R.s`에 들어 있다.
+
+그래서 마지막에:
+
+```text
+A.a := R.s
+```
+
+로 전체 결과를 `A.a`에 넣는다.
+
+---
+
+## `R → Y { R1.i := g(R.i, Y.y) } R1 { R.s := R1.s }`
+
+이 규칙은 `Y`가 하나 더 붙은 경우다.
+
+현재까지의 누적값은 `R.i`에 들어 있다.
+
+새로 처리한 `Y`의 값은 `Y.y`다.
+
+그러면 새로운 누적값은:
+
+```text
+g(R.i, Y.y)
+```
+
+가 된다.
+
+이 값을 다음 `R1`에게 넘긴다.
+
+```text
+R1.i := g(R.i, Y.y)
+```
+
+즉 `R1`은 “여기까지 누적된 값”을 이어받아서 나머지 `Y`들을 계속 처리한다.
+
+그리고 `R1`이 최종 결과를 계산해서 `R1.s`로 돌려주면, 현재 `R`도 그 값을 그대로 자신의 최종 결과로 삼는다.
+
+```text
+R.s := R1.s
+```
+
+---
+
+## `R → ε { R.s := R.i }`
+
+이건 더 이상 `Y`가 없는 경우다.
+
+즉 누적 계산이 끝났다.
+
+그러면 현재까지 들고 있던 누적값 `R.i`가 최종 결과가 된다.
+
+```text
+R.s := R.i
+```
+
+그래서 `R.s`로 올려보낸다.
+
+---
+
+# 7. 예시로 보면
+
+입력이 `X Y1 Y2`라고 해보자.
+
+원래 left recursive 문법에서는 결과가 이렇게 되어야 한다.
+
+```text
+A.a = g(g(f(X.x), Y1.y), Y2.y)
+```
+
+변환된 문법에서는 이렇게 진행된다.
+
+먼저:
+
+```text
+A → X R
+R.i = f(X.x)
+```
+
+첫 번째 `Y1` 처리:
+
+```text
+R1.i = g(R.i, Y1.y)
+     = g(f(X.x), Y1.y)
+```
+
+두 번째 `Y2` 처리:
+
+```text
+R2.i = g(R1.i, Y2.y)
+     = g(g(f(X.x), Y1.y), Y2.y)
+```
+
+마지막 `R → ε`:
+
+```text
+R2.s = R2.i
+```
+
+다시 위로 올라오면서:
+
+```text
+R1.s = R2.s
+R.s = R1.s
+A.a = R.s
+```
+
+결국:
+
+```text
+A.a = g(g(f(X.x), Y1.y), Y2.y)
+```
+
+가 된다.
+
+원래 left recursive SDT와 같은 결과가 나온다.
+
+---
+
+# 8. 이 슬라이드의 핵심
+
+첫 번째 슬라이드는 단순한 경우다.
+
+```text
+E → E + T { print('+'); }
+E → T
+```
+
+을
+
+```text
+E → T R
+R → + T { print('+'); } R
+R → ε
+```
+
+로 바꾸면 된다.
+
+action도 문법 symbol처럼 보고 적절한 위치로 옮기면 된다.
+
+두 번째 슬라이드는 복잡한 경우다.
+
+단순히 action 위치만 옮기면 안 되고, 원래 left recursive 구조에서 누적되던 값을 보존해야 한다.
+
+그래서 새로운 nonterminal `R`에 두 attribute를 둔다.
+
+```text
+R.i : inherited attribute, 지금까지 계산된 누적값
+R.s : synthesized attribute, 최종 계산 결과
+```
+
+그리고 `R.i`로 값을 아래로 넘기고, `R.s`로 최종값을 위로 올린다.
+
+---
+
+# 한 문장 정리
+
+**Left recursion을 제거할 때는 문법만 바꾸면 안 되고, 원래 semantic action의 실행 순서와 attribute 계산 결과가 유지되도록 action 위치와 attribute 흐름을 함께 변환해야 한다.**
+
+
+
+
+
 
 ---
 ## SDT's for L attributesd Definitions
