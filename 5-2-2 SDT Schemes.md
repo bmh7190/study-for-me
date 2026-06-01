@@ -611,7 +611,7 @@ R.s : 최종 결과값
 
 ---
 
-# 6. 변환된 SDT 해석
+# 변환된 SDT 해석
 
 슬라이드의 변환 결과는 다음과 같다.
 
@@ -623,57 +623,30 @@ R → Y { R1.i := g(R.i, Y.y) } R1 { R.s := R1.s }
 R → ε { R.s := R.i }
 ```
 
-하나씩 보면 된다.
+#### `A → X { R.i := f(X.x) } R { A.a := R.s }`
 
----
+먼저 `X`를 처리한다. 그러면 `X.x`가 생긴다.
 
-## `A → X { R.i := f(X.x) } R { A.a := R.s }`
-
-먼저 `X`를 처리한다.
-
-그러면 `X.x`가 생긴다.
-
-원래 base case였던:
-
-```text
-A → X { A.a := f(X.x) }
-```
-
-의 의미를 살려서, 첫 누적값을 만든다.
+원래 base case였던 `A → X { A.a := f(X.x) }` 의 의미를 살려서, 첫 누적값을 만든다.
 
 ```text
 R.i := f(X.x)
 ```
 
-그런 다음 `R`이 뒤에 오는 `Y`들을 처리한다.
+그런 다음 `R`이 뒤에 오는 `Y`들을 처리한다. `R` 처리가 끝나면 최종 결과가 `R.s`에 들어 있다.
 
-`R` 처리가 끝나면 최종 결과가 `R.s`에 들어 있다.
-
-그래서 마지막에:
-
-```text
-A.a := R.s
-```
-
-로 전체 결과를 `A.a`에 넣는다.
+그래서 마지막에 `A.a := R.s` 로 전체 결과를 `A.a`에 넣는다.
 
 ---
 
-## `R → Y { R1.i := g(R.i, Y.y) } R1 { R.s := R1.s }`
+#### `R → Y { R1.i := g(R.i, Y.y) } R1 { R.s := R1.s }`
 
 이 규칙은 `Y`가 하나 더 붙은 경우다.
 
-현재까지의 누적값은 `R.i`에 들어 있다.
+- 현재까지의 누적값은 `R.i`에 들어 있다.
+- 새로 처리한 `Y`의 값은 `Y.y`다.
 
-새로 처리한 `Y`의 값은 `Y.y`다.
-
-그러면 새로운 누적값은:
-
-```text
-g(R.i, Y.y)
-```
-
-가 된다.
+그러면 새로운 누적값은 `g(R.i, Y.y)` 가 된다.
 
 이 값을 다음 `R1`에게 넘긴다.
 
@@ -691,11 +664,9 @@ R.s := R1.s
 
 ---
 
-## `R → ε { R.s := R.i }`
+#### `R → ε { R.s := R.i }`
 
-이건 더 이상 `Y`가 없는 경우다.
-
-즉 누적 계산이 끝났다.
+이건 더 이상 `Y`가 없는 경우다. 즉 누적 계산이 끝났다.
 
 그러면 현재까지 들고 있던 누적값 `R.i`가 최종 결과가 된다.
 
@@ -707,8 +678,6 @@ R.s := R.i
 
 ---
 
-# 7. 예시로 보면
-
 입력이 `X Y1 Y2`라고 해보자.
 
 원래 left recursive 문법에서는 결과가 이렇게 되어야 한다.
@@ -719,34 +688,37 @@ A.a = g(g(f(X.x), Y1.y), Y2.y)
 
 변환된 문법에서는 이렇게 진행된다.
 
-먼저:
+![](../images/Pasted%20image%2020260601162526.png)
+
 
 ```text
 A → X R
 R.i = f(X.x)
 ```
 
-첫 번째 `Y1` 처리:
+첫 번째 `Y1` 처리
 
 ```text
 R1.i = g(R.i, Y1.y)
      = g(f(X.x), Y1.y)
 ```
 
-두 번째 `Y2` 처리:
+두 번째 `Y2` 처리
 
 ```text
 R2.i = g(R1.i, Y2.y)
      = g(g(f(X.x), Y1.y), Y2.y)
 ```
 
-마지막 `R → ε`:
+마지막 `R → ε`
 
 ```text
 R2.s = R2.i
 ```
 
-다시 위로 올라오면서:
+
+
+![](../images/Pasted%20image%2020260601162546.png)
 
 ```text
 R1.s = R2.s
@@ -754,66 +726,120 @@ R.s = R1.s
 A.a = R.s
 ```
 
-결국:
-
-```text
-A.a = g(g(f(X.x), Y1.y), Y2.y)
-```
-
-가 된다.
-
+다시 위로 올라오면서 결국 `A.a = g(g(f(X.x), Y1.y), Y2.y)` 가 된다.
 원래 left recursive SDT와 같은 결과가 나온다.
 
----
-
-# 8. 이 슬라이드의 핵심
-
-첫 번째 슬라이드는 단순한 경우다.
-
-```text
-E → E + T { print('+'); }
-E → T
-```
-
-을
-
-```text
-E → T R
-R → + T { print('+'); } R
-R → ε
-```
-
-로 바꾸면 된다.
-
-action도 문법 symbol처럼 보고 적절한 위치로 옮기면 된다.
-
-두 번째 슬라이드는 복잡한 경우다.
-
-단순히 action 위치만 옮기면 안 되고, 원래 left recursive 구조에서 누적되던 값을 보존해야 한다.
-
-그래서 새로운 nonterminal `R`에 두 attribute를 둔다.
-
-```text
-R.i : inherited attribute, 지금까지 계산된 누적값
-R.s : synthesized attribute, 최종 계산 결과
-```
-
-그리고 `R.i`로 값을 아래로 넘기고, `R.s`로 최종값을 위로 올린다.
+>left recursion을 제거한 뒤에는 원래 `A.a`에 누적되던 값을 `R.i`로 전달하면서 아래로 내려간다. 각 `Y`를 처리할 때마다 `R.i`와 `Y.y`를 이용해 새로운 누적값을 만들고, 이를 다음 `R1.i`로 넘긴다. 마지막에 `R → ε`에 도달하면 더 이상 처리할 `Y`가 없으므로 현재 누적값 `R.i`를 `R.s`로 확정한다. 이후 `R.s`가 위로 전달되어 최종적으로 `A.a`에 저장된다.
 
 ---
+# SDT's for L attributesd Definitions
 
-# 한 문장 정리
+앞에서 우리는 SDD와 SDT를 구분했다.
 
-**Left recursion을 제거할 때는 문법만 바꾸면 안 되고, 원래 semantic action의 실행 순서와 attribute 계산 결과가 유지되도록 action 위치와 attribute 흐름을 함께 변환해야 한다.**
+SDD는 production마다 semantic rule을 붙여서 **무엇을 계산할지**를 정의하는 방식이었다. 그런데 실제 parser가 동작할 때는 단순히 “계산해야 한다”만으로는 부족하다. 중요한 건 **언제 계산해야 하는가**이다.
 
+특히 L-attributed SDD에서는 inherited attribute가 자주 등장한다. inherited attribute는 어떤 nonterminal이 처리되기 전에 미리 값이 들어가 있어야 한다. 그래서 semantic action을 아무 위치에나 둘 수 없다.
 
+L-attributed SDD를 SDT로 바꿀 때 핵심 규칙은 두 가지다.
 
+- **inherited attribute를 계산하는 action은 해당 nonterminal 바로 앞에 둔다**는 것이다.
 
+- **synthesized attribute를 계산하는 action은 production 맨 끝에 둔다**는 것이다.
 
+이 두 규칙은 attribute가 필요한 시점이 다르기 때문에 생긴다.
 
 ---
-## SDT's for L attributesd Definitions
-Syn thesized 는 여전히 쉬움 하지만 inherited 는 어려움 
+### inherited attribute action은 왜 앞에 두는가
+
+Inherited attribute는 부모나 왼쪽 형제에게서 정보를 받아오는 attribute다.
+
+예를 들어 다음 production을 보자.
+
+```
+D → T L
+L.in := T.type
+```
+
+여기서 `L.in`은 `L`의 inherited attribute다.
+
+`L`은 자기 내부를 처리할 때 `L.in` 값을 사용해야 한다. 그러면 `L`을 처리하기 전에 이미 `L.in`이 준비되어 있어야 한다.
+
+그래서 SDT로 바꾸면 action을 `L` 앞에 둔다.
+
+```
+D → T { L.in := T.type } L
+```
+
+
+만약 action을 맨 뒤에 둔다면
+
+```
+D → T L { L.in := T.type }
+```
+
+이건 잘못된 위치다. 왜냐하면 이미 `L`을 처리한 뒤에 `L.in`을 넣는 것이기 때문이다. `L.in`은 `L`을 처리하는 도중에 필요한 값이므로, 처리 후에 넣으면 늦다.
+
+그래서 inherited attribute를 계산하는 action은 **그 값을 받을 nonterminal 바로 앞**에 둔다.
+
+---
+
+## synthesized attribute action은 왜 맨 끝에 두는가
+
+Synthesized attribute는 자식들의 값을 이용해서 부모의 값을 계산하는 attribute다.
+
+예를 들어:
+
+```
+E → E1 + TE.val := E1.val + T.val
+```
+
+여기서 `E.val`은 부모 `E`의 synthesized attribute다.
+
+이 값을 계산하려면 `E1.val`과 `T.val`이 먼저 필요하다. 즉 오른쪽 body에 있는 `E1`과 `T`가 모두 처리된 뒤에야 계산할 수 있다.
+
+그래서 SDT에서는 action을 production 맨 끝에 둔다.
+
+```
+E → E1 + T { E.val := E1.val + T.val }
+```
+
+흐름은 다음과 같다.
+
+```
+1. E1을 처리한다.2. T를 처리한다.3. E1.val과 T.val이 모두 준비된다.4. E.val := E1.val + T.val을 실행한다.
+```
+
+즉 synthesized attribute는 자식들이 다 처리된 후에 부모 값을 만들기 때문에, action이 맨 끝에 오는 것이 자연스럽다.
+
+---
+
+## L-attributed SDD와 연결해서 이해하기
+
+L-attributed SDD는 정보 흐름이 왼쪽에서 오른쪽으로 가는 형태다.
+
+예를 들어 production이 다음과 같다고 하자.
+
+```
+A → X1 X2 X3
+```
+
+여기서 `X3.in`을 계산해야 한다면, `X3`보다 왼쪽에 있는 `X1`, `X2`의 attribute나 부모 `A`의 attribute를 사용할 수 있다.
+
+그러면 SDT에서는 `X3` 바로 앞에 action을 넣는다.
+
+```
+A → X1 X2 { X3.in := ... } X3
+```
+
+이렇게 해야 `X3`를 처리하기 전에 필요한 inherited attribute가 준비된다.
+
+반대로 head인 `A`의 synthesized attribute를 계산한다면, 오른쪽 symbol들이 모두 처리된 뒤에 계산해야 한다.
+
+```
+A → X1 X2 X3 { A.s := ... }
+```
+
+그래서 synthesized attribute action은 production 맨 끝에 둔다.
 
 ![](../images/Pasted%20image%2020260507104411.png)
 while loop 는 condition 체크를 하고 만족하면 while 문 진행 그게 아니면 빠져나옴
