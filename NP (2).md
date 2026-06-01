@@ -95,9 +95,12 @@ $$(a ∨ ¬b ∨ c) ∧ (¬a ∨ d ∨ e) ∧ (b ∨ ¬c ∨ d)$$
 
 중요한 점은 3-SAT가 SAT보다 제한된 형태인데도 여전히 NP-complete라는 것이다. Karp가 SAT로부터 3-SAT로의 환원을 통해 3-SAT도 NP-complete임을 보였다.
 
+>환원은 A의 입력을 그대로 B에 넣는 것이 아니라, A의 입력 X를 다항시간 안에 B의 입력 Y로 변환했을 때 yes/no 결과가 동일하게 유지되는 것을 말한다. 따라서 SAT ≤p 3SAT라는 것은 SAT 식 S를 3SAT 형식의 식 S'로 변환할 수 있고, S가 만족 가능하면 S'도 만족 가능하며, S가 만족 불가능하면 S'도 만족 불가능하다는 뜻이다. 즉, SAT의 답과 변환된 3SAT의 답이 항상 같아야 한다. 그리고 SAT는 이미 NP-complete이고, 3SAT는 assignment가 주어지면 각 clause를 검사해서 다항시간에 검증 가능하므로 NP에 속한다. 결국 SAT를 3SAT로 환원할 수 있으므로 3SAT는 SAT만큼 어렵고, 동시에 NP에도 속하기 때문에 3SAT는 NP-complete이다.
+
 이게 왜 중요하냐면, 이후 많은 그래프 문제들을 증명할 때 일반 SAT보다 3-SAT에서 출발하는 경우가 많다. clause 크기가 3개로 고정되어 있어서 그래프로 변환하기가 더 편하기 때문이다.
 
-## Slide 7. CLIQUE 문제
+---
+# CLIQUE 문제
 
 Clique는 그래프에서 **서로 모두 연결되어 있는 꼭짓점들의 집합**이다.
 
@@ -105,7 +108,7 @@ Clique는 그래프에서 **서로 모두 연결되어 있는 꼭짓점들의 �
 
 CLIQUE 문제는 다음과 같이 정의된다.
 
-그래프 G와 정수 k가 주어졌을 때, 크기가 최소 k인 clique가 존재하는가?
+>그래프 G와 정수 k가 주어졌을 때, 크기가 최소 k인 clique가 존재하는가?
 
 여기서 “최소 k”라는 말은 k개 이상인 clique가 있냐는 뜻이다.
 
@@ -120,39 +123,34 @@ CLIQUE가 NP에 속하는 이유는 간단하다. 누군가 정점 집합 S를 �
 즉, SAT의 “만족 가능한 변수 선택” 문제가 CLIQUE의 “서로 연결된 정점 선택” 문제로 변환되는 것이다.
 
 ---
-
-## Slide 8. INDEPENDENT SET 문제
+# INDEPENDENT SET 문제
 
 Independent set은 clique와 반대 느낌이다.
 
-Clique는 집합 안의 정점들이 서로 모두 연결되어 있어야 한다. 반면 independent set은 집합 안의 정점들이 서로 하나도 연결되어 있지 않아야 한다.
-
+Clique는 집합 안의 정점들이 서로 모두 연결되어 있어야 한다. 반면 independent set은 집합 안의 정점들이 서로 하나도 연결되어 있지 않아야 한다. 
 즉, independent set은 **서로 모두 이웃하지 않는 꼭짓점들의 집합**이다.
 
 INDEPENDENT SET 문제는 다음과 같다.
 
-그래프 G와 정수 k가 주어졌을 때, 크기가 최소 k인 independent set이 존재하는가?
+>그래프 G와 정수 k가 주어졌을 때, 크기가 최소 k인 independent set이 존재하는가?
 
 이 문제도 NP에 속한다. 누군가 정점 집합 S를 주면, S 안의 모든 정점 쌍 사이에 edge가 없는지 확인하면 된다. 있으면 independent set이 아니고, 없으면 independent set이다.
 
 중요한 연결은 CLIQUE에서 INDEPENDENT SET으로의 환원이다.
 
 여기서 핵심은 **complement graph**다.
-
 원래 그래프 G에서 edge가 있던 곳은 없애고, edge가 없던 정점 쌍에는 edge를 추가한 그래프를 complement graph라고 한다.
 
 그러면 원래 그래프 G에서 clique였던 정점 집합은 complement graph에서는 independent set이 된다. 왜냐하면 원래 서로 모두 연결되어 있던 정점들이 complement graph에서는 서로 연결되지 않기 때문이다.
 
 따라서 CLIQUE 문제를 INDEPENDENT SET 문제로 바꿀 수 있다.
 
-G에 크기 k인 clique가 존재한다  
-↔ complement graph에 크기 k인 independent set이 존재한다.
+G에 크기 k인 clique가 존재한다 ↔ complement graph에 크기 k인 independent set이 존재한다.
 
 그래서 INDEPENDENT SET은 CLIQUE로부터 환원되어 NP-complete이다.
 
 ---
-
-## Slide 9. VERTEX COVER 문제
+# VERTEX COVER 문제
 
 Vertex cover는 그래프의 모든 edge를 “덮는” 정점 집합이다.
 
