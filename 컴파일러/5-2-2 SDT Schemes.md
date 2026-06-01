@@ -782,15 +782,15 @@ D → T L { L.in := T.type }
 그래서 inherited attribute를 계산하는 action은 **그 값을 받을 nonterminal 바로 앞**에 둔다.
 
 ---
-
 ## synthesized attribute action은 왜 맨 끝에 두는가
 
 Synthesized attribute는 자식들의 값을 이용해서 부모의 값을 계산하는 attribute다.
 
-예를 들어:
+예를 들어
 
 ```
-E → E1 + TE.val := E1.val + T.val
+E → E1 + T
+E.val := E1.val + T.val
 ```
 
 여기서 `E.val`은 부모 `E`의 synthesized attribute다.
@@ -803,17 +803,10 @@ E → E1 + TE.val := E1.val + T.val
 E → E1 + T { E.val := E1.val + T.val }
 ```
 
-흐름은 다음과 같다.
-
-```
-1. E1을 처리한다.2. T를 처리한다.3. E1.val과 T.val이 모두 준비된다.4. E.val := E1.val + T.val을 실행한다.
-```
-
 즉 synthesized attribute는 자식들이 다 처리된 후에 부모 값을 만들기 때문에, action이 맨 끝에 오는 것이 자연스럽다.
 
 ---
-
-## L-attributed SDD와 연결해서 이해하기
+### L-attributed SDD와 연결해서 이해하기
 
 L-attributed SDD는 정보 흐름이 왼쪽에서 오른쪽으로 가는 형태다.
 
@@ -841,31 +834,253 @@ A → X1 X2 X3 { A.s := ... }
 
 그래서 synthesized attribute action은 production 맨 끝에 둔다.
 
+---
+# EX 5.19 S→while (C) S1
+
+이번 예제는 위의 두 규칙을 `while` 문에 적용한 것이다.
+
+여기서 `C`는 조건식이고, `S1`은 while 문 안에서 반복 실행될 statement다.
+
+컴파일러는 이 while 문을 단순히 문법적으로 인식하는 것에서 끝나지 않고, 실제 실행 흐름을 표현하는 code를 만들어야 한다.
+
+## Syntax-Directed Definition 의미
+
 ![](../images/Pasted%20image%2020260507104411.png)
-while loop 는 condition 체크를 하고 만족하면 while 문 진행 그게 아니면 빠져나옴
+#### `L1 = new();`
 
-가장 먼저해야할건 condition check 를 해야함 
+- `L1`은 while 문의 시작 지점 label이다. 
+- while 문은 반복문이기 때문에, body 실행이 끝나면 다시 조건 검사 위치로 돌아가야 한다.
+- 그래서 조건 검사를 시작하는 위치에 label이 필요하다.
 
-S1 수행한 다음에는 while loop 으로 다시 돌아와야함
-condition check 후 false라면 S1이 아니라 밖으로 나가야함
+```
+L1:    조건 검사
+```
 
-C가 false라면 S의 next가 될 것
-
-S1.next 는 inherited attribute 
-앞에서 일을 처리하고 전달을 받았기 때문
-
-S.next 도 마찬가지로 inherited attribute 일 것이다.
-
-C.code 는 자기 ㅅ자신이고
-C의 true와 false는 부모에서 넘겨준것이기 때문에 inherited attribute임 
-
-synsthesized attribute는 맨 뒤에 그리고 inheried attribute 는 필요한 곳 전에
-
-그래서 c 전에 c.false c. true S1 전에 S1.next 그리고 맨 뒤에 synthesized
+즉 `L1`은 while 문의 맨 앞, 조건 검사 위치다.
 
 ---
-# Implemeting L-attributed SDD's
+#### `L2 = new();`
 
-투 패스 컴파일러를 쓴다
-중간 단계 파일을 dump 그걸 다시 읽어서 백엔드로 보낸다
-조금 더 낫게 할 수 있는 방법은 중간중간에 계속 dump 하자
+- `L2`는 조건이 true일 때 이동할 위치다.
+- 조건 `C`가 참이면 while body인 `S1`을 실행해야 한다.
+- 그래서 body 시작 위치에도 label이 필요하다.
+
+```
+L2:    S1.code
+```
+
+---
+#### `S1.next = L1`
+
+- `S1.next`는 `S1` 실행이 끝난 다음 어디로 가야 하는지를 의미한다.
+- while 문에서는 body 실행이 끝나면 다시 조건 검사로 돌아가야 한다.
+- 그래서 `S1.next`는 `L1`이 된다.
+
+이 값은 `S1`이 code를 만들 때 필요하므로, `S1`을 처리하기 전에 미리 전달되어야 한다.
+그래서 `S1.next`는 inherited attribute다.
+
+---
+#### `C.false = S.next`
+
+- `C.false`는 조건 `C`가 false일 때 어디로 갈지를 의미한다.
+- while 조건이 false면 반복문을 빠져나가야 한다.
+- 그런데 while 문을 빠져나간 다음 위치는 `S.next`다.
+
+즉 `S.next`는 현재 statement `S`가 끝난 뒤 다음에 실행될 위치다.
+
+그래서 조건이 false이면 `C.false = S.next` 가 된다.
+
+이 값은 조건식 `C`의 code를 만들 때 필요하다. 조건식 code는 true/false에 따라 jump를 생성해야 하기 때문이다. 따라서 `C.false`는 `C`를 처리하기 전에 미리 정해져 있어야 한다.
+
+그래서 `C.false`도 inherited attribute다.
+
+---
+#### `C.true = L2`
+
+- `C.true`는 조건 `C`가 true일 때 어디로 갈지를 의미한다.
+- while 조건이 true이면 body를 실행해야 한다.
+
+body 시작 label이 `L2`이므로 `C.true = L2` 가 된다.
+
+이 값도 조건식 `C`의 code 생성에 필요하므로, `C`를 처리하기 전에 미리 전달되어야 한다.
+따라서 `C.true`도 inherited attribute다.
+
+---
+#### `S.code = label || L1 || C.code || label || L2 || S1.code`
+
+이건 while 문 전체 code를 조립하는 부분이다.
+
+구조는 다음과 같다.
+
+```
+label L1
+C.code
+label L2
+S1.code
+```
+
+조금 더 의미 중심으로 쓰면:
+
+```
+L1:
+    C.code
+
+L2:
+    S1.code
+```
+
+여기서 `C.code` 안에는 조건이 true이면 `C.true`, false이면 `C.false`로 jump하는 코드가 들어간다고 보면 된다.
+
+이미 앞에서 
+```
+C.true = L2
+C.false = S.next
+```
+
+로 정했기 때문에, `C.code`는 조건 결과에 따라 적절한 위치로 이동할 수 있다.
+
+그리고 `S1.next = L1`로 정했기 때문에, `S1.code`는 body가 끝난 뒤 다시 `L1`로 돌아가는 흐름을 만들 수 있다.
+
+`S.code`는 `C.code`와 `S1.code`가 모두 만들어진 뒤에 조립할 수 있다.
+
+그래서 `S.code`는 synthesized attribute다.
+
+---
+## SDD를 SDT로 바꾸는 과정
+
+이제 중요한 부분은 아래쪽 SDT다.
+
+![[Pasted image 20260601165651.png]]
+
+원래 production은 `S → while ( C ) S1` 이었다.
+
+그런데 inherited attribute들은 해당 nonterminal이 처리되기 전에 준비되어야 한다.
+
+그래서 action을 중간에 배치한다.
+
+---
+#### 첫 번째 action
+
+첫 번째 action은 `C` 바로 앞에 있다.
+
+```
+{ L1 = new(); L2 = new(); C.false = S.next; C.true = L2; }
+```
+
+왜 `C` 앞에 있냐면, 이 action이 `C`의 inherited attribute를 계산하기 때문이다.
+
+`C`를 처리하기 전에 다음 값들이 필요하다.
+
+```
+C.false = S.nextC.true = L2
+```
+
+그래서 `C` 앞에 action을 둔다.
+
+또 `C.true = L2`를 하려면 `L2`가 먼저 있어야 하고, body가 끝난 뒤 돌아갈 `L1`도 필요하므로 여기서 `L1`, `L2`를 함께 만든다.
+
+여기서 `dummy`라고 적힌 이유는 `L1`, `L2`가 grammar symbol의 attribute라기보다는, code 생성을 위해 중간에 만들어두는 임시 label이기 때문이다.
+
+즉 parsing symbol은 아니지만, 뒤의 semantic action들이 사용해야 하는 보조 값이다.
+
+---
+#### 두 번째 action
+
+```
+) { S1.next = L1; } S1
+```
+
+이 action은 `S1` 바로 앞에 있다.
+
+왜냐하면 `S1.next`는 `S1`의 inherited attribute이기 때문이다.
+
+`S1`이 자기 code를 만들 때, statement가 끝난 뒤 어디로 가야 하는지 알아야 한다.
+
+while body가 끝나면 다시 조건 검사 위치로 가야 하므로 `S1.next = L1` 이다.
+
+이 값은 `S1` 처리 전에 필요하기 때문에 `S1` 앞에 둔다.
+
+---
+#### 세 번째 action
+
+```
+S1 { S.code = label || L1 || C.code || label || L2 || S1.code; }
+```
+
+이 action은 production 맨 끝에 있다.
+
+왜냐하면 `S.code`는 synthesized attribute이기 때문이다.
+
+`S.code`를 만들려면 다음 값들이 모두 준비되어 있어야 한다.
+
+```
+L1L2C.codeS1.code
+```
+
+특히 `C.code`는 `C`를 처리한 뒤에 나오고, `S1.code`는 `S1`을 처리한 뒤에 나온다.
+
+그래서 `S1`까지 모두 처리한 다음, 맨 마지막에 while 문 전체 code인 `S.code`를 조립한다.
+
+---
+
+# 이 예제의 흐름 정리
+
+전체 실행 순서를 보면 이렇게 된다.
+
+```
+1. while ( 를 만난다.
+
+2. L1, L2를 새로 만든다.
+   L1 = while 조건 검사 위치
+   L2 = while body 시작 위치
+
+3. C를 처리하기 전에 C의 inherited attribute를 정한다.
+   C.true = L2
+   C.false = S.next
+
+4. C를 처리한다.
+   C.code 생성
+
+5. S1을 처리하기 전에 S1의 inherited attribute를 정한다.
+   S1.next = L1
+
+6. S1을 처리한다.
+   S1.code 생성
+
+7. 마지막에 전체 while 문 code를 조립한다.
+   S.code = label L1 || C.code || label L2 || S1.code
+```
+
+---
+
+# 왜 이게 L-attributed SDT인가
+
+이 예제에서 inherited attribute는 모두 해당 nonterminal 앞에서 계산된다.
+
+```
+C.true, C.false
+→ C 앞에서 계산
+
+S1.next
+→ S1 앞에서 계산
+```
+
+그리고 synthesized attribute인 `S.code`는 production 맨 끝에서 계산된다.
+
+```
+S.code  
+→ production 끝에서 계산
+```
+
+즉 앞 슬라이드의 규칙을 그대로 따른다.
+
+```
+inherited attribute action
+→ 받을 nonterminal 바로 앞
+
+synthesized attribute action
+→ production 맨 끝
+```
+
+그래서 이 예제는 L-attributed SDD를 SDT로 바꾸는 대표적인 예시다.
+
