@@ -1209,3 +1209,165 @@ LR parser는 입력을 왼쪽에서 오른쪽으로 shift하면서 stack에 쌓�
 
 - 마지막으로 S → while ( M C ) N S1을 reduce
 	M.L1, C.code, M.L2, S1.code를 조합해서 S.code를 만든다.
+
+![](../images/Pasted%20image%2020260602214559.png)
+
+---
+# Rewriting a Grammer to Avoid Inherited Attributed
+
+marker를 사용하면 중간 action을 `M → ε` 형태의 reduce action으로 바꿀 수 있지만, marker action에서 필요한 값이 reduce 시점에 stack에 존재하지 않으면 문제가 생길 수 있다.
+
+그래서 이번에는 아예 문법을 바꿔 inherited attribute가 필요하지 않도록 만드는 방법을 본다.
+
+![](../images/Pasted%20image%2020260602214856.png)
+
+예를 들어 입력이 다음과 같다고 하자.
+
+```
+id1, id2, id3 : int
+```
+
+여기서 타입 정보는 `T → int`를 보고 나서야 알 수 있다.  
+그런데 타입을 붙여야 하는 `id1`, `id2`, `id3`는 왼쪽의 `L` 안에 있다.
+
+즉 정보 흐름이 이렇게 된다.
+
+```
+T.type → L 안의 id들
+```
+
+오른쪽에서 얻은 정보를 왼쪽으로 넘겨야 하므로 inherited attribute가 필요하다.
+
+---
+
+그래서 문법을 이렇게 바꾼다.
+
+```
+D → id L  
+T → int  
+T → real  
+L → , id L1  
+L → : T
+```
+
+이제 `id`들을 먼저 읽다가, 마지막에 `: T`를 만난다.
+
+```
+id1, id2, id3 : int
+```
+
+이 구조에서는 가장 안쪽의 `: T`에서 타입이 결정된다.
+
+```
+L → : TL.type = T.type
+```
+
+그다음 reduce가 일어나면서 타입 정보가 위로 올라온다.  
+올라오는 과정에서 각 `id`에 타입을 붙인다.
+
+```
+L → , id L1
+addtype(id.entry, L1.type)
+
+D → id L
+addtype(id.entry, L.type)
+```
+
+즉 `T.type`을 아래로 내려보내는 게 아니라, `T.type`이 만들어진 뒤 reduce 과정에서 위로 올라오게 만든 것이다.
+
+---
+# Replacing Inherited Attributes with Syntheiszed Lists
+앞에서는 **문법 자체를 바꿔서 inherited attribute를 피하는 방법**이었다면,  
+
+이번에는 **문법은 거의 유지하되, inherited attribute 대신 list를 synthesized attribute로 만들어서 처리하는 방법**이다.
+
+![](../images/Pasted%20image%2020260602215315.png)
+
+원래 선언문은 이런 형태라고 보면 된다.
+
+```
+real id1, id2, id3
+```
+
+```
+D → T L  
+T → int  
+T → real  
+L → L1 , id  
+L → id
+```
+
+여기서 해야 하는 일은 아래와 같다.
+
+```
+id1의 type = real
+id2의 type = real
+id3의 type = real
+```
+
+그런데 `T.type`은 `T → real`에서 만들어지고, 이 타입을 `L` 안의 여러 `id`들에게 전달해야 한다.
+
+여기서 `L.type`은 위에서 아래로 전달되는 값이다. 즉 inherited attribute다.
+
+흐름은 이렇게 된다.
+
+```
+T.type = real
+↓
+L.type = real
+↓
+L1.type = real
+↓
+각 id에 addtype 적용
+```
+
+그래서 그림에서도 `T`에서 나온 type 정보가 `L` 쪽으로 내려가는 화살표로 표현되어 있다.
+
+---
+
+두 번째 슬라이드는 발상을 바꾼다. 기존 방식은 **타입을 id들에게 내려보내자** 였다.
+그런데 새 방식은 다음과 같다.
+
+>id들을 먼저 list로 모아 올리고,나중에 type을 한 번에 적용하자
+
+그래서 `L`이 더 이상 `type`을 inherited attribute로 받지 않는다.  
+대신 `L`은 자기 안에 있는 id들을 모아서 `L.list`라는 synthesized attribute로 만든다.
+
+```
+L → id
+L.list = [id]
+
+L → L1 , id
+L.list = L1.list + [id]
+```
+
+예를 들어 `id1`, `id2`, `id3이면` reduce 과정에서
+
+```
+L.list = [id1]
+L.list = [id1, id2]
+L.list = [id1, id2, id3]
+```
+
+이렇게 id 목록이 위로 올라간다.
+
+![](../images/Pasted%20image%2020260602215645.png)
+
+이제 `D → T L`을 reduce할 때는 두 값이 모두 준비되어 있다.
+
+```
+T.type = real
+L.list = [id1, id2, id3]
+```
+
+그래서 이때 한 번에 처리한다.
+
+```
+D → T L {
+    for all id ∈ L.list:
+        addtype(id.entry, T.type)
+}
+```
+
+즉 `L` 내부로 type을 미리 내려보내지 않는다.  
+대신 `L`이 id 목록을 위로 올려주고, `D`에서 `T.type`과 `L.list`를 함께 사용한다.
