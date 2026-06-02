@@ -653,3 +653,96 @@ action-record
 
 ----
 ![](../images/Pasted%20image%2020260602145059.png)
+
+### (a) 처음 stack 상태
+
+왼쪽 위 그림을 보면 stack top에 `S`가 있고, 그 아래에 `next = x`가 있다. 이 말은 현재 parser가 nonterminal `S`를 처리하려는 상황이고, `S.next` 값이 이미 `x`로 들어와 있다는 뜻이다.
+
+여기서 `x`는 while 문이 끝났을 때 이동할 label이다.
+
+```
+S.next = x
+```
+
+이 값은 inherited attribute다. 왜냐하면 `S`가 자기 내부에서 만든 값이 아니라, 바깥 문맥이 `S`에게 넘겨준 값이기 때문이다.
+
+---
+## S를 production으로 확장한 상태
+
+이제 LL parser가 `S → while ( C ) S1` production을 선택하면 stack에 production body를 넣는다. 그런데 단순히 문법 symbol만 넣는 게 아니라, 중간 action과 attribute record도 같이 넣는다.
+
+그래서 그림처럼 stack에 다음 요소들이 생긴다.
+
+![](../images/Pasted%20image%2020260602170904.png)
+
+여기서 중요한 건 `Action` record가 두 개 들어간다는 점이다.
+
+첫 번째 action은 `C`를 처리하기 전에 실행되어야 한다.
+왜냐하면 `C.false`, `C.true`를 미리 정해줘야 `C`가 조건식 코드를 만들 수 있기 때문이다.
+
+두 번째 action은 `S1`을 처리하기 전에 실행되어야 한다.
+왜냐하면 `S1.next`를 미리 정해줘야 `S1`이 body 코드를 만들 수 있기 때문이다.
+
+---
+## 첫 번째 Action record
+
+첫 번째 action record에는 이런 정보가 있다.
+
+```
+snext = x
+L1 = ?
+L2 = ?
+```
+
+여기서 `snext = x`는 원래 `S.next = x`였던 값을 action record가 복사해서 들고 있는 것이다.
+왜 복사하냐면, 이 action이 실행될 때 `S.next` 값을 사용해야 하기 때문이다.
+
+첫 번째 action이 하는 일은 아래 박스에 적혀 있다.
+
+```
+L1 = new();
+L2 = new();
+
+stack[top - 1].false = snext;
+stack[top - 1].true = L2;
+
+stack[top - 3].al1 = L1;
+stack[top - 3].al2 = L2;
+
+print("label", L1);
+```
+
+LL parser는 production의 오른쪽 부분을 왼쪽부터 처리해야 한다. 하지만 stack은 나중에 넣은 것이 먼저 나오는 LIFO 구조이므로, production RHS를 stack에 넣을 때는 오른쪽에서 왼쪽 순서로 push한다. 그래야 가장 왼쪽 symbol이 stack top에 올라와 먼저 처리된다.
+
+예를 들어 다음 production이 있다고 하면,
+
+```
+S → while ( Action1 C ) Action2 S1
+```
+
+처리 순서는 다음과 같아야 한다.
+
+```
+while → ( → Action1 → C → ) → Action2 → S1
+```
+
+따라서 stack에는 반대로 넣는다.
+
+그러면 stack top에는 `while`이 올라오고, parser는 top부터 하나씩 처리하면서 왼쪽에서 오른쪽 순서로 production을 수행할 수 있다.
+
+이 구조를 이해하면 `top-1`, `top-3` 같은 상대 위치 접근도 이해된다. parser는 `S → while ( Action1 C ) Action2 S1` production으로 확장할 때, stack에 들어가는 symbol들의 순서를 이미 알고 있다. 그래서 `while`과 `(`가 처리된 뒤 `Action1`이 실행되는 시점에는, 현재 top이 `Action1`이고 그 아래쪽에 앞으로 처리될 `C`, `)`, `Action2`, `S1`이 정해진 순서로 놓여 있다.
+
+따라서 첫 번째 action은 현재 action record를 기준으로 상대 위치를 이용해 값을 넣을 수 있다. 예를 들어 `top-1`에는 곧 처리될 `C` record가 있으므로 `C.false`, `C.true` 값을 채울 수 있다. 또한 `top-3`에는 나중에 실행될 두 번째 action record가 있으므로, 그 action이 사용할 `L1`, `L2` 값을 미리 저장할 수 있다.
+
+---
+핵심만 보자
+
+첫째, `C`가 처리되기 전에 `C.false`, `C.true`를 미리 채운다. 이는 조건식 `C`가 중간 코드를 만들 때 true/false일 때 이동할 label을 알아야 하기 때문이다.
+
+둘째, `L1`, `L2`는 나중에 `Action2`에서도 필요하므로 두 번째 action record에 저장해둔다. `Action2`는 이후 `S1`을 처리하기 전에 실행된다.
+
+```
+Action2 실행 내용S1.next = L1;print("label", L2);
+```
+
+`S1.next = L1`은 while body가 끝난 뒤 다시 조건 검사 위치로 돌아가게 하기 위한 것이다. 그리고 `label L2`는 while body가 시작되는 위치를 출력하는 것이다.
