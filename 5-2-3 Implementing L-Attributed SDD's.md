@@ -1085,7 +1085,7 @@ M → ε { M.i = A.i; M.s = f(M.i); }
 ```
 
 
-결론부터 말하면 **그냥 이렇게 바꾸면 legal하지 않다**고 보는 게 맞다..
+>결론부터 말하면 **그냥 이렇게 바꾸면 legal하지 않다**고 보는 게 맞다..
 
 원래 의도는 아래와 같다.
 
@@ -1143,4 +1143,69 @@ LR parser 관점에서도 문제가 있다.
 
 그래서 이 변환은 그냥 두면 legal하지 않다.
 
+>marker는 LR parser의 reduce-action 방식에 맞추기 위한 수단이다. 하지만 그 수단을 쓰려면, reduce 시점에 필요한 데이터가 stack이나 전역 상태에 준비되어 있어야 한다.
+>이 예시는 A.i가 준비되어 있지 않아서 문제가 된다.
+
 ---
+# Ex 5.26
+
+![](../images/Pasted%20image%2020260602183542.png)
+
+여기서 action이 두 번 중간에 들어간다.
+
+첫 번째 action은 `C`를 처리하기 전에 실행되어야 한다.
+
+```
+L1 = new()
+L2 = new()
+C.true = L2
+C.false = S.next
+print(label L1)
+```
+
+왜냐하면 조건식 `C`를 번역할 때 이미 `C.true`, `C.false`가 필요하기 때문이다.
+
+두 번째 action은 `S1`을 처리하기 전에 실행되어야 한다.
+
+```
+S1.next = L1
+print(label L2)
+```
+
+왜냐하면 while문의 body인 `S1`이 끝나면 다시 while문의 시작 위치 `L1`로 돌아가야 하기 때문이다.
+
+---
+그래서 marker를 넣어서 이렇게 바꾼다.
+
+![](../images/Pasted%20image%2020260602183640.png)
+
+여기서 `M`은 첫 번째 중간 action을 대신한다.
+`N`은 S1 가기 전에 action을 대신한다.
+
+![](../images/Pasted%20image%2020260602183823.png)
+
+
+LR parser는 입력을 왼쪽에서 오른쪽으로 shift하면서 stack에 쌓고,완성된 부분을 reduce하면서 bottom-up으로 올라간다.
+
+- ?에는 S.next 같은 inherited attribute가 이미 저장되어 있다고 본다.
+
+- while shift
+- ( shift
+
+- M → ε reduce
+	이때 첫 번째 중간 action 실행
+	L1, L2를 만들고, C.true, C.false를 설정한다.
+	C.false는 바깥 S.next를 stack에서 가져온다.
+
+- 그다음 C를 parsing/reduce하면서 C.code를 만든다.
+	이때 C.true, C.false는 M이 준비해 둔 값을 사용한다.
+
+- ) shift
+
+- N → ε reduce
+	이때 M.L1을 가져와서 S1.next에 넣는다. S1이 끝나면 while 시작 위치 L1로 돌아가게 한다.
+
+- 그다음 body 부분을 parsing/reduce해서 S1.code를 만든다.
+
+- 마지막으로 S → while ( M C ) N S1을 reduce
+	M.L1, C.code, M.L2, S1.code를 조합해서 S.code를 만든다.
