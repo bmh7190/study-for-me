@@ -1074,13 +1074,7 @@ S.code
 
 즉 앞 슬라이드의 규칙을 그대로 따른다.
 
-```
-inherited attribute action
-→ 받을 nonterminal 바로 앞
-
-synthesized attribute action
-→ production 맨 끝
-```
+**L-attributed SDD를 SDT로 바꾸면 inherited attribute 계산은 필요한 nonterminal 앞에 넣고, synthesized attribute 계산은 production 끝에 넣어서 parsing 중간중간 필요한 순서대로 semantic action을 실행한다.**
 
 그래서 이 예제는 L-attributed SDD를 SDT로 바꾸는 대표적인 예시다.
 
