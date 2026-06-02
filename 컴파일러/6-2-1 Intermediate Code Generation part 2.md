@@ -122,9 +122,10 @@ three-address code는 보통 한 명령에서 다루는 operand 수를 제한해
 그래서 `call foo(a+1, b, 7)` 처럼 한 줄에 복잡한 호출을 그대로 두지 않고, 계산할 건 먼저 계산인자는 param으로 하나씩 전달하고 마지막에 call하는 구조로 바꾼다.
 
 ---
-![](../images/Pasted%20image%2020260602232508.png)
 
 이 semantic rule은 **인자 목록 `Elist`가 각 인자의 주소 `E.addr`를 queue로 모아 올리고, 마지막에 `S`에서 그 queue를 이용해 `param`과 `call` 코드를 생성하는 구조**다.
+
+![](../images/Pasted%20image%2020260602232508.png)
 
 ```text
 S → call id ( Elist )
@@ -207,24 +208,6 @@ call foo 3
 여기서 `|queue|`는 queue의 길이, 즉 인자 개수다.  
 그래서 `call foo 3`에서 `3`은 **인자가 3개**라는 뜻이다.
 
-정리하면 이 rule은:
-
-```text
-Elist → E
-```
-
-에서 첫 인자를 queue에 넣고,
-
-```text
-Elist → Elist , E
-```
-
-에서 뒤의 인자들을 queue 뒤에 계속 추가하고,
-
-```text
-S → call id ( Elist )
-```
-
-에서 queue에 모인 인자들을 순서대로 `param`으로 출력한 뒤 `call`을 출력하는 방식이다.
+정리하면 이 rule은 `Elist → E` 에서 첫 인자를 queue에 넣고, `Elist → Elist , E` 에서 뒤의 인자들을 queue 뒤에 계속 추가하고, `S → call id ( Elist )` 에서 queue에 모인 인자들을 순서대로 `param`으로 출력한 뒤 `call`을 출력하는 방식이다.
 
 즉 **parameter들을 synthesized list/queue로 모아 둔 다음, 함수 호출이 완성되는 reduce 시점에 한 번에 TAC를 생성하는 구조**라고 보면 된다.
