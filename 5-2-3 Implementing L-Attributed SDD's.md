@@ -1,4 +1,440 @@
-앞에서 배운 내용들은 SDD ㄹ
-투 패스 컴파일러를 쓴다
-중간 단계 파일을 dump 그걸 다시 읽어서 백엔드로 보낸다
-조금 더 낫게 할 수 있는 방법은 중간중간에 계속 dump 하자
+앞에서는 L-attributed SDD를 SDT로 바꾸는 규칙을 배웠다.
+
+예를 들어 inherited attribute는 이렇게 필요한 nonterminal 앞에 넣었다.
+
+```
+D → T { L.in := T.type } L
+```
+
+그리고 synthesized attribute는 production 맨 끝에 넣었다.
+
+```
+E → E1 + T { E.val := E1.val + T.val }
+```
+
+여기까지는 “semantic action을 어디에 배치해야 하는가”에 대한 내용이었다.
+
+그런데 실제 컴파일러는 이 action들을 진짜로 실행해야 한다. 그래서 이제 질문이 바뀐다.
+
+>이 action들을 실제 parser 코드에서는 어떻게 처리할 것인가?
+
+이걸 설명하기 위해 나온 단원이 **Implementing L-attributed SDD’s**다.
+
+특히 Recursive-Descent Parser에서는 nonterminal마다 함수가 하나씩 생긴다. 그래서 L-attributed SDD의 attribute 전달을 함수의 **argument**와 **return value**로 구현할 수 있다는 것을 설명한다.
+
+---
+# During Recursive -Descent Parsing
+
+Recursive-Descent Parser는 각 nonterminal을 함수로 만든다.
+
+예를 들어 nonterminal `A`가 있으면 parser 안에는 `A()`라는 함수가 있다고 보면 된다.
+
+이제 이 `A()` 함수가 단순히 문법만 검사하는 것이 아니라, attribute도 같이 처리하도록 확장한다.
+
+그래서 슬라이드에서 말하는 핵심은 이거다.
+
+- function A의 argument→ nonterminal A의 inherited attribute
+- function A의 return value→ nonterminal A의 synthesized attribute
+
+즉 inherited attribute는 바깥에서 안쪽으로 전달되는 값이므로 함수 인자로 받는다. 반대로 synthesized attribute는 `A`를 처리한 결과로 만들어지는 값이므로 함수의 return 값으로 돌려준다.
+
+예를 들어 `A`가 어떤 inherited attribute를 받아야 한다면 함수는 이런 느낌이 된다.
+
+```
+A(inherited 값)
+```
+
+그리고 `A`를 처리한 뒤 synthesized attribute를 만들어서 반환한다.
+
+```
+result = A(inherited 값)
+```
+
+쉽게 말하면 들어오는 값으로 inherited attribute를 사용하고, 나가는 값으로 synthesized attribute을 사용한다는 것이다
+
+---
+## Function A가 해야 하는 일
+
+첫 번째로, `A`를 어떤 production으로 전개할지 결정해야 한다.
+
+예를 들어 `A`에 여러 production이 있으면, 현재 입력 token을 보고 어떤 rule을 사용할지 고른다.
+
+```
+A → X Y
+A → Z
+```
+
+이런 경우 현재 입력을 보고 `A → X Y`를 쓸지, `A → Z`를 쓸지 결정해야 한다.
+
+
+두 번째로, 필요한 terminal이 실제 입력에 있는지 확인해야 한다.
+
+예를 들어 production에 `int`가 필요하면, 현재 입력 token이 정말 `int`인지 확인한다.
+맞으면 다음 token으로 넘어가고, 아니면 syntax error가 된다.
+
+
+세 번째로, attribute 변수들을 보존해야 한다.
+
+parsing 중간에 계산된 attribute는 나중에 다른 nonterminal에게 넘겨야 할 수 있다.
+
+예를 들어 왼쪽 symbol에서 계산한 값을 오른쪽 symbol의 inherited attribute로 넘겨야 한다면, 그 값을 중간 변수에 저장해두어야 한다.
+
+
+네 번째로, production body 안에 있는 nonterminal에 해당하는 함수를 호출해야 한다.
+
+예를 들어 production이 `A → X Y` 라면 `A()` 함수 안에서는 `X()`를 호출하고, 그다음 `Y()`를 호출한다. 만약 `Y`가 inherited attribute를 필요로 한다면, `X()`에서 얻은 값을 `Y()`의 인자로 넘길 수 있다.
+
+---
+## Implementing L-attributed Definitions in Top Down Parsers
+
+앞에서 말한걸 예시로 알아보자
+
+![](../images/Pasted%20image%2020260602140741.png)
+
+### 왼쪽 SDT 해석
+
+왼쪽에는 이런 translation scheme이 있다.
+
+```
+D → T { L.in := T.type } L
+T → int  { T.type := 'integer' }
+T → real { T.type := 'real' }
+```
+
+여기서 `D → T { L.in := T.type } L`을 보면, `T`를 먼저 처리한 뒤 `T.type`을 `L.in`으로 넘긴다.
+
+이게 L-attributed 방식과 잘 맞는 이유는, 왼쪽 `T`에서 얻은 정보를 오른쪽 `L`로 넘기기 때문이다.
+
+---
+### 오른쪽 코드 해석: `void D()`
+
+오른쪽 코드의 `D()` 함수는 production `D → T L`을 구현한 것이다.
+
+```
+void D()
+{
+    Type Ttype = T();
+    Type Lin = Ttype;
+    L(Lin);
+}
+```
+
+이 코드는 왼쪽 SDT와 정확히 대응된다.
+
+먼저 `Type Ttype = T();` 이 부분은 `T`를 처리하는 부분이다. `T()` 함수는 `T.type`을 계산해서 return한다. 그래서 `Ttype`에는 `integer` 또는 `real` 같은 타입 정보가 들어간다.
+
+그다음 `Type Lin = Ttype;` 이 부분이 바로 semantic action이다.
+
+```
+L.in := T.type
+```
+
+즉 `T.type`을 `L.in`으로 넘기기 위해 `Lin`이라는 변수에 저장한다.
+
+마지막으로 `L(Lin);` 을 통해 L을 처리한다. `L.in`은 inherited attribute이므로 `L()` 함수의 argument로 전달된다.
+
+---
+### 오른쪽 코드 해석: `Type T()`
+
+이제 `T()` 함수를 보자.
+
+```
+Type T()
+{
+    Type Ttype;
+
+    if (lookahead == INT)
+    {
+        Ttype = TYPE_INT;
+        match(INT);
+    }
+    else if (lookahead == REAL)
+    {
+        Ttype = TYPE_REAL;
+        match(REAL);
+    }
+    else error();
+
+    return Ttype;
+}
+```
+
+이 함수는 production 두 개를 처리한다.
+
+```
+T → int
+T → real
+```
+
+현재 입력 token이 `INT`이면 `T → int`를 선택한다.
+
+```
+Ttype = TYPE_INT;
+match(INT);
+```
+
+즉 `int`를 읽고, `T.type`을 `TYPE_INT`로 만든다.
+
+현재 입력 token이 `REAL`이면 `T → real`을 선택한다.
+
+```
+Ttype = TYPE_REAL;match(REAL);
+```
+
+즉 `real`을 읽고, `T.type`을 `TYPE_REAL`로 만든다.
+
+마지막에 `return Ttype;` 을 한다. 이 return 값이 바로 `T`의 synthesized attribute다.
+
+---
+### 오른쪽 코드 해석: `void L(Type Lin)`
+
+아래에는 이런 함수가 있다.
+
+```
+void L(Type Lin)
+{
+    ...
+}
+```
+
+여기서 `Lin`이 바로 `L.in`이다. `L.in`은 inherited attribute였다.
+그래서 함수 안에서 계산해서 return하는 것이 아니라, 바깥에서 인자로 받아온다.
+
+예를 들어 입력이 `int a, b`라면 `T()`가 `TYPE_INT`를 return하고, `D()`는 그 값을 `L(TYPE_INT)`로 넘긴다. 그러면 `L()`은 `a`, `b` 같은 identifier들에게 integer 타입을 붙일 수 있다.
+
+>정리해보면, 지금까지 배운 `SDD → SDT` 과정은 이론적으로 attribute 계산 순서와 semantic action의 위치를 정하는 과정이라고 볼 수 있다.
+>
+>이를 실제 recursive-descent parser 코드로 구현하면 더 단순하게 이해할 수 있다. 각 nonterminal은 하나의 함수로 대응되고, synthesized attribute는 해당 함수를 처리한 결과이므로 return 값으로 전달된다. 반대로 inherited attribute는 해당 nonterminal을 처리하기 전에 외부에서 받아야 하는 값이므로 함수의 argument로 전달된다.
+>
+>그리고 semantic action은 특별한 구조가 아니라, 실제 코드 안에서 수행되는 일반적인 대입문이나 함수 호출로 구현하면 된다.
+
+---
+# Ex 5.20  `while (C) S1`
+
+![](../images/Pasted%20image%2020260602141555.png)
+
+- `S.next`는 while 문이 끝난 뒤 이동할 위치다.
+
+- `C.false = S.next`는 조건이 false이면 while 문 밖으로 나가라는 뜻이다.
+
+- `C.true = L2`는 조건이 true이면 while body 시작 위치로 가라는 뜻이다.
+
+- `S1.next = L1`은 while body 실행이 끝나면 다시 조건 검사 위치로 돌아가라는 뜻이다.
+
+- 마지막 `S.code`는 `C.code`와 `S1.code`를 합쳐서 while 문 전체 코드를 만드는 것이다.
+
+---
+
+![](../images/Pasted%20image%2020260602141631.png)
+
+
+```text
+string S(label next)
+```
+
+여기서 `next`가 바로 `S.next`다.
+
+`S.next`는 inherited attribute였다. 즉 `S`가 자기 내부에서 만드는 값이 아니라, 바깥 문맥에서 “이 statement가 끝나면 어디로 갈지”를 받아오는 값이다.
+
+그래서 함수의 argument로 들어간다.
+
+### local variable: `Scode`, `Ccode`, `L1`, `L2`
+
+함수 안에는 이런 local variable이 있다.
+
+```text
+string Scode, Ccode;
+label L1, L2;
+```
+
+- `Ccode`는 조건식 `C`가 만든 코드 조각이다.
+
+- `Scode`는 body statement `S1`이 만든 코드 조각이다.
+
+- `L1`, `L2`는 while 문을 만들기 위해 새로 생성하는 label이다.
+	- 여기서 `L1`은 조건 검사 위치이고, `L2`는 while body 시작 위치다.
+
+---
+### `if (current input == token while)`
+
+이 부분은 recursive-descent parser의 기본 역할이다.
+
+현재 입력이 `while`이면 이 production을 선택한다.
+
+```text
+S → while ( C ) S1
+```
+
+즉 parser가 “이번 statement는 while 문이구나”라고 판단하는 부분이다.
+
+그다음 `while`을 소비하고, `(`도 확인한다.
+
+```text
+advance input;
+check '(' is next on the input, and advance;
+```
+
+---
+### `L1 = new(); L2 = new();`
+
+이 부분은 SDT의 첫 번째 action에 해당한다.
+
+```c
+L1 = new(); // 조건 검사 위치
+L2 = new(); // body 시작 위치
+```
+
+while 문 코드 생성을 위해 label 두 개를 새로 만든다.
+
+---
+### `Ccode = C(next, L2);`
+
+이 부분이 제일 중요하다.
+
+원래 SDT에서는 이렇게 되어 있었다.
+
+```c
+C.false = S.next;
+C.true = L2;
+```
+
+그런데 코드에서는 `S.next`가 함수 인자 `next`로 들어와 있다.
+
+그래서 `C`를 호출할 때 다음처럼 넘긴다.
+
+```c
+Ccode = C(next, L2);
+```
+
+즉 이건 의미상
+
+```c
+C.false = next
+C.true = L2
+```
+
+를 넘기는 것이다.
+
+여기서 `next`와 `L2`는 `C`의 inherited attribute로 들어간다. 그리고 `C()`는 조건식 코드를 만들어서 return한다. 그래서 `Ccode`는 `C.code`에 해당한다.
+
+---
+### `Scode = S(L1);`
+
+이 부분은 while body인 `S1`을 처리하는 부분이다.
+
+원래 SDT에서는 `S1.next = L1;` 이었다. 즉 body 실행이 끝나면 다시 조건 검사 위치 `L1`로 돌아가야 한다.
+
+코드에서는 이것을 다음처럼 구현한다.
+
+```c
+Scode = S(L1);
+```
+
+여기서 `L1`은 body statement `S1`의 inherited attribute로 전달된다.
+
+그리고 `S(L1)`은 body code를 만들어서 return한다.
+
+그래서 `Scode`는 `S1.code`에 해당한다.
+
+---
+### `return ...`
+
+마지막 부분은 synthesized attribute를 return하는 부분이다.
+
+```c
+return("label" || L1 || Ccode || "label" || L2 || Scode);
+```
+
+이건 원래 SDT의 마지막 action과 같다.
+
+```c
+S.code = label || L1 || C.code || label || L2 || S1.code;
+```
+
+즉 while 문 전체 코드를 조립해서 return한다. 여기서 `S.code`는 synthesized attribute다.
+왜냐하면 `S.code`는 `Ccode`, `Scode` 같은 자식 결과를 이용해서 부모 `S`에서 만들어지는 값이기 때문이다. 따라서 코드에서는 return 값으로 구현된다.
+
+---
+# On the fly code generation
+
+앞에서는 `while` 문을 recursive-descent parser 코드로 구현하면서, `Ccode`, `Scode` 같은 문자열을 return 받아 마지막에 합쳤다.
+
+```text
+Ccode = C(next, L2);
+Scode = S(L1);
+
+return "label" || L1 || Ccode || "label" || L2 || Scode;
+```
+
+이 방식은 개념을 이해하기에는 좋다. `C.code`, `S1.code`, `S.code` 같은 synthesized attribute가 실제 코드에서는 return 값으로 표현된다는 것을 보여주기 때문이다.
+
+그런데 실제 구현 관점에서는 문제가 있다.
+
+`Ccode`와 `Scode`가 짧은 문자열이면 괜찮지만, 실제 프로그램에서는 조건식이나 statement가 길어질 수 있다. 그러면 `Ccode`, `Scode`, `S.code` 같은 코드 조각도 길어진다. 이 긴 문자열들을 계속 return하고, 복사하고, `||`로 이어 붙이면 비효율적이다.
+
+그래서 **on-the-fly code generation**이 나온다.
+
+---
+on-the-fly code generation은 `S.code`라는 긴 문자열을 다 만든 뒤 return하는 방식이 아니라, parsing 중에 코드가 필요한 순간마다 바로 생성하는 방식이다.
+
+예를 들어 앞에서는 while 문 전체 코드를 마지막에 이렇게 합쳤다.
+
+```text
+S.code = label || L1 || C.code || label || L2 || S1.code
+```
+
+하지만 on-the-fly 방식에서는 굳이 `S.code` 전체를 문자열로 만들지 않는다.
+
+대신 parsing 중에 순서대로 바로 emit한다.
+
+```text
+emit(label L1)
+C를 처리하면서 C.code에 해당하는 코드 emit
+emit(label L2)
+S1을 처리하면서 S1.code에 해당하는 코드 emit
+```
+
+즉 이전 방식이 “코드 조각을 문자열로 들고 있다가 마지막에 합치기”라면, on-the-fly 방식은 “코드가 나와야 하는 시점에 바로 출력하거나 저장하기”라고 보면 된다.
+
+이렇게 하면 긴 문자열을 계속 복사하지 않아도 된다.
+
+---
+
+다만 아무 경우에나 on-the-fly로 바꿀 수 있는 것은 아니다. 코드가 생성되는 순서가 parser가 production body를 처리하는 순서와 잘 맞아야 한다.
+
+슬라이드에서 말하는 `main attribute`는 어떤 nonterminal의 대표 결과 attribute를 의미한다. 예를 들어 statement `S`의 대표 결과는 보통 `S.code`다. 조건식 `C`도 `C.code`를 대표 attribute로 볼 수 있다.
+
+이 main attribute가 synthesized attribute여야 한다는 말은, 그 결과가 자식들을 처리한 뒤 만들어지는 값이어야 한다는 뜻이다.
+
+예를 들어 while 문에서는:
+
+```text
+S.code = label L1 || C.code || label L2 || S1.code
+```
+
+`S.code`는 `C.code`와 `S1.code`를 이용해 만들어진다. 즉 자식의 결과를 부모가 조립하는 synthesized attribute다.
+
+그리고 중요한 조건은, 이 조립 순서가 production body의 순서와 맞아야 한다는 것이다.
+
+while 문 production은 다음과 같다.
+
+```text
+S → while ( C ) S1
+```
+
+여기서 `C`가 먼저 나오고, 그 다음 `S1`이 나온다.
+
+코드 생성 순서도 다음과 같다.
+
+```text
+label L1
+C.code
+label L2
+S1.code
+```
+
+즉 `C.code`가 먼저 나오고, `S1.code`가 뒤에 나온다. production에서 `C`가 `S1`보다 앞에 있는 것과 코드 생성 순서가 맞는다.
+
+그래서 이런 경우에는 on-the-fly code generation이 가능하다.
+
+반대로 만약 production에서는 `C`를 먼저 처리해야 하는데, 최종 코드에서는 `S1.code`가 `C.code`보다 먼저 나와야 한다면 바로 emit하기 어렵다. 그 경우에는 결국 코드 조각을 임시로 저장해두거나 나중에 재배치해야 한다.
