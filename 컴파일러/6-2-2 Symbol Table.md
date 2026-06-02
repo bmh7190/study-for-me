@@ -1,4 +1,3 @@
-
 ## Names and Scopes
 
 앞에서 syntax-directed translation을 이용해서 three-address code를 생성하는 방법을 배웠다. 그런데 three-address code를 만들 때 `id`가 나오면, 컴파일러는 그 `id`가 단순히 어떤 문자열인지 보는 것에서 끝나면 안 된다.
@@ -761,8 +760,7 @@ D → D ; D
 `proc id ; D ; S`는 procedure 선언이다. procedure 안에도 다시 선언부 `D`와 실행문 `S`가 있다. 이 말은 procedure 내부에 새로운 스코프가 생긴다는 뜻이다.
 
 ---
-
-## 2. T는 타입을 만든다
+### T는 타입을 만든다
 
 ```text
 T → integer
@@ -774,33 +772,17 @@ T → integer
 
 `T`는 타입을 의미한다.
 
-예를 들어
+예를 들어 아래와 같은  타입들을 만들 수 있다.
 
-```text
-integer
-real
-array [10] of integer
-^ integer
-record ... end
-```
-
-같은 타입들을 만들 수 있다.
+- integer
+- real
+- array [10] of integer
+- ^ integer
+- record ... end
 
 여기서 `T.type`과 `T.width`가 중요하다.
 
-```text
-T.type  → 타입 정보를 가리키는 포인터
-T.width → 그 타입이 차지하는 크기
-```
-
-예를 들어 `integer`의 width가 4라면,
-
-```text
-T.type = integer type
-T.width = 4
-```
-
-가 된다.
+예를 들어 `integer`의 width가 4라면, T.type에는  integer type 이 들어가고 T.width는 4가 된다.
 
 배열 타입이면 원소 타입의 width와 개수를 이용해서 전체 width를 계산할 수 있다.
 
@@ -810,8 +792,7 @@ array [10] of integer
 ```
 
 ---
-
-## 3. E는 표현식 처리를 위한 속성이다
+### E는 표현식 처리를 위한 속성이다
 
 오른쪽 문법에는 표현식 `E`도 나온다.
 
@@ -840,18 +821,13 @@ t1 = a + b
 
 이때 `E.addr = t1`이 된다.
 
-하지만 이 슬라이드의 중심은 표현식보다는 **선언과 스코프 처리**다.
-
 ---
+### tblptr와 offset
 
-## 4. tblptr와 offset
+오른쪽에 전역 데이터가 두 개 나온다.
 
-슬라이드 오른쪽에 전역 데이터가 두 개 나온다.
-
-```text
-tblptr
-offset
-```
+- tblptr
+- offset
 
 둘 다 stack이다.
 
@@ -879,9 +855,9 @@ offset = offset value stack
 
 ---
 
-## 5. 프로그램 시작: P → D ; S
+![](../images/Pasted%20image%2020260603000824.png)
 
-두 번째 슬라이드의 첫 규칙이다.
+### P → D ; S
 
 ```text
 P →
@@ -921,8 +897,7 @@ offset top → 0
 ```
 
 ---
-
-## 6. 변수 선언: D → id : T
+### D → id : T
 
 다음은 변수 선언을 처리하는 규칙이다.
 
@@ -946,13 +921,7 @@ x : integer
 enter(current table, x, integer type, current offset)
 ```
 
-처음 offset이 0이면,
-
-```text
-x → type integer, offset 0
-```
-
-이 된다.
+처음 offset이 0이면, `x → type integer, offset 0` 이 된다.
 
 그다음 offset을 `T.width`만큼 증가시킨다.
 
@@ -960,13 +929,7 @@ x → type integer, offset 0
 top(offset) := top(offset) + T.width
 ```
 
-만약 integer의 width가 4라면,
-
-```text
-offset = 0 + 4 = 4
-```
-
-다음 변수가 선언되면 offset 4에 배치된다.
+만약 integer의 width가 4라면, `offset = 0 + 4 = 4` 로 다음 변수가 선언되면 offset 4에 배치된다.
 
 예를 들어
 
@@ -985,8 +948,7 @@ y → offset 4
 그리고 `y`의 width만큼 offset이 또 증가한다.
 
 ---
-
-## 7. procedure 선언: D → proc id ; D1 ; S
+### D → proc id ; D1 ; S
 
 가장 중요한 부분은 procedure 선언이다.
 
@@ -1035,8 +997,7 @@ push(0, offset)
 이제 `D1 ; S`를 처리하면서 procedure 내부의 변수 선언과 문장을 처리한다.
 
 ---
-
-## 8. procedure 처리가 끝날 때
+### procedure 처리가 끝날 때
 
 procedure 내부 선언과 문장을 다 처리한 뒤에는 이 semantic action이 실행된다.
 
@@ -1107,8 +1068,7 @@ swap → procedure, local table pointer
 그리고 `swap`의 local table에는 `a`, `b` 같은 내부 선언이 들어 있다.
 
 ---
-
-## 9. D → D1 ; D2
+### D → D1 ; D2
 
 마지막 규칙은 선언이 여러 개 이어지는 경우다.
 
@@ -1129,42 +1089,506 @@ y : real;
 그다음 `D2`에서 `y`를 현재 table에 넣고 offset을 또 증가시킨다.
 
 ---
+## Type 선언에 대한 SDT
 
-## 핵심 정리
+여기서는 앞에서 봤던 선언 처리 중에서, 특히 **타입 `T`를 만나면 `T.type`과 `T.width`를 어떻게 계산하는지**를 보여준다.
 
-이 두 슬라이드는 선언문을 처리하면서 symbol table을 어떻게 만드는지를 보여준다.
+![](../images/Pasted%20image%2020260603001231.png)
 
-```text
-프로그램 시작
-→ global symbol table 생성
-→ tblptr에 push
-→ offset 0 push
-```
+여기서 핵심 attribute는 두 개다.
 
 ```text
-변수 선언 id : T
-→ 현재 symbol table에 이름, 타입, offset 저장
-→ offset을 타입 width만큼 증가
+T.type  → 타입 정보
+T.width → 그 타입이 차지하는 byte 크기
 ```
+
+---
+
+### 기본 타입: integer, real
 
 ```text
-procedure 선언
-→ procedure용 local symbol table 생성
-→ tblptr에 push
-→ offset 0부터 시작
-→ 내부 선언 처리
-→ 끝나면 width 저장
-→ table pop
-→ 바깥 table에 procedure 이름 등록
+T → integer
+{
+  T.type := 'integer';
+  T.width := 4
+}
 ```
 
-즉, 이 부분의 핵심은 다음이다.
+`integer` 타입을 만나면 타입은 integer이고, 크기는 4바이트로 저장한다.
 
 ```text
-tblptr는 현재 스코프의 symbol table을 관리하고,
-offset은 현재 스코프에서 변수 배치 위치를 관리한다.
+integer → type integer, width 4
 ```
 
-선언을 만나면 `enter`로 현재 table에 등록하고,  
-스코프가 새로 생기면 `mktable`로 table을 만들고,  
-스코프가 끝나면 `addwidth`로 전체 크기를 저장한 뒤 pop한다.
+다음은 `real`이다.
+
+```text
+T → real
+{
+  T.type := 'real';
+  T.width := 8
+}
+```
+
+`real`은 8바이트라고 가정한다. 즉, 기본 타입은 바로 type과 width를 정할 수 있다.
+
+---
+### 배열 타입
+
+```text
+T → array [ num ] of T1
+{
+  T.type := array(num.val, T1.type);
+  T.width := num.val * T1.width
+}
+```
+
+배열 타입은 원소 타입 `T1`을 먼저 알아야 한다.
+
+예를 들어 `array [10] of integer` 이면 `T1`은 `integer`다.
+
+```text
+T1.type = integer
+T1.width = 4
+```
+
+배열 크기 `num.val`이 10이므로,
+
+```text
+T.type = array(10, integer)
+T.width = 10 * 4 = 40
+```
+
+즉, 배열의 width는 `배열 길이 × 원소 타입의 width`이다.
+
+배열 안에 배열이 들어가도 같은 방식으로 계산된다.
+
+```text
+array [2] of array [3] of integer
+```
+
+이면 안쪽부터 계산해서,
+
+```text
+array [3] of integer → width 12
+array [2] of array[3] of integer → width 2 * 12 = 24
+```
+
+가 된다.
+
+---
+### 포인터 타입
+
+```text
+T → ^ T1
+{
+  T.type := pointer(T1.type);
+  T.width := 4
+}
+```
+
+`^T1`은 `T1`을 가리키는 포인터 타입이다.
+
+예를 들어 `^ integer` 이면,
+
+```text
+T.type = pointer(integer)
+T.width = 4
+```
+
+여기서 중요한 점은 포인터가 가리키는 대상 타입이 무엇이든, 포인터 자체의 크기는 `4바이트`로 둔다는 것이다.
+
+```text
+^integer → width 4
+^real    → width 4
+^array[...] → width 4
+```
+
+왜냐하면 포인터 변수에는 실제 값 전체가 들어가는 것이 아니라, 그 값을 가리키는 주소가 들어가기 때문이다.
+
+---
+### record 타입
+
+가장 중요한 부분은 record다.
+
+```text
+T → record
+{
+  t := mktable(nil);
+  push(t, tblptr);
+  push(0, offset)
+}
+D end
+{
+  T.type := record(top(tblptr));
+  T.width := top(offset);
+  addwidth(top(tblptr), top(offset));
+  pop(tblptr);
+  pop(offset)
+}
+```
+
+record는 C의 struct와 비슷하다고 보면 된다.
+
+```text
+record
+  a : integer;
+  b : real
+end
+```
+
+record 안에는 field 선언들이 들어간다.  
+그래서 record를 만나면 record 내부 field를 저장할 **새 symbol table**이 필요하다.
+
+---
+### record 시작 시점
+
+record를 만나자마자 다음 action을 실행한다.
+
+```text
+t := mktable(nil);
+push(t, tblptr);
+push(0, offset)
+```
+
+이 의미는 다음과 같다.
+
+- record field를 위한 새 symbol table 생성
+- 그 table을 현재 table로 push
+- record 내부 offset을 0부터 시작
+
+즉, record 안의 field들은 기존 global/local table에 바로 들어가는 것이 아니라, record 전용 field table에 들어간다.
+
+예를 들어
+
+```text
+record
+  a : integer;
+  b : real
+end
+```
+
+이면 `a`, `b`는 record field table에 저장된다.
+
+---
+### record 내부 선언 D 처리
+
+record 안의 `D`를 처리하면서 field들이 등록된다.
+
+처리 방식은 앞에서 본 변수 선언과 같다.
+
+```text
+D → id : T
+{
+  enter(top(tblptr), id.name, T.type, top(offset));
+  top(offset) := top(offset) + T.width
+}
+```
+
+예를 들어
+
+```text
+a : integer;
+b : real;
+```
+
+이면 처음 offset은 0이다.
+
+```text
+a → type integer, offset 0
+offset = 0 + 4 = 4
+```
+
+그다음 `b`는 offset 4에 들어간다.
+
+```text
+b → type real, offset 4
+offset = 4 + 8 = 12
+```
+
+따라서 record 전체 width는 12가 된다.
+
+---
+### record가 끝났을 때
+
+`D end`까지 처리한 뒤에는 record 타입을 완성한다.
+
+```text
+T.type := record(top(tblptr));
+T.width := top(offset);
+addwidth(top(tblptr), top(offset));
+pop(tblptr);
+pop(offset)
+```
+
+먼저 현재 symbol table을 이용해서 record 타입을 만든다.
+
+```text
+T.type := record(top(tblptr))
+```
+
+즉, 이 record 타입은 자신의 field table을 가리키게 된다.
+
+그다음 현재 offset을 record 전체 width로 사용한다.
+
+```text
+T.width := top(offset)
+```
+
+예를 들어 field들이 총 12바이트라면,
+
+```text
+T.width = 12
+```
+
+그리고 field table에도 전체 width를 저장한다.
+
+```text
+addwidth(top(tblptr), top(offset))
+```
+
+마지막으로 record 스코프가 끝났으므로 table과 offset을 pop한다.
+
+```text
+pop(tblptr)
+pop(offset)
+```
+
+이제 다시 바깥 스코프의 symbol table로 돌아간다.
+
+---
+# Example
+
+![](../images/Pasted%20image%2020260603001521.png)
+
+---
+# Syntax - Directed Translation of Statements in Scope
+
+앞에서는 선언을 처리하면서 symbol table에 이름, 타입, offset, width를 저장했다.  
+이제 **저장해 둔 symbol table 정보를 실제 문장과 표현식 번역에 어떻게 사용하는지**를 보여준다.
+
+![](../images/Pasted%20image%2020260603001657.png)
+
+---
+## Statements in Scope
+
+### S → S ; S
+
+```text
+S → S ; S
+```
+
+이건 문장이 여러 개 이어질 수 있다는 뜻이다.
+
+예를 들어
+
+```c
+a = b;
+c = d;
+```
+
+같은 구조를 처리하기 위한 규칙이다.
+
+---
+### S → id := E
+
+핵심은 이 규칙이다.
+
+```text
+S → id := E
+```
+
+즉, 대입문이다.
+
+예를 들어 `x := a + b` 를 처리한다고 생각하면 된다.
+
+이때 오른쪽 표현식 `E`는 이미 계산되어서 결과 위치가 `E.addr`에 들어 있다고 본다.
+
+예를 들어 `a + b`를 계산하면서 이런 중간 코드가 나왔다면,
+
+```text
+t1 := a + b
+```
+
+`E.addr`는 `t1`이 된다. 이제 해야 할 일은 `id`에 `E.addr` 값을 저장하는 것이다.
+
+---
+### lookup으로 id 찾기
+
+먼저 symbol table에서 왼쪽 변수 이름을 찾는다.
+
+```text
+p := lookup(top(tblptr), id.name)
+```
+
+여기서 `top(tblptr)`는 현재 스코프의 symbol table이다. 즉, 현재 함수나 블록의 symbol table에서 먼저 찾고, 없으면 `prev`를 따라 global table까지 올라가면서 찾는다.
+
+만약 못 찾으면, 선언되지 않은 변수를 사용한 것이므로 error를 낸다.
+
+---
+### 전역 변수와 지역 변수의 차이
+
+찾은 entry `p`에는 그 이름이 전역 변수인지 지역 변수인지 알 수 있는 정보가 있다.
+
+```text
+if p.level = 0 then // global variable
+```
+
+`level = 0`이면 전역 변수라고 본다.
+
+전역 변수는 이름 자체 또는 전역 주소로 접근할 수 있으므로, `emit(id.addr ':=' E.addr)` 처럼 코드를 만든다.
+
+예를 들어 전역 변수 `x`에 대입하면, `x := t1` 같은 코드가 생성된다.
+
+반면 지역 변수는 함수의 activation record 안에 있다.  
+그래서 이름 자체가 아니라 frame pointer 기준 offset으로 접근해야 한다.
+
+```text
+emit(fp[p.offset] ':=' E.addr)
+```
+
+예를 들어 `t`가 현재 함수 frame의 offset 8에 있다면,
+
+```text
+fp[8] := E.addr
+```
+
+이렇게 번역된다.
+
+---
+# Syntax-Directed Translation of Expressions in Scope
+
+이번에는 표현식 `E`를 번역하는 규칙이다.
+
+표현식의 핵심 attribute는 이것이다.
+
+```text
+E.addr
+```
+
+`E.addr`는 표현식 결과가 저장된 위치를 의미한다.
+
+---
+### E → E1 + E2
+
+```text
+E → E1 + E2
+{
+  E.addr := newtemp();
+  emit(E.addr ':=' E1.addr '+' E2.addr)
+}
+```
+
+덧셈 표현식이다.
+
+예를 들어 `a + b` 를 만나면, 먼저 결과를 저장할 임시 변수를 만든다.
+
+```text
+E.addr := newtemp()
+```
+
+예를 들어 `t1`이 만들어졌다고 하면, `t1 := a + b` 같은 three-address code를 생성한다.
+
+정확히는 `a`, `b`도 각각 `E1.addr`, `E2.addr`로 표현된다.
+
+```text
+t1 := E1.addr + E2.addr
+```
+
+---
+### E → E1 * E2
+
+곱셈도 똑같다.
+
+```text
+E → E1 * E2
+{
+  E.addr := newtemp();
+  emit(E.addr ':=' E1.addr '*' E2.addr)
+}
+```
+
+예를 들어 `a * b` 이면, `t1 := a * b` 가 된다.
+
+---
+### E → -E1
+
+단항 minus다.
+
+```text
+E → - E1
+{
+  E.addr := newtemp();
+  emit(E.addr ':=' 'uminus' E1.addr)
+}
+```
+
+예를 들어 `-a` 이면, `t1 := uminus a` 처럼 번역된다.
+
+여기서 `uminus`는 이항 연산자 `-`와 구분하기 위한 단항 minus 연산이다.
+
+---
+### E → (E1)
+
+```text
+E → ( E1 )
+{
+  E.addr := E1.addr
+}
+```
+
+괄호는 계산 결과를 바꾸지 않는다.   우선순위만 조정할 뿐이다.
+
+그래서 새 임시 변수를 만들 필요 없이, 안쪽 표현식의 주소를 그대로 사용한다.
+
+```text
+E.addr = E1.addr
+```
+
+---
+### E → id
+
+가장 중요한 부분이다.
+
+```text
+E → id
+{
+  p := lookup(top(tblptr), id.name);
+  if p = nil then error()
+  else if p.level = 0 then
+      E.addr := id.addr
+  else
+      E.addr := fp[p.offset]
+}
+```
+
+표현식에서 `id`가 나오면, 이 이름이 어떤 변수인지 symbol table에서 찾아야 한다.
+
+예를 들어 `x + t` 에서 `x`와 `t`를 각각 lookup한다.
+
+---
+### 전역 변수 id
+
+만약 `p.level = 0`이면 전역 변수다.
+
+```text
+E.addr := id.addr
+```
+
+즉, 전역 변수는 이름 자체 또는 전역 주소를 `E.addr`로 사용한다.
+
+예를 들어 전역 변수 `x`라면, `E.addr = x` 처럼 볼 수 있다.
+
+---
+### 지역 변수 id
+
+반면 지역 변수라면 함수의 frame 안에 있다.
+
+```text
+E.addr := fp[p.offset]
+```
+
+예를 들어 `t`가 offset 8에 있으면, `E.addr = fp[8]` 이다.
+즉, 표현식에서 `t`를 사용하면 실제로는 현재 함수 frame의 offset 8 위치에 있는 값을 읽는 것이다.
+
+---
