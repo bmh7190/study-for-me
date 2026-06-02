@@ -684,20 +684,35 @@ S.next = x
 왜냐하면 `S1.next`를 미리 정해줘야 `S1`이 body 코드를 만들 수 있기 때문이다.
 
 ---
+## stack에 오른쪽부터 push하는 이유
+LL parser는 production의 오른쪽 부분을 왼쪽부터 처리해야 한다.
+
+```
+while → ( → Action1 → C → ) → Action2 → S1
+```
+
+하지만 stack은 나중에 넣은 것이 먼저 나오는 LIFO 구조다. 따라서 실제로 stack에 넣을 때는 오른쪽에서 왼쪽 순서로 push한다.
+
+```
+push S1
+push Action2
+push )
+push C
+push Action1
+push (
+push while
+```
+
+그래야 stack top에는 `while`이 올라오고, parser는 top부터 하나씩 처리하면서 production을 왼쪽에서 오른쪽 순서로 수행할 수 있다.
+
+---
 ## 첫 번째 Action record
 
-첫 번째 action record에는 이런 정보가 있다.
+`while`과 `(`가 처리되고 나면 `Action1`이 stack top에 온다.
 
-```
-snext = x
-L1 = ?
-L2 = ?
-```
+이때 stack 안에는 앞으로 처리될 `C`, `)`, `Action2`, `S1`이 이미 정해진 순서로 놓여 있다. 그래서 `Action1`은 현재 top을 기준으로 상대 위치를 이용해 다른 record에 attribute 값을 넣을 수 있다.
 
-여기서 `snext = x`는 원래 `S.next = x`였던 값을 action record가 복사해서 들고 있는 것이다.
-왜 복사하냐면, 이 action이 실행될 때 `S.next` 값을 사용해야 하기 때문이다.
-
-첫 번째 action이 하는 일은 아래 박스에 적혀 있다.
+첫 번째 action의 내용은 다음과 같다.
 
 ```
 L1 = new();
@@ -712,37 +727,247 @@ stack[top - 3].al2 = L2;
 print("label", L1);
 ```
 
-LL parser는 production의 오른쪽 부분을 왼쪽부터 처리해야 한다. 하지만 stack은 나중에 넣은 것이 먼저 나오는 LIFO 구조이므로, production RHS를 stack에 넣을 때는 오른쪽에서 왼쪽 순서로 push한다. 그래야 가장 왼쪽 symbol이 stack top에 올라와 먼저 처리된다.
+여기서 `snext`는 원래 `S.next` 값이다. 즉 while 문이 끝난 뒤 이동할 위치다.
 
-예를 들어 다음 production이 있다고 하면,
-
-```
-S → while ( Action1 C ) Action2 S1
-```
-
-처리 순서는 다음과 같아야 한다.
+`stack[top - 1]`은 곧 처리될 `C` record를 가리킨다. 따라서 다음 코드는
 
 ```
-while → ( → Action1 → C → ) → Action2 → S1
+stack[top - 1].false = snext;
+stack[top - 1].true = L2;
 ```
 
-따라서 stack에는 반대로 넣는다.
+결국 다음 의미와 같다.
 
-그러면 stack top에는 `while`이 올라오고, parser는 top부터 하나씩 처리하면서 왼쪽에서 오른쪽 순서로 production을 수행할 수 있다.
+```
+C.false = S.next;
+C.true = L2;
+```
 
-이 구조를 이해하면 `top-1`, `top-3` 같은 상대 위치 접근도 이해된다. parser는 `S → while ( Action1 C ) Action2 S1` production으로 확장할 때, stack에 들어가는 symbol들의 순서를 이미 알고 있다. 그래서 `while`과 `(`가 처리된 뒤 `Action1`이 실행되는 시점에는, 현재 top이 `Action1`이고 그 아래쪽에 앞으로 처리될 `C`, `)`, `Action2`, `S1`이 정해진 순서로 놓여 있다.
+즉 조건식이 false이면 while 문 밖으로 나가고, true이면 body 시작 위치인 `L2`로 이동하도록 만드는 것이다.
 
-따라서 첫 번째 action은 현재 action record를 기준으로 상대 위치를 이용해 값을 넣을 수 있다. 예를 들어 `top-1`에는 곧 처리될 `C` record가 있으므로 `C.false`, `C.true` 값을 채울 수 있다. 또한 `top-3`에는 나중에 실행될 두 번째 action record가 있으므로, 그 action이 사용할 `L1`, `L2` 값을 미리 저장할 수 있다.
+또한 `L1`, `L2`는 나중에 실행될 `Action2`에서도 필요하다. 그래서 첫 번째 action은 `stack[top - 3]`, 즉 두 번째 action record에 이 label들을 미리 저장한다.
+
+```
+Action2.al1 = L1;
+Action2.al2 = L2;
+```
+
+마지막으로 `print("label", L1)`은 조건 검사 시작 위치를 중간 코드에 바로 출력하는 것이다.
 
 ---
-핵심만 보자
+## 두 번째 Action record
 
-첫째, `C`가 처리되기 전에 `C.false`, `C.true`를 미리 채운다. 이는 조건식 `C`가 중간 코드를 만들 때 true/false일 때 이동할 label을 알아야 하기 때문이다.
+`C`와 `)`가 처리된 뒤에는 `Action2`가 실행된다.
 
-둘째, `L1`, `L2`는 나중에 `Action2`에서도 필요하므로 두 번째 action record에 저장해둔다. `Action2`는 이후 `S1`을 처리하기 전에 실행된다.
+`Action2`에는 앞에서 저장해둔 `L1`, `L2`가 들어 있다.
 
 ```
-Action2 실행 내용S1.next = L1;print("label", L2);
+al1 = L1
+al2 = L2
 ```
 
-`S1.next = L1`은 while body가 끝난 뒤 다시 조건 검사 위치로 돌아가게 하기 위한 것이다. 그리고 `label L2`는 while body가 시작되는 위치를 출력하는 것이다.
+두 번째 action의 내용은 다음과 같다.
+
+```
+stack[top - 1].next = al1;
+print("label", al2);
+```
+
+여기서 `stack[top - 1]`은 곧 처리될 `S1` record를 가리킨다. 따라서
+
+```
+stack[top - 1].next = al1;
+```
+
+은 다음 의미와 같다.
+
+```
+S1.next = L1;
+```
+
+즉 while body가 끝나면 다시 조건 검사 위치로 돌아가게 한다.
+
+그리고
+
+```
+print("label", al2);
+```
+
+는 body 시작 label인 `L2`를 중간 코드에 출력하는 것이다.
+
+----
+# Implementing L-Attributed Definitions in Bottom-UP Parsers
+
+앞에서는 LL parser, recursive descent parser 처럼 top-down 방식에서 L-attributed SDD를 구현하는 방법을 보았다.
+
+```text
+inherited attribute → 함수 argument
+synthesized attribute → 함수 return value
+```
+
+또는 stack 기반 LL parser에서는 필요한 attribute를 nonterminal record에 미리 넣어줬다. 그런데 이제 bottom-up parser, 즉 LR parser 같은 방식에서 L-attributed SDD를 구현하려고 하면 문제가 생긴다.
+
+---
+### 왜 Bottom-Up Parser에서는 더 어려운가
+
+Bottom-up parser는 기본적으로 **오른쪽 body가 다 인식된 뒤 reduce**한다.
+
+예를 들어 `A → X Y` 이면 `X Y`가 모두 stack에 올라온 뒤에야 `A`로 reduce한다.
+이 방식은 synthesized attribute와는 잘 맞는다.
+
+```text
+A.val = X.val + Y.val
+```
+
+처럼 자식 값이 다 준비된 뒤 부모 값을 계산하면 되기 때문이다.
+
+하지만 L-attributed SDD에는 inherited attribute가 있다.
+예를 들어 `A → X { Y.in = X.val } Y` 이런 경우 `Y`를 처리하기 전에 `Y.in`이 미리 필요하다.
+
+그런데 bottom-up parser는 `Y`까지 다 읽고 나서 reduce하는 방식이라, production 중간에 있는 action을 바로 실행하기가 어렵다. 그래서 **Bottom-Up Parser에서 L-attributed definition을 구현하는 것은 더 어렵고, translation scheme으로 다시 작성해야 한다**.
+
+---
+### 중간 action을 marker nonterminal로 바꾸는 이유
+
+L-attributed SDT에서는 action이 production 중간에 들어갈 수 있었다.
+
+```text
+A → X { actions } Y
+```
+
+여기서 `{ actions }`는 `X`를 처리한 뒤, `Y`를 처리하기 전에 실행되어야 한다.
+
+하지만 bottom-up parser는 production 중간에 있는 action을 문법 symbol처럼 자연스럽게 처리하지 못한다.
+
+그래서 이 action을 하나의 가짜 nonterminal로 바꾼다.
+
+```text
+A → X N Y
+N → ε { actions }
+```
+
+여기서 `N`이 **marker nonterminal**이다.
+
+`N → ε`이므로 실제 입력 token은 소비하지 않는다.  
+대신 parser가 `N → ε`로 reduce하는 순간 `{ actions }`를 실행한다.
+
+즉 원래는 production 중간에 있던 action을, 문법적으로는 nonterminal `N`으로 바꿔서 bottom-up parser가 처리할 수 있게 만드는 것이다.
+
+---
+## 예시로 보면
+
+원래 SDT가 다음과 같다고 하자.
+
+```text
+A → X { actions } Y
+```
+
+X를 처리하고, action을 실행한 다음 Y를 처리한다.
+
+이걸 bottom-up parser에서 구현하기 위해 이렇게 바꾼다.
+
+```text
+A → X N Y
+N → ε { actions }
+```
+
+이제 parser 입장에서는 `N`도 하나의 nonterminal이다.
+
+흐름은 이렇게 된다.
+
+- X가 stack에 올라온다.
+- N → ε로 reduce하면서 actions를 실행한다.
+- 그 다음 Y를 처리한다.
+- 마지막에 X N Y를 A로 reduce한다.
+
+즉 marker nonterminal `N`은 **입력은 소비하지 않지만, action을 실행하기 위한 위치 표시자**라고 보면 된다.
+
+---
+## 왜 conflict가 생길 수 있나
+
+marker nonterminal `N`은 `N → ε`이다. 즉 아무 입력도 읽지 않고 바로 reduce될 수 있다.
+
+Bottom-up parser에서는 어떤 시점에 다음 token을 shift할지, 아니면 `N → ε`로 reduce할지 결정해야 한다.
+
+그런데 `N → ε` 같은 규칙을 추가하면 parser table에서 이런 갈등이 생길 수 있다.
+
+```text
+지금 N → ε로 reduce해야 하나?
+아니면 다음 input token을 shift해야 하나?
+```
+
+이게 shift/reduce conflict로 이어질 수 있다. 그래서 marker nonterminal은 중간 action을 bottom-up parser에서 구현하기 위한 방법이지만, 항상 안전한 것은 아니다. parse table에 새로운 conflict를 만들 수 있다는 점을 조심해야 한다.
+
+---
+# Bottom-Up parsing of L-Attributed SDDs
+
+### M이 action에 필요한 값을 어떻게 아는가?
+
+원래 action `{ a }`는 `A`의 attribute나 `α`에 있는 symbol들의 attribute를 사용할 수 있다.
+
+예를 들어 `A → α { a } β` 에서 `{ a }`가 다음과 같은 값을 필요로 한다고 하자.
+
+```
+A.in
+α.s
+```
+
+그러면 marker nonterminal `M`이 이 값들을 알아야 한다.
+
+>**원래 action이 필요로 하던 값들을 M의 inherited attribute로 복사해 둔다.**
+
+즉 `M`이 실행될 때 필요한 재료를 미리 들고 있게 만드는 것이다.
+
+---
+### M이 계산한 결과는 synthesized attribute로 만든다
+
+원래 action `{ a }`는 뒤쪽 symbol `β`에게 넘길 inherited attribute를 계산할 수 있다.
+
+예를 들어
+
+```
+A → α { B.in = f(A.in, α.s) } B
+```
+
+여기서 action은 `B.in`을 계산한다.
+이걸 marker nonterminal로 바꾸면, `M`이 먼저 그 값을 계산하게 한다.
+
+```
+A → α M B
+M → ε { M.s = f(M.i, α.s) }
+```
+
+그리고 이후 `B.in`은 `M.s`를 이용해 채운다고 보면 된다.
+
+원래 action `{ a }`가 계산하던 값을 그대로 계산하되, 그 결과를 바로 뒤쪽 symbol에 직접 넣는 게 아니라 **M의 synthesized attribute로 만들어 둔다**는 뜻이다.
+
+즉 흐름은 이렇게 바뀐다.
+
+- 기존 : A 또는 α의 정보 → action a → β.in
+
+- 변환 후 : 
+	A 또는 α의 정보 → M의 inherited attribute
+	M에서 action 실행 → M의 synthesized attribute
+	M.s를 이용해 β 쪽으로 전달
+
+---
+## 왜 이렇게 복잡하게 하나?
+
+bottom-up parser에서는 reduce 시점이 중요하다. `M → ε`은 입력을 소비하지 않고 reduce될 수 있으므로, `M`이 reduce되는 순간 action을 실행할 수 있다.
+
+그런데 이때 `M`은 자기만의 attribute를 가져야 한다.
+
+그래야 stack 기반으로 다음과 같이 처리할 수 있다.
+
+```
+α까지 처리됨
+→ M → ε reduce
+→ M이 필요한 값을 받아 action 실행
+→ 결과를 M.s에 저장
+→ 이후 β 처리에 사용
+```
+
+즉 marker nonterminal `M`은 단순한 표시자가 아니라, **중간 action의 입력과 출력을 attribute 형태로 들고 있는 record 역할**을 한다.
+
+---
+# Translation Schemes us
