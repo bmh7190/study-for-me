@@ -438,3 +438,218 @@ S1.code
 그래서 이런 경우에는 on-the-fly code generation이 가능하다.
 
 반대로 만약 production에서는 `C`를 먼저 처리해야 하는데, 최종 코드에서는 `S1.code`가 `C.code`보다 먼저 나와야 한다면 바로 emit하기 어렵다. 그 경우에는 결국 코드 조각을 임시로 저장해두거나 나중에 재배치해야 한다.
+
+---
+# EX 5.22
+
+![](../images/Pasted%20image%2020260602143340.png)
+
+
+```
+print("label", L1);
+```
+
+이 부분이 on-the-fly code generation의 핵심이다.
+
+이전에는 마지막에
+
+```
+"label" || L1 || Ccode || "label" || L2 || Scode
+```
+
+로 합쳤다.
+
+그런데 지금은 `L1` label이 필요한 순간에 바로 출력한다.
+
+즉 중간 코드에 바로 이런 줄을 생성하는 것이다.
+
+```
+label L1
+```
+
+---
+
+```
+C(next, L2);
+```
+
+조건식 `C`를 처리한다. 여기서 인자로 `next`, `L2`를 넘긴다.
+조건이 true이면 body 시작 label인 `L2`로 가고, false이면 while 문 밖인 `next`로 간다.
+
+
+```
+Ccode = C(next, L2);
+```
+
+이전 방식에서는 위처럼 `C`가 만든 코드를 문자열로 받아왔다.
+하지만 지금은 return을 받지 않는다.
+
+왜냐하면 `C()` 내부에서 조건식에 해당하는 중간 코드를 직접 출력하기 때문이다.
+
+예를 들어 `C`가 `i < 10`이라면 `C()` 안에서 이런 코드가 바로 출력될 수 있다.
+
+```
+if i < 10 goto L2
+goto next
+```
+
+---
+```
+print("label", L2);
+```
+
+이제 while body가 시작되는 위치를 출력한다.
+
+중간 코드에 이런 줄을 생성하는 것이다.
+
+```
+label L2
+```
+
+---
+
+```
+S(L1);
+```
+
+while body인 `S1`을 처리한다.
+
+여기서 `L1`을 인자로 넘기는 이유는 body 실행이 끝나면 다시 조건 검사 위치 `L1`로 돌아가야 하기 때문이다.
+
+```
+Scode = S(L1);
+```
+
+여기서도 이전 방식에서는 위처럼 body code를 문자열로 return 받았다.
+하지만 지금은 `S(L1)` 안에서 body에 해당하는 코드가 바로 출력된다.
+
+---
+# L-attributed SDD's and LL parsing
+
+앞에서는 nonterminal을 함수로 보고 아래와 같이 처리했다.
+
+- inherited attribute  → 함수 argument
+- synthesized attribute → 함수 return value
+
+그런데 모든 top-down parser가 recursive function (함수) 형태로만 구현되는 것은 아니다. LL parser는 **parser stack**을 사용해서도 구현할 수 있다. 이 슬라이드는 바로 그 경우에 attribute와 semantic action을 stack에 어떻게 넣을 것인지 설명한다.
+
+## L-attributed SDD is based on an LL-grammar
+
+L-attributed SDD는 LL parser와 잘 맞는다.
+
+왜냐하면 LL parser는 production을 왼쪽에서 오른쪽으로 처리하고, L-attributed SDD도 attribute 정보가 왼쪽에서 오른쪽으로 흐르기 때문이다.
+
+예를 들어
+
+```text
+D → T { L.in := T.type } L
+```
+
+여기서 `T`를 먼저 처리하고, 그 결과인 `T.type`을 이용해 `L.in`을 만든 다음 `L`을 처리한다.
+
+이런 흐름은 LL parser의 처리 순서와 잘 맞는다.
+
+즉 이 말은 **L-attributed SDD는 LL parser가 처리하는 순서대로 inherited attribute를 넘기고 synthesized attribute를 받을 수 있는 구조다.**
+
+### We can embed actions into productions
+
+앞에서 SDT를 만들 때 semantic action을 production 안에 넣었다.
+
+```text
+D → T { L.in := T.type } L
+```
+
+이런 식으로 action을 production 중간에 넣을 수 있다.
+
+LL parser에서도 이 action을 실제 parsing 과정 중에 실행해야 한다. 그런데 LL parser가 stack 기반으로 구현되어 있다면, stack에는 원래 grammar symbol만 들어간다.
+
+예를 들어
+
+```text
+D → T { action } L
+```
+
+을 처리하려면 stack에 단순히 `T`, `L`만 넣으면 안 된다. 중간에 `{ action }`도 실행해야 하니까, parser stack이 action도 저장할 수 있어야 한다.
+
+즉 LL parser stack을 확장해서 다음 것들을 같이 저장한다.
+
+```text
+grammar symbol
+semantic action
+attribute data
+```
+
+### However extra information should be kept
+
+stack에 symbol만 넣으면 parsing은 가능하지만, attribute 계산은 어렵다.
+
+예를 들어 `L.in := T.type`을 실행하려면 `T.type` 값을 알고 있어야 하고, 그 값을 `L`에게 전달할 공간도 필요하다.
+
+그래서 parser stack에는 추가 정보가 필요하다.
+
+단순히 `T`, `L` 만 저장하는 것이 아니라,
+
+```text
+T의 synthesized attribute 저장 위치
+L의 inherited attribute 저장 위치
+action record
+```
+
+같은 정보도 함께 관리해야 한다. 여기서 핵심은 **LL parser stack을 attribute 계산까지 가능한 구조로 확장해야 한다**는 것이다.
+
+---
+## Managing stack to attribute handling
+
+이제 stack에서 inherited attribute와 synthesized attribute를 어떻게 저장하는지가 나온다.
+
+### inherited attribute는 nonterminal과 함께 stack에 둔다
+`A`라는 nonterminal을 처리할 때 필요한 inherited attribute를 `A`와 같이 stack에 넣는다.
+
+예를 들어 `L.in`이 필요하면, stack에 `L`을 넣을 때 `L.in` 값도 같이 넣어둔다.
+
+```text
+L, L.in
+```
+
+왜냐하면 `L`을 expand할 때 `L.in` 값을 바로 써야 하기 때문이다.
+
+`A`를 처리하기 전에 실행해야 하는 action이 있다면, 그 action record를 `A`보다 위쪽에 두어야 한다. LL parser stack은 top에서부터 처리되니까, `A` 위에 action이 있으면 `A`를 처리하기 전에 action이 먼저 실행된다.
+
+즉 inherited attribute를 계산하는 action은 해당 nonterminal 전에 실행되어야 하므로, stack에서도 그 순서가 유지되도록 배치한다.
+
+### synthesized attribute는 별도 synthesize-record에 둔다
+
+synthesized attribute는 자식들을 처리한 뒤 부모로 올라가는 값이다. 그래서 `A`를 처리한 결과를 저장할 공간이 필요하다.
+
+이것을 separate synthesize-record라고 한다. 즉 `A`가 처리된 뒤 만들어질 synthesized attribute를 저장할 record를 `A` 아래쪽에 따로 둔다.
+
+```text
+synthesize-record
+A
+action-record
+```
+
+이런 식으로 stack에 관련 정보를 배치해서, `A`가 처리된 뒤 결과값을 synthesize-record에 저장할 수 있게 한다.
+
+---
+# Ex 5.23 Prdictive LL parser with Stack 
+
+우리가 다루는 production은 while 문이다.
+
+![](../images/Pasted%20image%2020260602144904.png)
+
+여기서 필요한 attribute는 다음과 같다.
+
+- S.next   : while 문이 끝난 뒤 이동할 위치
+- C.false  : 조건이 false일 때 이동할 위치
+- C.true   : 조건이 true일 때 이동할 위치
+- S1.next  : body 실행 후 이동할 위치
+
+
+그리고 label은 다음과 같다.
+
+- L1 : 조건 검사 시작 위치
+- L2 : while body 시작 위치
+
+----
+![](../images/Pasted%20image%2020260602145059.png)
