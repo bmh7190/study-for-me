@@ -82,3 +82,149 @@ after:
 
 
 ---
+# Translating Procedure Calls
+
+이 예제는 procedure call을 three-address code 형태로 번역하는 방법**을 보여주는 예제다.
+
+![](../images/Pasted%20image%2020260602232150.png)
+
+여기서 parameter는 3개다.
+
+- a+1
+- b
+- 7
+
+그래서 마지막 줄이 `call foo 3` 이 된다..   여기서 `3`은 **인자의 개수**를 의미한다.
+
+`a+1`이나 `7` 같은 표현식은 먼저 계산해서 임시 변수에 저장한다.
+
+```
+t1 := a + 1t2 := 7
+```
+
+그다음 인자들을 순서대로 넘긴다.
+
+```
+param t1
+param b
+param t2
+```
+
+그리고 마지막에 함수를 호출한다.
+
+```
+call foo 3
+```
+
+왜 이렇게 하냐면, 함수 호출에서는 인자 개수가 여러 개일 수 있기 때문이다.
+three-address code는 보통 한 명령에서 다루는 operand 수를 제한해서 단순하게 만든다. 
+
+그래서 `call foo(a+1, b, 7)` 처럼 한 줄에 복잡한 호출을 그대로 두지 않고, 계산할 건 먼저 계산인자는 param으로 하나씩 전달하고 마지막에 call하는 구조로 바꾼다.
+
+---
+![](../images/Pasted%20image%2020260602232508.png)
+
+이 semantic rule은 **인자 목록 `Elist`가 각 인자의 주소 `E.addr`를 queue로 모아 올리고, 마지막에 `S`에서 그 queue를 이용해 `param`과 `call` 코드를 생성하는 구조**다.
+
+```text
+S → call id ( Elist )
+Elist → Elist , E
+Elist → E
+```
+
+예를 들어 입력이 `call foo(a+1, b, 7)`이면 `Elist`는 `a+1`, `b`, `7`을 처리하면서 queue를 만든다.
+
+먼저 첫 번째 인자 `a+1`이 `E`로 reduce된다.
+
+```text
+E.addr = t1
+```
+
+그러면
+
+```text
+Elist → E
+{ initialize queue to contain only E.addr }
+```
+
+에 의해 queue가 만들어진다.
+
+```text
+queue = [t1]
+```
+
+그다음 `, b`가 붙으면:
+
+```text
+Elist → Elist , E
+{ append E.addr to the end of queue }
+```
+
+가 실행된다.
+
+```text
+queue = [t1, b]
+```
+
+그다음 `, 7`이 붙으면 `7`도 어떤 주소 또는 임시 변수로 표현된다.
+
+```text
+E.addr = t2
+```
+
+그리고 다시 queue 뒤에 붙는다.
+
+```text
+queue = [t1, b, t2]
+```
+
+이제 `Elist` 전체가 완성된 상태에서 `S`를 reduce한다.
+
+```text
+S → call id ( Elist )
+```
+
+이때 semantic action이 실행된다.
+
+```text
+for each item p on queue do
+    emit('param', p);
+
+emit('call', id.addr, |queue|)
+```
+
+그래서 결과는:
+
+```text
+param t1
+param b
+param t2
+call foo 3
+```
+
+이 된다.
+
+여기서 `|queue|`는 queue의 길이, 즉 인자 개수다.  
+그래서 `call foo 3`에서 `3`은 **인자가 3개**라는 뜻이다.
+
+정리하면 이 rule은:
+
+```text
+Elist → E
+```
+
+에서 첫 인자를 queue에 넣고,
+
+```text
+Elist → Elist , E
+```
+
+에서 뒤의 인자들을 queue 뒤에 계속 추가하고,
+
+```text
+S → call id ( Elist )
+```
+
+에서 queue에 모인 인자들을 순서대로 `param`으로 출력한 뒤 `call`을 출력하는 방식이다.
+
+즉 **parameter들을 synthesized list/queue로 모아 둔 다음, 함수 호출이 완성되는 reduce 시점에 한 번에 TAC를 생성하는 구조**라고 보면 된다.
