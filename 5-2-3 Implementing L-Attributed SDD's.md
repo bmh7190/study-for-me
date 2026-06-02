@@ -970,4 +970,177 @@ bottom-up parser에서는 reduce 시점이 중요하다. `M → ε`은 입력을
 즉 marker nonterminal `M`은 단순한 표시자가 아니라, **중간 action의 입력과 출력을 attribute 형태로 들고 있는 record 역할**을 한다.
 
 ---
-# Translation Schemes us
+# Translation Schemes using Marker Nonterminals
+
+**직접 stack을 쓰던 것을 marker nonterminal의 synthesized attribute로 대체**하는 예시를 보자
+
+![](../images/Pasted%20image%2020260602181145.png)
+
+원래 방식은 이렇게 되어 있다.
+
+```
+S → if E { 
+        emit(iconst_0);
+        push(pc);
+        emit(if_icmpeq, 0);
+    }
+    then S { 
+        backpatch(top(), pc - top());
+        pop();
+    }
+```
+
+여기서 첫 번째 action은 `E`가 끝난 직후 실행된다. 이때 조건식 `E`의 결과가 stack 위에 있다고 보고, `0`과 비교해서 false이면 `then S`를 건너뛰도록 jump 명령을 만든다.
+
+문제는 이 jump 명령의 목적지를 아직 모른다는 것이다.  
+왜냐하면 `then S`가 아직 생성되지 않았기 때문이다.
+
+그래서 일단 현재 명령어 위치 `pc`를 저장해 둔다.
+
+```
+push(pc);
+emit(if_icmpeq, 0);
+```
+
+그리고 `then S`까지 다 처리한 뒤에야 현재 `pc`가 “if문이 끝나는 위치”가 된다.  
+그때 저장해 둔 위치를 꺼내서 jump 거리를 채운다.
+
+```
+backpatch(top(), pc - top());pop();
+```
+
+---
+
+이걸 marker nonterminal로 바꾸면 이렇게 된다.
+
+```
+S → if E M then S { backpatch(M.loc, pc - M.loc) }
+
+M → ε { 
+        emit(iconst_0);
+        M.loc := pc;
+        emit(if_icmpeq, 0);
+    }
+```
+
+여기서 `M`은 실제 입력 토큰을 소비하지 않는다. `M → ε` 이기 때문에 문법적으로는 아무것도 안 읽지만, **그 위치에서 action을 실행하기 위해 끼워 넣은 가짜 nonterminal**이다.
+
+즉 `M`의 역할은 이거다. E를 처리한 직후,then S를 처리하기 전에,미리 실행해야 하는 action을 수행하고,나중에 필요한 값 pc를 M.loc에 저장한다.
+
+
+> marker nonterminal이 추가되는 건 그 다음에 나올 것들을 처리하기 전에 필요한 action을 먼저 하고, 그 결과를 M 자체에 저장한 다음, 나중 action에서 넘겨받아 쓰는 것이다.
+
+이렇게 이해하면 된다.
+
+>**M이 “다음 것들의 정보”를 미리 아는 것은 아니다.**  
+
+`M`은 아직 `then S`의 결과를 모른다. 대신 나중에 `then S`가 끝났을 때 필요한 과거 정보, 즉 “jump 명령이 있던 위치”를 저장해 둔다.
+
+
+
+즉 흐름은 이렇게 된다.
+
+```
+if E
+```
+
+여기까지 처리하면 조건식 코드가 만들어져 있다.
+
+```
+M → ε action 실행
+```
+
+여기서 false jump 명령을 만들고, 그 위치를 `M.loc`에 저장한다.
+
+```
+then S
+```
+
+then 안의 문장 코드를 생성한다.
+
+```
+마지막 action 실행
+```
+
+이제 `pc`가 then문 끝 위치를 가리키므로,
+
+```
+backpatch(M.loc, pc - M.loc)
+```
+
+으로 jump 목적지를 채운다.
+
+---
+# Ex 5.25
+
+### 위를 아래와 같이 바꾸는 것이 타당한가?
+
+```
+A → { B.i = f(A.i); } B C
+```
+
+```
+A → M B C
+M → ε { M.i = A.i; M.s = f(M.i); }
+```
+
+
+결론부터 말하면 **그냥 이렇게 바꾸면 legal하지 않다**고 보는 게 맞다..
+
+원래 의도는 아래와 같다.
+
+```
+A → { B.i = f(A.i); } B C
+```
+
+A의 inherited attribute A.i를 이용해서 B의 inherited attribute B.i를 미리 계산한다.
+즉 `B`를 parsing하기 전에 `B.i`가 필요하니까, action을 `B` 앞에 둔 거다.
+
+그런데 marker로 바꾸면서 이렇게 했다.
+
+```
+A → M B C
+M → ε { M.i = A.i; M.s = f(M.i); }
+```
+
+여기서 문제가 생긴다.
+
+`M → ε`의 semantic action 안에서 `A.i`를 쓰고 있다.
+
+```
+M.i = A.i
+```
+
+그런데 `M → ε`라는 production만 보면, 이 production에 등장하는 symbol은 `M`뿐이다.
+
+```
+M → ε
+```
+
+즉 이 production의 semantic action에서 직접 접근할 수 있는 건 기본적으로 `M`의 attribute뿐이다.  그런데 갑자기 바깥 production의 head인 `A.i`를 참조하고 있다.
+
+그래서 문법적으로 보면 이건 이상한 형태다.
+
+```
+M → ε { M.i = A.i; }
+```
+
+여기서 `A`는 `M → ε` production 안에 존재하지 않는다.
+
+---
+
+LR parser 관점에서도 문제가 있다.
+
+`A → M B C`를 parsing할 때, `M → ε`는 제일 먼저 reduce된다.
+
+그 순간 stack 상태는 대략 이렇다.
+
+```
+... 
+```
+
+아직 `A`는 만들어지지 않았다.  왜냐하면 `A`는 나중에 `M B C` 전체가 완성되어야 reduce되기 때문이다. 즉 `M → ε` action이 실행되는 시점에는 `A.i` 를 어디서 가져와야 하는지가 명확하지 않다.
+
+그래서 이 변환은 그냥 두면 legal하지 않다.
+
+---
