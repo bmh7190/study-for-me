@@ -118,7 +118,7 @@ a = f(d);
 
 대표적으로 `break`가 어디서 사용될 수 있는지를 검사한다.
 
-### 잘못된 경우
+#### 잘못된 경우
 
 ```c
 myfunc()
@@ -129,10 +129,9 @@ myfunc()
 ```
 
 `break`는 아무 곳에서나 쓸 수 없다. 보통 `while`, `for`, `switch` 안에서만 의미가 있다.
-
 따라서 반복문이나 switch 밖에서 `break`를 쓰면 오류다.
 
-### 올바른 경우: while 내부
+#### 올바른 경우: while 내부
 
 ```c
 while (n)
@@ -145,7 +144,7 @@ while (n)
 
 여기서 `break`는 while 반복문을 빠져나가는 의미가 있으므로 가능하다.
 
-### 올바른 경우: switch 내부
+#### 올바른 경우: switch 내부
 
 ```c
 switch (a)
@@ -160,22 +159,12 @@ switch (a)
 
 여기서도 `break`는 switch를 빠져나가는 의미가 있으므로 가능하다.
 
-즉, flow-of-control check는 이런 식으로 검사한다.
-
-```text
-break가 반복문 또는 switch 안에 있는가?
-continue가 반복문 안에 있는가?
-return이 함수 안에서 올바르게 사용되었는가?
-goto label이 존재하는가?
-```
-
 ---
-
-## 5. Uniqueness Checks
+# Uniqueness Checks
 
 여기는 같은 스코프 안에서 이름이 중복 선언되는지를 검사하는 내용이다.
 
-### 지역 변수 중복
+#### 지역 변수 중복
 
 ```c
 myfunc()
@@ -187,7 +176,7 @@ myfunc()
 같은 함수 블록 안에서 `i`가 두 번 선언되었다.  
 같은 스코프 안에서는 같은 이름의 변수를 중복 선언할 수 없으므로 오류다.
 
-### parameter 중복
+#### parameter 중복
 
 ```c
 cnufym(int a, int a) // ERROR
@@ -198,7 +187,7 @@ cnufym(int a, int a) // ERROR
 
 함수 parameter 이름도 같은 parameter list 안에서는 중복될 수 없다.
 
-### struct 이름 중복
+#### struct 이름 중복
 
 ```c
 struct myrec
@@ -216,14 +205,8 @@ struct myrec // ERROR
 
 즉, uniqueness check는 symbol table을 이용해서 현재 스코프에 이미 같은 이름이 있는지 확인하는 검사다.
 
-```text
-현재 symbol table에 같은 name이 이미 존재하는가?
-→ 있으면 중복 선언 error
-```
-
 ---
-
-## 6. Name-Related Checks
+# Name-Related Checks
 
 여기는 이름과 이름의 연결 관계를 검사하는 예시다.
 
@@ -240,54 +223,10 @@ LoopA: for (int I = 0; I < n; I++)
 ```
 
 여기서 `LoopA`는 label 이름이다. 그런데 안에서는 `break LoopB;`를 하고 있다.
-
 이 경우 컴파일러는 `LoopB`라는 label이 실제로 존재하는지 확인해야 한다.
 
 만약 `LoopB`가 선언되어 있지 않다면 오류다.
 
 즉, name-related check는 단순 변수뿐 아니라 label, 함수, 타입 이름 등 여러 종류의 이름이 올바르게 사용되었는지 확인하는 것이다.
 
-```text
-break LoopB
-→ LoopB라는 label이 있는가?
-→ 현재 위치에서 접근 가능한 label인가?
-```
-
-이런 검사를 한다.
-
 ---
-
-## 전체 흐름 정리
-
-여기서 핵심은 컴파일러가 단순히 문법만 보는 게 아니라는 것이다.
-
-```text
-parser
-→ 문법 구조가 맞는지 확인
-
-semantic/static checking
-→ 의미 규칙이 맞는지 확인
-```
-
-그리고 static checking은 symbol table과 type 정보를 바탕으로 수행된다.
-
-```text
-symbol table
-→ 이름이 선언되었는지 확인
-→ 중복 선언 확인
-→ 타입 확인
-→ 스코프 확인
-
-type information
-→ 연산 가능 여부 확인
-→ 함수 호출 가능 여부 확인
-→ 형 변환 가능 여부 확인
-```
-
-정리하면 이 부분은 다음을 말한다.
-
-```text
-컴파일 타임에 확인 가능한 오류는 최대한 컴파일러가 잡는다.
-그중 대표적인 것이 타입 검사, 제어 흐름 검사, 중복 선언 검사, 이름 관련 검사다.
-실행 중에만 알 수 있는 것은 dynamic checking으로 처리한다.
-```
