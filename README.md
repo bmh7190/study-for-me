@@ -3,7 +3,7 @@
 # 📚 Computer Science Notes
 
 컴퓨터공학 전공 과목을 공부하며 정리한 **Obsidian 기반 CS 학습 노트**입니다.  
-운영체제, 데이터베이스, 컴퓨터구조론, 네트워크처럼 핵심 과목별 개념을 Markdown으로 정리합니다.
+운영체제, 데이터베이스, 컴퓨터구조론, 네트워크, 보안, 알고리즘처럼 핵심 과목별 개념을 Markdown으로 정리합니다.
 
 ![Markdown](https://img.shields.io/badge/notes-Markdown-111111?style=flat-square)
 ![Obsidian](https://img.shields.io/badge/tool-Obsidian-7C3AED?style=flat-square)
@@ -43,25 +43,37 @@ mindmap
       OpenMP
       CUDA
     Security
-      Number Theory
-      DES
-      AES
+      Cryptography
+      TLS
+      Web Security
     Compiler
       Grammar
       LR Parsing
+      SDT
+    Algorithm
+      MST
+      Shortest Path
+      String Matching
 ```
 
 ## 🗂️ Subjects
 
-| 과목                                   | 주요 내용                                              |
-| ------------------------------------ | -------------------------------------------------- |
-| 🧱 [컴퓨터구조론](<컴퓨터구조론/README.md>)      | 컴퓨터 추상화, 명령어 집합, 산술 연산, 프로세서, 메모리                  |
-| 🖥️ [오퍼레이팅시스템](<오퍼레이팅시스템/README.md>) | 프로세스, 스레드, CPU 스케줄링, 동기화, 교착상태, 메모리 관리             |
-| 🗃️ [데이터베이스](<데이터베이스/README.md>)     | 관계형 모델, SQL, ER 모델, 정규화, 저장 구조, 인덱싱, 쿼리 처리         |
-| ⚙️ [병렬프로그래밍](<병렬프로그래밍/README.md>)    | C++11 멀티스레딩, OpenMP, CUDA, 병렬 계산 패턴                |
-| 🌐 [컴퓨터 네트워크](<컴퓨터 네트워크/README.md>)  | OSI/TCP-IP 계층, IP, ARP, ICMP, 라우팅, TCP, TCP Socket |
-| 🔐 [컴퓨터보안](<컴퓨터보안/README.md>)        | 정수론, DES, AES, 블록 암호 운영 모드, 난수 생성                  |
-| 🧩 [컴파일러](<컴파일러/README.md>)          | 문법, Bottom-up Parsing, LR(0), SLR                  |
+| 과목 | 주요 내용 |
+|---|---|
+| 🧱 [컴퓨터구조론](<컴퓨터구조론/README.md>) | 컴퓨터 추상화, 명령어 집합, 산술 연산, 프로세서, 메모리 |
+| 🖥️ [오퍼레이팅시스템](<오퍼레이팅시스템/README.md>) | 프로세스, 스레드, CPU 스케줄링, 동기화, 교착상태, 메모리 관리 |
+| 🗃️ [데이터베이스](<데이터베이스/README.md>) | 관계형 모델, SQL, ER 모델, 정규화, 저장 구조, 인덱싱, 쿼리 처리 |
+| ⚙️ [병렬프로그래밍](<병렬프로그래밍/README.md>) | C++11 멀티스레딩, OpenMP, CUDA, 병렬 계산 패턴 |
+| 🌐 [컴퓨터 네트워크](<컴퓨터 네트워크/README.md>) | OSI/TCP-IP 계층, IP, ARP, ICMP, 라우팅, TCP, TCP Socket |
+| 🔐 [컴퓨터보안](<컴퓨터보안/README.md>) | 암호학 기초, 대칭키/공개키, 해시와 서명, TLS, 웹 보안, 사이버 보안 |
+| 🧩 [컴파일러](<컴파일러/README.md>) | 문법, LR 파싱, Syntax Directed Translation, 중간 코드, 활성 레코드 |
+| 📐 [알고리즘](<알고리즘/README.md>) | MST, 최단 경로, 문자열 매칭, NP, 그래프 알고리즘 |
+
+## 🔎 Additional Notes
+
+| 노트 | 주요 내용 |
+|---|---|
+| [Web Security](<컴퓨터보안/13. Web Security.md>) | HTTP stateless, cookie, SQL Injection, XSS, JWT, SSRF, CSRF |
 
 ## 🚀 How to Read
 
@@ -79,6 +91,7 @@ mindmap
 ├── Templates/
 ├── 데이터베이스/
 ├── 병렬프로그래밍/
+├── 알고리즘/
 ├── 오퍼레이팅시스템/
 ├── 컴파일러/
 ├── 컴퓨터 네트워크/
