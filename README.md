@@ -69,12 +69,6 @@ mindmap
 | 🧩 [컴파일러](<컴파일러/README.md>) | 문법, LR 파싱, Syntax Directed Translation, 중간 코드, 활성 레코드 |
 | 📐 [알고리즘](<알고리즘/README.md>) | MST, 최단 경로, 문자열 매칭, NP, 그래프 알고리즘 |
 
-## 🔎 Additional Notes
-
-| 노트 | 주요 내용 |
-|---|---|
-| [Web Security](<컴퓨터보안/13. Web Security.md>) | HTTP stateless, cookie, SQL Injection, XSS, JWT, SSRF, CSRF |
-
 ## 🚀 How to Read
 
 - GitHub에서는 위 표의 과목별 README에서 목차를 따라가면 됩니다.

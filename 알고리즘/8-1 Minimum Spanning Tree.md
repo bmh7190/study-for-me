@@ -24,7 +24,7 @@ Prim 알고리즘의 목적은 그래프의 모든 vertex를 연결하되, 선�
 Prim 알고리즘은 다음과 같이 진행된다.
 
 1. 임의의 vertex 하나를 선택해서 tree를 만든다.
-2. 현재 tree에 포함된 vertex들과, 아직 tree에 포함되지 않은 vertex들을 연결하는 edge들을 확인한다.
+2. 현재 tree에 포함된 vertex들과, 아직 tree에 포함되지 않은 vertex들을 연결하는 edge들을 확인한다. 
 3. 그중 가중치가 가장 작은 edge를 선택한다.
 4. 선택된 edge와 연결된 새로운 vertex를 tree에 추가한다.
 5. 모든 vertex가 tree에 포함될 때까지 이 과정을 반복한다.
@@ -77,6 +77,7 @@ While there are fringe vertices:
 
 ---
 ## 시간 복잡도
+
 Prim 알고리즘은 minimum spanning tree를 만들기 위해 vertex를 하나씩 tree에 추가한다. 그래프에 vertex가 `n`개 있다면, 최종적으로 모든 vertex가 tree에 포함되어야 하므로 vertex는 총 `n`번 추가된다.
 
 처음에는 임의의 시작 vertex 하나를 tree에 넣고, 이후에는 매 단계마다 fringe vertex 중에서 현재 tree와 가장 작은 가중치로 연결되는 vertex를 하나 선택한다.
@@ -86,9 +87,7 @@ Prim 알고리즘은 minimum spanning tree를 만들기 위해 vertex를 하나�
 
 예를 들어 어떤 vertex `E`가 원래는 가중치 10짜리 edge로 tree와 연결될 수 있었다고 하자. 그런데 새로 추가된 vertex `v`를 통해 `E`로 가는 edge의 가중치가 4라면, `E`의 최소 연결 비용을 10에서 4로 갱신해야 한다.
 
-즉, vertex `v`를 tree에 넣을 때는 `v`에서 나가는 edge들을 확인하면서 fringe vertex들의 정보를 갱신한다.
-
-이때 `v`에서 나가는 edge의 개수를 `|N(v)|`라고 하면, 이 edge들을 확인하는 데 걸리는 시간은 $O(|N(v)|)$ 이다.
+즉, vertex `v`를 tree에 넣을 때는 `v`에서 나가는 edge들을 확인하면서 fringe vertex들의 정보를 갱신한다. 이떄 v와 인접한 정점들의 집합을 N(v)라고 하면, `|N(v)|`는 v와 연결된 edge의 개수를 의미한다. 이 edge들을 확인하는 데 걸리는 시간은 $O(|N(v)|)$ 이다.
 
 ### 그런데 왜 O(n + |N(v)|)인가?
 배열 기반 구현에서는 매번 다음에 tree에 넣을 vertex를 찾기 위해 fringe vertex들의 배열을 훑어야 한다. 즉, 현재 tree와 연결될 수 있는 후보 vertex들 중에서 최소 가중치를 가진 vertex를 찾아야 한다.
@@ -105,21 +104,21 @@ Prim 알고리즘은 minimum spanning tree를 만들기 위해 vertex를 하나�
 ### 전체 시간 복잡도
 이 과정을 모든 vertex에 대해 반복한다. 먼저, 최소 fringe vertex를 찾는 작업은 매번 `O(n)`이고, vertex를 총 `n`번 추가하므로 $O(n) \times n = O(n^2)$ 이다.
 
-다음으로, 각 vertex가 tree에 추가될 때마다 그 vertex에서 나가는 edge들을 확인한다.
+다음으로, 각 vertex가 tree에 추가될 때마다 그 vertex와 연결된 edge들을 확인한다. 새로운 vertex v가 tree에 들어오면, v를 통해 바깥쪽 vertex로 더 작은 가중치로 연결될 수 있기 때문에 인접 edge들을 확인하고 갱신해야 한다. 이때 v의 인접 정점 집합을 N(v)라고 하면, v를 추가할 때 확인해야 하는 edge 수는 |N(v)|이다.
 
-모든 vertex에 대해 `|N(v)|`를 다 더하면 전체 edge 수와 관련된다.
-무방향 그래프라면 각 edge가 양쪽 vertex의 인접 리스트에 한 번씩 들어가므로
+이 과정을 모든 vertex에 대해 수행하면 Σ |N(v)|만큼의 edge 확인이 발생한다. 무방향 그래프에서는 하나의 edge가 양쪽 vertex의 adjacency list에 각각 한 번씩 저장된다. 
+
+예를 들어 A--B라는 edge는 A의 adjacency list에도 B로 들어가고, B의 adjacency list에도 A로 들어간다. 따라서 실제 edge 수가 m개라면 adjacency list 전체에서 확인되는 edge 항목 수는 2m개가 된다. 
 
 $$  
 \sum_v |N(v)| = 2m  
 $$
 
-이다.
-
-그래서 edge 갱신 전체 비용은 $O(m)$으로 볼 수 있다. 정확히는 무방향 그래프에서 `O(2m)`이지만, 상수는 생략하므로 `O(m)`이다. 따라서 전체 시간 복잡도는 $O(n^2 + m)$ 이다.
+결국 edge 갱신 전체 비용은 $O(2m)$ 이고, Big-O 표기에서는 상수 2를 생략하므로 $O(m)$ 으로 볼 수 있다. 여기에 배열 기반 구현에서 매번 최소 비용 vertex를 찾는 비용 $O(n^2)$ 을 더하면, Prim 알고리즘의 전체 시간 복잡도는 $O(n^2 + m)$ 이 된다.
 
 ---
 # Kruskal’s algorithm
+
 Kruskal 알고리즘도 **minimum spanning tree**를 구하는 greedy algorithm이다. Prim 알고리즘이 하나의 tree를 점점 확장해 나가는 방식이라면, Kruskal 알고리즘은 **가중치가 작은 edge부터 하나씩 선택하면서 여러 개의 작은 tree들을 점점 합쳐 나가는 방식**이다.
 
 처음에는 모든 vertex가 각각 독립된 tree라고 생각한다. 즉, vertex가 `n`개라면 처음에는 tree도 `n`개 있는 상태이다.
@@ -237,8 +236,29 @@ Union-Find를 효율적으로 구현하면 `find`와 `union`은 거의 상수 �
 따라서 Kruskal 알고리즘의 전체 시간 복잡도는 $O(m \log m) + O(m)$ 이고, 더 큰 항만 남기면 $O(m \log m)$ 이 된다. 여기서 `m`은 edge의 개수이다.
 
 ---
+# Prim's VS Kruskal’s algorithm
 
 Prim 알고리즘과 비교하면 그래프가 sparse한지 dense한지에 따라 차이가 생긴다.
+
+### dense랑 spase
+그래프에서 vertex가 `n`개 있을 때, 가능한 edge 수에 가깝게 edge가 많이 존재하면 dense graph라고 한다.
+
+무방향 단순 그래프 기준으로 가능한 최대 edge 수는 `n(n - 1) / 2` 이다. 그래서 실제 edge 수 `m`이 이 값에 가까우면 dense graph라고 한다.
+
+예를 들어 vertex가 5개라면 가능한 최대 edge 수는:
+
+```
+5 × 4 / 2 = 10
+```
+
+이때 edge가 8개, 9개, 10개 정도로 많으면 dense graph라고 볼 수 있다.
+
+반대로 edge가 적으면 **sparse graph**라고 한다.
+
+- Dense graph  = edge가 많은 그래프
+- Sparse graph = edge가 적은 그래프
+
+---
 
 Prim 알고리즘을 배열 기반으로 구현하면 시간 복잡도는 보통 $O(n^2 + m)$ 이고, dense graph에서는 보통 $O(n^2)$ 로 본다.
 
