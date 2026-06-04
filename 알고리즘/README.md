@@ -6,7 +6,7 @@
 
 ### Graph Algorithms
 
-- [Minimum Spanning Tree](<Minimum Spanning Tree.md>)
+- [8-1 Minimum Spanning Tree](<8-1 Minimum Spanning Tree.md>)
   - Prim과 Kruskal 알고리즘을 중심으로 minimum spanning tree를 정리합니다.
 - [Single Source shortest paths](<Single Source shortest paths.md>)
   - 하나의 시작 정점에서 모든 정점까지의 최단 경로 문제를 다룹니다.
