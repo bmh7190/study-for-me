@@ -1,8 +1,17 @@
 # 알고리즘
 
-그래프 알고리즘, 문자열 매칭, 계산 복잡도와 NP 관련 개념을 정리한 노트입니다.
+그래프 탐색, 그래프 알고리즘, 문자열 매칭, 계산 복잡도와 NP 관련 개념을 정리한 노트입니다.
 
 ## 목차
+
+### Graph Traversal
+
+- [7-2-1 DFS ( Depth First Search )](<7-2-1 DFS ( Depth First Search ).md>)
+  - 깊이 우선 탐색의 진행 방식과 DFS tree, back edge, cross edge 같은 간선 분류를 정리합니다.
+- [7-2-2 BFS ( Breath First Search )](<7-2-2 BFS ( Breath First Search ).md>)
+  - 너비 우선 탐색의 레벨 기반 탐색 흐름과 BFS에서의 간선 특성을 설명합니다.
+- [7-2-2 Strongly Connected Components](<7-2-2 Strongly Connected Components.md>)
+  - strongly connected component의 정의와 Kosaraju 알고리즘으로 SCC를 찾는 과정을 다룹니다.
 
 ### Graph Algorithms
 

@@ -16,16 +16,16 @@ edge weight 합 = 10 + 10 = 20
 edge weight 합 = 2 + 3 + 4 = 9
 ```
 
-경로 1은 edge를 2개만 지나고, 경로 2는 edge를 3개 지나간다. 하지만 weighted graph에서는 edge 개수가 아니라 weight의 합을 기준으로 보기 때문에, 이 경우 shortest path는 경로 2가 된다.
+경로 1은 edge를 2개만 지나고, 경로 2는 edge를 3개 지나간다. 하지만 weighted graph에서는 edge 개수가 아니라 weight의 합을 기준으로 보기 때문에, 이 경우 shortest path는 경로 2가 된다. 
 
 따라서 weighted graph에서 shortest path 문제는 다음과 같이 볼 수 있다.
-
-시작 vertex s가 주어졌을 때,s로부터 각 vertex까지 가는 path 중edge weight의 합이 가장 작은 path를 찾는 문제
+>시작 vertex s가 주어졌을 때, s로부터 각 vertex까지 가는 path 중 edge weight의 합이 가장 작은 path를 찾는 문제
 
 이러한 문제를 해결하는 대표적인 알고리즘이 **Dijkstra’s algorithm**이다
 
 ---
 # Dijkstra's Algorithm
+
 Dijkstra 알고리즘은 특정 시작 vertex `s`에서 다른 모든 vertex까지의 shortest path를 찾는 알고리즘이다.
 
 처음에는 `s` 하나만 포함된 tree에서 시작한다. 그리고 현재 tree와 인접한 vertex들 중에서, **시작점 `s`로부터의 거리가 가장 짧은 vertex**를 하나 선택해서 tree에 추가한다.
@@ -45,6 +45,7 @@ distance(A, C) = distance(A, B) + weight(B, C)
 
 ---
 ## 진행 과정
+
 Dijkstra 알고리즘은 다음과 같이 진행된다.
 
 먼저 시작 vertex `s`를 tree에 넣고, `s`까지의 거리를 0으로 둔다.
