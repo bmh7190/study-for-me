@@ -17,58 +17,30 @@
 각 과목 폴더의 `README.md`가 상세 목차 역할을 하며, 개별 노트에서는 개념 설명, 예시, 수식, 이미지 자료를 함께 다룹니다.
 
 ```mermaid
-flowchart LR
-    CS["CS Notes"]
-    SYS["Systems"]
-    THEORY["Theory"]
-
-    CA["Computer Architecture<br/>ISA · Processor · Memory"]
-    OS["Operating System<br/>Process · Thread · Virtual Memory"]
-    DB["Database<br/>SQL · ER Model · Indexing"]
-    NET["Network<br/>IP · Routing · TCP"]
-    PP["Parallel Programming<br/>C++ Threads · OpenMP · CUDA"]
-    SEC["Security<br/>Cryptography · TLS · Web Security"]
-    COMP["Compiler<br/>Grammar · LR Parsing · SDT"]
-    ALG["Algorithm<br/>DFS · BFS · MST · Shortest Path"]
-
-    CS --> SYS
-    CS --> THEORY
-
-    SYS --> CA
-    SYS --> OS
-    SYS --> DB
-    SYS --> NET
-
-    THEORY --> PP
-    THEORY --> SEC
-    THEORY --> COMP
-    THEORY --> ALG
-
-    classDef center fill:#111827,stroke:#374151,color:#F9FAFB,stroke-width:1.3px;
-    classDef hub fill:#DBEAFE,stroke:#60A5FA,color:#0F172A,stroke-width:1.1px;
-    classDef systems fill:#E0F2FE,stroke:#38BDF8,color:#0F172A,stroke-width:1px;
-    classDef theory fill:#DCFCE7,stroke:#4ADE80,color:#0F172A,stroke-width:1px;
-
-    class CS center;
-    class SYS,THEORY hub;
-    class CA,OS,DB,NET systems;
-    class PP,SEC,COMP,ALG theory;
-
-    linkStyle default stroke:#94A3B8,stroke-width:1.1px;
+mindmap
+  root((CS Notes))
+    Computer Architecture
+    Operating System
+    Database
+    Network
+    Parallel Programming
+    Security
+    Compiler
+    Algorithm
 ```
 
 ## 🗂️ Subjects
 
-| 과목 | 주요 내용 |
-|---|---|
-| 🧱 [컴퓨터구조론](<컴퓨터구조론/README.md>) | 컴퓨터 추상화, 명령어 집합, 산술 연산, 프로세서, 메모리 |
-| 🖥️ [오퍼레이팅시스템](<오퍼레이팅시스템/README.md>) | 프로세스, 스레드, CPU 스케줄링, 동기화, 교착상태, 메모리 관리 |
-| 🗃️ [데이터베이스](<데이터베이스/README.md>) | 관계형 모델, SQL, ER 모델, 정규화, 저장 구조, 인덱싱, 쿼리 처리 |
-| ⚙️ [병렬프로그래밍](<병렬프로그래밍/README.md>) | C++11 멀티스레딩, OpenMP, CUDA, 병렬 계산 패턴 |
-| 🌐 [컴퓨터 네트워크](<컴퓨터 네트워크/README.md>) | OSI/TCP-IP 계층, IP, ARP, ICMP, 라우팅, TCP, TCP Socket |
-| 🔐 [컴퓨터보안](<컴퓨터보안/README.md>) | 암호학 기초, 대칭키/공개키, 해시와 서명, TLS, 웹 보안, 사이버 보안 |
-| 🧩 [컴파일러](<컴파일러/README.md>) | 문법, LR 파싱, Syntax Directed Translation, 중간 코드, 활성 레코드 |
-| 📐 [알고리즘](<알고리즘/README.md>) | DFS, BFS, MST, 최단 경로, 문자열 매칭, NP |
+| 과목                                   | 주요 내용                                                 |
+| ------------------------------------ | ----------------------------------------------------- |
+| 🧱 [컴퓨터구조론](<컴퓨터구조론/README.md>)      | 컴퓨터 추상화, 명령어 집합, 산술 연산, 프로세서, 메모리                     |
+| 🖥️ [오퍼레이팅시스템](<오퍼레이팅시스템/README.md>) | 프로세스, 스레드, CPU 스케줄링, 동기화, 교착상태, 메모리 관리                |
+| 🗃️ [데이터베이스](<데이터베이스/README.md>)     | 관계형 모델, SQL, ER 모델, 정규화, 저장 구조, 인덱싱, 쿼리 처리            |
+| ⚙️ [병렬프로그래밍](<병렬프로그래밍/README.md>)    | C++11 멀티스레딩, OpenMP, CUDA, 병렬 계산 패턴                   |
+| 🌐 [컴퓨터 네트워크](<컴퓨터 네트워크/README.md>)  | OSI/TCP-IP 계층, IP, ARP, ICMP, 라우팅, TCP, TCP Socket    |
+| 🔐 [컴퓨터보안](<컴퓨터보안/README.md>)        | 암호학 기초, 대칭키/공개키, 해시와 서명, TLS, 웹 보안, 사이버 보안            |
+| 🧩 [컴파일러](<컴파일러/README.md>)          | 문법, LR 파싱, Syntax Directed Translation, 중간 코드, 활성 레코드 |
+| 📐 [알고리즘](<알고리즘/README.md>)          | DFS, BFS, MST, 최단 경로, 문자열 매칭, NP                      |
 
 ## 🚀 How to Read
 
