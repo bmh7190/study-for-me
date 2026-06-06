@@ -182,7 +182,7 @@ E → E1 + T { E.val = E1.val + T.val }
 이런 action은 `E1 + T`가 모두 stack에 올라와서 reduce될 때 실행하면 된다.
 즉 reduce 시점에 자식들의 attribute가 이미 준비되어 있으니까, 부모 attribute를 계산하기 쉽다. 그래서 LR parser 같은 경우에 action 이 맨 끝에 있는 형태가 자연스럽다.
 
-d오른쪽 바디 즉 자식들 전체 처리 완료 하고, reduce 하면 서 action 실행하고 action을 통해 부모 attribute 계산하는 아주 자연스러운 흐름이 있다. 이걸 postfix translation schme 이라고 한다.
+오른쪽 바디 즉 자식들 전체 처리 완료 하고, reduce 하면 서 action 실행하고 action을 통해 부모 attribute 계산하는 아주 자연스러운 흐름이 있다. 이걸 postfix translation schme 이라고 한다.
 
 ---
 ## Postfix Translation Scheme

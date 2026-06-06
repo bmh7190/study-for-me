@@ -137,10 +137,10 @@ F.node = Leaf(id, id.entry)
 
 정리하면 이런 흐름이다.
 
-`id`를 만나면 leaf 생성  
-`id * id`를 만나면 `*` node 생성  
-`id + (id * id)`를 만나면 `+` node 생성  
-최종적으로 `E.node`가 전체 AST의 root가 된다.
+1. `id`를 만나면 leaf 생성  
+2. `id * id`를 만나면 `*` node 생성  
+3. `id + (id * id)`를 만나면 `+` node 생성 
+4. 최종적으로 `E.node`가 전체 AST의 root가 된다.
 
 ---
 # Ex 5.11
@@ -211,6 +211,7 @@ p4 = c
 
 ---
 # SDT with inherited attributes
+
 앞에서는 `E.node = new Node('+', E1.node, T.node)`처럼 자식 node를 이용해서 부모 node를 만들었다. 즉 정보가 아래에서 위로 올라갔다.
 
 그런데 이번 예제에서는 정보가 **위에서 아래로 내려가야 하는 상황**이 나온다. 그래서 **inherited attribute**가 필요하다.
