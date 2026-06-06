@@ -10,7 +10,9 @@ Activation Record는 줄여서 **AR**이라고 부르고, 쉽게 말하면 **함
 예를 들어 `factorial(3)`이 실행되면서 `factorial(2)`, `factorial(1)`을 호출하면 함수 코드는 하나지만 호출은 여러 번 일어난다. 따라서 AR도 여러 개 생긴다.
 
 ```
-factorial(3)의 ARfactorial(2)의 ARfactorial(1)의 AR
+factorial(3)의 AR
+factorial(2)의 AR
+factorial(1)의 AR
 ```
 
 각 호출마다 매개변수 `n`의 값이 다르기 때문에 같은 함수라도 AR을 따로 가져야 한다.
@@ -28,7 +30,8 @@ factorial(3)의 ARfactorial(2)의 ARfactorial(1)의 AR
 컴파일러 입장에서는 변수 이름을 직접 찾는 것이 아니라,
 
 ```
-ARP + offsetARP - offset
+ARP + offset
+ARP - offset
 ```
 
 같은 방식으로 AR 안의 값을 찾는다.
