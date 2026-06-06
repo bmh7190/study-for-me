@@ -57,8 +57,153 @@ gen(t3 := t1 + t2)
 
 ---
 # Example a = b + - c
+이 예제는 **문법 구조를 따라가면서 expression을 three-address code로 바꾸는 방식**을 보여주는 거다. 핵심은 `E`가 계산될 때마다 두 가지 정보를 가진다고 보면 된다.
 
 ![](../images/Pasted%20image%2020260519134835.png)
+
+- `E.addr` : 이 식의 결과가 저장되어 있는 위치  
+- `E.code` : 그 결과를 만들기 위해 필요한 코드
+
+예를 들어 `b + -c`라는 식을 계산한다고 하면, 최종 결과가 바로 `b + -c`라는 긴 식으로 남는 게 아니라, 중간 결과를 임시 변수에 저장하면서 three-address code로 바꾼다.
+
+입력은 사실상 이런 문장이다.
+
+```text
+a := b + -c
+```
+
+---
+## 1. id는 코드가 필요 없다
+
+가장 아래쪽부터 보면 `b`, `c` 같은 변수는 이미 메모리나 심볼 테이블에 존재하는 값이다.
+
+그래서 production이 `E → id` 이면 아래와 같다.
+
+```text
+E.addr := id.name
+E.code := ''
+```
+
+즉, `b`를 봤으면
+
+```text
+E.addr = b
+E.code = 없음
+```
+
+`c`를 봤으면
+
+```text
+E.addr = c
+E.code = 없음
+```
+
+이다.
+
+변수 자체는 이미 값이 있는 장소이기 때문에 새 코드를 만들 필요가 없다.
+
+---
+## 2. `-c`는 임시 변수가 필요하다
+
+그다음 오른쪽 부분에 `-c`가 있다.
+
+문법으로는 `E → - E1` 이고 semantic rule은 아래와 같다.
+
+```text
+E.addr := newtemp()
+E.code := E1.code || gen(E.addr := uminus E1.addr)
+```
+
+여기서 `E1`은 `c`다.
+
+이미 `c`는
+
+```text
+E1.addr = c
+E1.code = 없음
+```
+
+이므로, `-c`의 결과를 저장할 새 임시 변수 `t1`을 만든다.
+
+```text
+E.addr = t1
+E.code = t1 = minus c
+```
+
+그래서 첫 번째 three-address code가 나온다.
+
+```text
+t1 = minus c
+```
+
+즉, `-c`라는 식 전체의 결과는 이제 `t1`에 들어 있다고 보는 것이다.
+
+---
+## 3. `b + t1`도 임시 변수가 필요하다
+
+이제 전체 식은 `b + -c` 인데, `-c`는 이미 `t1`으로 계산되었으므로 사실상 `b + t1` 이 된다.
+
+문법으로는 `E → E1 + E2`이고 semantic rule은 아래와 같다.
+
+```text
+E.addr := newtemp()
+E.code := E1.code || E2.code || gen(E.addr := E1.addr + E2.addr)
+```
+
+
+왼쪽 `E1`은 `b`다.
+
+```text
+E1.addr = b
+E1.code = 없음
+```
+
+오른쪽 `E2`는 `-c`다.
+
+```text
+E2.addr = t1
+E2.code = t1 = minus c
+```
+
+이제 `b + t1`의 결과를 저장할 새 임시 변수 `t2`를 만든다.
+
+```text
+E.addr = t2
+E.code = t1 = minus c
+         t2 = b + t1
+```
+
+그래서 두 번째 코드가 나온다.
+
+```text
+t2 = b + t1
+```
+
+여기서 중요한 점은 `+` 연산의 코드를 만들기 전에, 오른쪽 피연산자인 `-c`의 코드가 먼저 나와야 한다는 것이다. 그래서 `E1.code || E2.code || gen(...)` 순서가 된다.
+
+---
+## 4. 마지막으로 assignment 코드가 붙는다
+
+전체 문장은 `S → id := E` 이다.
+
+semantic rule은 아래와 같다ㅣ.
+
+```text
+S.code := E.code || gen(id.addr := E.addr)
+```
+
+
+왼쪽 `id`는 `a`이고, 오른쪽 `E`의 최종 결과는 `t2`에 있다.
+
+그러면 최종 코드는
+
+```text
+t1 = minus c
+t2 = b + t1
+a = t2
+```
+
+가 된다.
 
 ---
 # Example While

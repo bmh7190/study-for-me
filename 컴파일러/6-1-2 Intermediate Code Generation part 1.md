@@ -29,6 +29,7 @@ a + p;
 
 ---
 # Type Expression
+
 타입은 단순히 `int`, `float` 같은 기본 타입만 있는 것이 아니다. 배열, 포인터, 함수, 구조체처럼 복합 타입도 있다.
 
 이런 타입을 표현하기 위해 **type expression**을 사용한다.
@@ -130,6 +131,7 @@ integer × char → integer
 
 ---
 # Type Equivalence
+
 타입 검사의 핵심 중 하나는 두 타입이 같은지 판단하는 것이다. 이를 **type equivalence**라고 한다.
 
 예를 들어 두 값이 모두 `int`이면 같은 타입이다. 그런데 배열이나 포인터처럼 복합 타입이면 단순히 이름만 비교하면 부족하다.
@@ -171,6 +173,7 @@ pointer(float)
 
 ---
 # Declaration and Storage Layout
+
 변수가 선언되면 컴파일러는 그 변수의 타입을 보고 필요한 저장 공간을 계산해야 한다.
 
 예를 들어,
