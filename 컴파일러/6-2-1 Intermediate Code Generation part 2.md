@@ -110,9 +110,14 @@ E.code = 없음
 문법으로는 `E → - E1` 이고 semantic rule은 아래와 같다.
 
 ```text
-E.addr := newtemp()
+E.addr := newtemp() //임시 변수 생성
 E.code := E1.code || gen(E.addr := uminus E1.addr)
 ```
+
+1. E 전체 결과를 저장할 임시변수를 만든다.
+2. 그 임시변수를 E.addr로 정한다.
+3. E1을 계산하는 코드가 있다면 먼저 붙인다.
+4. E1.addr에 있는 값에 unary minus를 적용해서 E.addr에 저장하는 코드를 만든다.
 
 여기서 `E1`은 `c`다.
 

@@ -229,6 +229,7 @@ s.a와 s.b는 접근 가능한 field다.
 
 ---
 # Offset and Width for Runtime Allocation
+
 앞에서 말한 symbol table 정보가 **실제 실행 시간 메모리 배치**와 어떻게 연결되는지를 보자.
 
 앞에서는 symbol table이 이름, 타입, 스코프를 저장한다고 했다. 그런데 컴파일러가 실제 코드를 생성하려면 한 가지 정보가 더 필요하다.
