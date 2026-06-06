@@ -324,13 +324,9 @@ D → T { L.in = T.type } L
 
 ![](../images/Pasted%20image%2020260601155054.png)
 
-이 방식은 **S-attributed SDD**에 잘 맞는다.
+이 방식은 **S-attributed SDD**에 잘 맞는다. 모든 값이 자식에서 부모로 올라가기 때문이다.
 
-왜냐하면 모든 값이 자식에서 부모로 올라가기 때문이다.
-
-예를 들어 `E → E1 + T`를 보면, `E.val`을 계산하려면 `E1.val`과 `T.val`이 필요하다. 이 둘은 모두 오른쪽 body에 있는 자식들의 attribute다.
-
-그래서 `E1 + T`가 전부 처리된 뒤에 action을 실행하면 된다.
+예를 들어 `E → E1 + T`를 보면, `E.val`을 계산하려면 `E1.val`과 `T.val`이 필요하다. 이 둘은 모두 오른쪽 body에 있는 자식들의 attribute다. 그래서 `E1 + T`가 전부 처리된 뒤에 action을 실행하면 된다.
 
 이걸 postfix translation scheme이라고 부르는 이유는, semantic action이 production body의 뒤쪽에 오기 때문이다.
 
@@ -461,7 +457,8 @@ stack[top - 2] : '('
 왜 left recursion을 제거해야 하는지 회상해보자. 예를 들어 이런 문법이 있다고 하자.
 
 ```
-E → E + TE → T
+E → E + T
+E → T
 ```
 
 이 문법은 left recursive하다. 왜냐하면 `E → E + T`처럼 오른쪽이 다시 `E`로 시작하기 때문이다.

@@ -23,7 +23,7 @@ E → E1 + T { E.val := E1.val + T.val }
 특히 Recursive-Descent Parser에서는 nonterminal마다 함수가 하나씩 생긴다. 그래서 L-attributed SDD의 attribute 전달을 함수의 **argument**와 **return value**로 구현할 수 있다는 것을 설명한다.
 
 ---
-# During Recursive -Descent Parsing
+# During Recursive - Descent Parsing
 
 Recursive-Descent Parser는 각 nonterminal을 함수로 만든다.
 
@@ -178,7 +178,8 @@ match(INT);
 현재 입력 token이 `REAL`이면 `T → real`을 선택한다.
 
 ```
-Ttype = TYPE_REAL;match(REAL);
+Ttype = TYPE_REAL;
+match(REAL);
 ```
 
 즉 `real`을 읽고, `T.type`을 `TYPE_REAL`로 만든다.
