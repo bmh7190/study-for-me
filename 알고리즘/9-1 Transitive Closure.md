@@ -4,6 +4,7 @@ Digraph `G`의 transitive closure `G*`란, `G`에서 어떤 vertex `v`로부터 
 
 ---
 ## Transitive Closure를 구하는 가장 쉬운 방법
+
 Transitive closure `G*`를 구하는 가장 단순한 방법은 **각 vertex마다 DFS 또는 BFS를 한 번씩 수행하는 것**이다.
 
 Transitive closure는 어떤 vertex `v`에서 다른 vertex `w`로 갈 수 있으면, `G*`에 arc `vw`를 추가한 그래프이다. 따라서 핵심은 각 vertex `v`에 대해 **v로부터 도달 가능한 모든 vertex를 찾는 것**이다.

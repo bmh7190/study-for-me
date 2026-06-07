@@ -19,9 +19,9 @@
   - Prim과 Kruskal 알고리즘을 중심으로 minimum spanning tree를 정리합니다.
 - [8-2 Single Source shortest paths](<8-2 Single Source shortest paths.md>)
   - 하나의 시작 정점에서 모든 정점까지의 최단 경로 문제를 다룹니다.
-- [8-3 All pairs shortest paths](<8-3 All pairs shortest paths.md>)
+- [9-2 All pairs shortest paths](<9-2 All pairs shortest paths.md>)
   - 모든 정점 쌍 사이의 최단 경로를 구하는 알고리즘을 정리합니다.
-- [9 Transitive Closure](<9 Transitive Closure.md>)
+- [9-1 Transitive Closure](<9-1 Transitive Closure.md>)
   - 그래프에서 도달 가능성(reachability)을 계산하는 방법을 다룹니다.
 
 ### String Matching
