@@ -34,6 +34,7 @@ i := i + 1;
 
 ---
 # Static and Dynamic Notions of Bindings
+
 Static notion은 **코드에 작성된 구조**이고, dynamic notion은 **실행 중 실제로 만들어지는 것**이다.
 
 ![](../images/Pasted%20image%2020260530153152.png)
@@ -42,7 +43,8 @@ Procedure 정의는 하나지만 activation은 호출마다 생기고, 이름 �
  
 ---
 # Scope Rules
-같은 이름의 변수가 여러 번 등장할 때, 그 이름이 정확히 무엇을 가리키는지 어떻게 확인할까?
+
+>같은 이름의 변수가 여러 번 등장할 때, 그 이름이 정확히 무엇을 가리키는지 어떻게 확인할까?
 
 프로그램 안에서는 같은 이름이 여러 곳에서 쓰일 수 있다. 예를 들어 이 예시에서는 `x`라는 이름이 두 번 나온다.
 
@@ -54,13 +56,14 @@ Procedure 정의는 하나지만 activation은 호출마다 생기고, 이름 �
 # Scoping Rules
 
 ### Scoping
-Scoping은 쉽게 말하면 **이 이름이 정확히 어떤 선언을 가리키는지 정하는 규칙**이다.
+
+>Scoping은 쉽게 말하면 **이 이름이 정확히 어떤 선언을 가리키는지 정하는 규칙**이다.
 
 프로그램 안에는 같은 이름이 여러 번 나올 수 있다. 예를 들어 `x`라는 이름이 전역 변수로도 있고, 함수 이름으로도 있고, 어떤 procedure 안의 지역 변수로도 있을 수 있다.
 
 그런데 코드에서 그냥 `x`라고 쓰면 컴파일러는 이걸 보고 판단해야 한다.
 
-“이 `x`는 어느 `x`인가?”
+>“이 `x`는 어느 `x`인가?”
 
 이걸 결정하는 것이 **scope**이고, 그 규칙이 **scoping rule**이다.
 
@@ -70,7 +73,9 @@ Scoping은 쉽게 말하면 **이 이름이 정확히 어떤 선언을 가리키
 
 ---
 ### Lexicla Scoping
-Lexical scoping은 **소스 코드의 구조를 보고 이름을 결정하는 방식**이다.
+
+>Lexical scoping은 **소스 코드의 구조를 보고 이름을 결정하는 방식**이다.
+
 즉 프로그램을 실제로 실행해보지 않아도, 코드가 어떻게 중첩되어 있는지만 보면 어떤 이름이 어떤 선언을 가리키는지 알 수 있다.
 
 예를 들어 이런 구조가 있다고 해보자.
@@ -97,7 +102,10 @@ procedure outer;
 
 ---
 ### Dynamic Scoping
-Dynamic scoping은 lexical scoping과 반대로 **실행 중 호출 관계를 보고 이름을 결정하는 방식**이다. 즉 소스 코드상 어디에 선언되어 있는지를 보는 것이 아니라, 프로그램이 실행될 때 현재 함수가 누구에게 호출되었는지, 그 호출 스택을 따라가면서 같은 이름을 찾는다.
+
+>Dynamic scoping은 lexical scoping과 반대로 **실행 중 호출 관계를 보고 이름을 결정하는 방식**이다. 
+
+즉 소스 코드상 어디에 선언되어 있는지를 보는 것이 아니라, 프로그램이 실행될 때 현재 함수가 누구에게 호출되었는지, 그 호출 스택을 따라가면서 같은 이름을 찾는다.
 
 예를 들어 이런 상황을 생각해보자.
 
@@ -109,8 +117,8 @@ B 안에서 x를 사용한다.
 Dynamic scoping에서는 `B`의 코드상 바깥 scope를 보는 것이 아니라, **B를 호출한 A의 실행 환경**을 볼 수 있다. 그래서 A에 `x`가 있으면 B 안의 `x`가 A의 `x`를 가리킬 수도 있다. 즉 dynamic scoping에서는 같은 함수 `B`라도 누가 호출했는지에 따라 `x`가 다른 변수를 가리킬 수 있다.
 
 이게 lexical scoping과 가장 큰 차이다.
-Lexical scoping에서는 `B` 안의 `x`가 무엇인지는 코드 구조만 보면 정해진다.  
-Dynamic scoping에서는 `B` 안의 `x`가 무엇인지는 실행 흐름을 봐야 정해진다.
+- Lexical scoping에서는 `B` 안의 `x`가 무엇인지는 코드 구조만 보면 정해진다.  
+- Dynamic scoping에서는 `B` 안의 `x`가 무엇인지는 실행 흐름을 봐야 정해진다.
 
 ```c
 int x = 1;
@@ -143,17 +151,20 @@ void B() {
 이 예시에서는 여러 procedure와 function이 바깥 scope에 선언된 변수를 사용하고 있다. 이러한 변수 접근은 실행 중 호출 관계가 아니라, 코드가 작성된 중첩 구조를 기준으로 결정되기 때문에 **lexical scoping**으로 이해할 수 있다.
 
 ### Lexical VS Dynmaic Scoping
+
 특히 헷갈릴 수 있는 부분은 `exchange`이다. `exchange`는 코드상으로는 `sort` 바로 아래에 선언되어 있지만, 실제 실행 중에는 `partition` 안에서 호출된다. 하지만 lexical scoping에서는 “누가 호출했는가”가 아니라 “어디에 선언되어 있는가”를 기준으로 이름을 찾는다. 따라서 `exchange` 안에서 사용하는 `a`나 `x`는 호출자인 `partition`의 변수가 아니라, `exchange`를 감싸고 있는 `sort`의 변수로 해석된다.
 
 만약 dynamic scoping이라면 이야기가 달라질 수 있다. Dynamic scoping에서는 `exchange`가 코드상 어디에 정의되어 있는지를 보는 것이 아니라, 실행 중에 **누가 `exchange`를 호출했는지**를 기준으로 이름을 찾는다. 오른쪽 call tree에서는 `partition`이 `exchange`를 호출하고 있으므로, `exchange` 안에서 이름을 찾을 때 현재 `exchange`의 환경에서 먼저 찾고, 없으면 호출자인 `partition`의 환경을 확인한다. 그다음에는 `partition`을 호출한 `quicksort`, 그 위의 `quicksort`, 마지막으로 `sort` 순서로 call stack을 따라 올라가며 같은 이름의 변수를 찾게 된다.
 
 ### Symbol table 을 사용한다.
+
 또 하나 중요한 점은 `partition` 안에서 사용되는 `v`이다. `v`는 `partition` 내부에서 선언된 변수가 아니라, 바깥쪽 procedure인 `quicksort`에서 선언된 지역 변수이다. 따라서 `quicksort` 입장에서는 `v`가 지역 변수이고, `partition` 입장에서는 바깥 scope에 있는 **non-local variable**이다.
 
 이처럼 같은 이름이나 변수 참조가 어떤 선언에 연결되는지는 각 scope의 **symbol table**을 통해 확인한다. 컴파일러는 현재 scope의 symbol table에서 먼저 이름을 찾고, 없으면 lexical parent의 symbol table로 올라가면서 해당 이름을 찾는다. 이 과정을 통해 `partition`의 `v`는 `quicksort`의 `v`로, `exchange`의 `a`와 `x`는 `sort`의 `a`와 `x`로 결정된다.
 
 ---
 # Nested Procedures & Symbol Tables
+
 앞에서 본 lexical scoping을 **컴파일러가 symbol table로 어떻게 관리하는지**를 보여준다.
 
 앞에서는 `partition` 안에서 `v`를 쓰면 `quicksort`의 `v`를 의미하고, `exchange` 안에서 `a`, `x`를 쓰면 `sort`의 `a`, `x`를 의미한다고 했다.  
@@ -171,7 +182,6 @@ void B() {
 예를 들어 `partition`은 `quicksort` 안에 선언되어 있으므로, `partition`의 symbol table은 `quicksort`의 symbol table을 가리킨다. 그리고 `quicksort`는 `sort` 안에 선언되어 있으므로, `quicksort`의 symbol table은 `sort`의 symbol table과 연결된다.
 
 이렇게 연결해두면 컴파일러는 어떤 이름을 찾을 때 현재 procedure의 symbol table에서 먼저 찾고, 없으면 바깥 procedure의 symbol table로 올라가면서 찾을 수 있다. 이 과정을 통해 `partition` 안에서 사용된 `v`는 `quicksort`의 지역 변수로, `a`는 `sort`의 변수로 해석된다.
-
 
 ---
 # Static Allocation
