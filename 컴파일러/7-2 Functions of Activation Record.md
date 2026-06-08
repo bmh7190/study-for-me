@@ -643,7 +643,9 @@ int fact(int n) {    if (n == 1) return 1;    return n * fact(n - 1);}
 재귀 함수에서는 같은 procedure의 activation이 여러 개 동시에 존재한다.
 
 ```
-fact(3)fact(2)fact(1)
+fact(3)
+fact(2)
+fact(1)
 ```
 
 이 셋은 모두 `n`이라는 지역 정보를 갖지만, 각각 값이 다르다. 만약 static 공간 하나만 사용하면 `n` 값이 서로 덮어써져서 제대로 실행할 수 없다.
