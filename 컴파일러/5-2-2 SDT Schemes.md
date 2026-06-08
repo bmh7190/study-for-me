@@ -1,7 +1,8 @@
 이전까지 정리한 **SDD**에서 한 단계 더 나아가서, **semantic rule을 실제 parsing 중에 언제 실행할 것인가**를 정리해보자
 
 # SDD와 SDT schemes의 차이
-먼저 SDD는 문법 규칙에 sematic rule을 붙인 것이다.
+
+>먼저 SDD는 문법 규칙에 sematic rule을 붙인 것이다.
 
 예를 들어 앞에서 봤던 형태는 왼쪽과 같은 형태였다. 
 이건 “어떤 attribute 값을 어떻게 계산해야 하는지”를 말해준다.
@@ -13,7 +14,8 @@
 >**그 semantic rule을 정확히 언제 실행할 것인가?**
 
 예를 들어 `D → T L`에서 `L.in := T.type`을 실행하려면, `T.type`이 먼저 계산되어 있어야 한다. 그리고 `L`을 처리하기 전에 `L.in`이 이미 준비되어 있어야 한다.
-그래서 SDD를 실제 parser가 실행 가능한 형태로 바꾼 것이 **SDT scheme**이다.
+
+>그래서 SDD를 실제 parser가 실행 가능한 형태로 바꾼 것이 **SDT scheme**이다.
 
 ```
 1. D → T L        L.in := T.type
@@ -25,7 +27,8 @@
 `T`를 처리한 직후에 `{ L.in := T.type }`를 실행하고, 그다음 `L`을 처리하라는 뜻이다.
 
 ## SDT scheme이란?
-SDT scheme은 production rule 안에 실행 코드를 직접 넣은 형태다.
+
+>SDT scheme은 production rule 안에 실행 코드를 직접 넣은 형태다.
 
 즉 문법 규칙과 semantic action이 섞여 있다.
 
@@ -120,8 +123,8 @@ B → X {a} Y
 4. 그다음 Y를 처리한다.
 ```
 
-Top-down은 **Y를 처리하러 내려가기 전에 action을 실행**하는 것이고, 
-bottom-up은 **X가 stack 위에서 완성된 뒤 action을 실행**하는 것이다.
+- Top-down은 **Y를 처리하러 내려가기 전에 action을 실행**하는 것이고, 
+- bottom-up은 **X가 stack 위에서 완성된 뒤 action을 실행**하는 것이다.
 
 둘 다 결과적으로는 `X 처리 후, Y 처리 전`이지만, top-down은 호출/확장 관점이고 bottom-up은 shift-reduce stack 관점이라고 보면 된다.
 

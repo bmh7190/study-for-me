@@ -413,8 +413,10 @@ addtype(id3.entry, real)
 그 대표적인 두 종류가 S-attributed SDD, L-attributed SDD 이다.
 
 ## S-attributed SDD란?
-S-attributed SDD는 **모든 attribute가 synthesized attribute인 SDD**이다.
-즉, 모든 semantic rule이 오른쪽 자식들의 값을 이용해서 왼쪽 부모의 attribute를 계산하는 형태다.
+
+>S-attributed SDD는 **모든 attribute가 synthesized attribute인 SDD**이다.
+
+모든 semantic rule이 오른쪽 자식들의 값을 이용해서 왼쪽 부모의 attribute를 계산하는 형태다.
 
 예를 들면 여기서 `E.val`은 자식 `E1.val`, `T.val`로부터 계산된다.
 
@@ -449,7 +451,6 @@ LR parser는 bottom-up parsing 방식이다. 즉, production의 오른쪽 body�
 
 S-attributed SDD에서는 reduce 시점에 오른쪽 symbol들의 attribute가 이미 준비되어 있다. 그래서 reduce와 동시에 semantic rule을 실행해서 왼쪽 nonterminal의 attribute를 계산할 수 있다.
 
-예를 들어:
 
 ```
 T → T * F
@@ -461,7 +462,8 @@ LR parser가 `T * F`를 `T`로 reduce하는 순간, stack에는 이미 `T.val`�
 
 ---
 ## L-attributed
-L-attributed definition은 dependency graph의 정보 흐름이 **left to right**, 즉 왼쪽에서 오른쪽으로 진행되는 SDD다.
+
+>L-attributed definition은 dependency graph의 정보 흐름이 **left to right**, 즉 왼쪽에서 오른쪽으로 진행되는 SDD다.
 
 production이 다음과 같다고 하자.
 
@@ -487,7 +489,7 @@ X1, X2, ..., Xi-1의 attribute → Xi.a
 
 즉 `Xi.a`를 계산할 때는 **부모 A의 정보** 또는 **자기보다 왼쪽에 있는 형제들의 정보**만 사용할 수 있다.
 
-#### 왜 오른쪽 형제는 안 되는가
+#### 왜 오른쪽 형제는 안 되는가?
 
 예를 들어 production이 `A → X1 X2` 라고 하자.
 

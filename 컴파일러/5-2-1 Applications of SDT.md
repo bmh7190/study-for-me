@@ -1,10 +1,13 @@
 
 ![](../images/Pasted%20image%2020260601113445.png)
 
-parser가 parse tree를 만들면, 그 tree의 각 노드에 `val` 같은 attribute를 붙인다. 그리고 semantic rule에 따라 자식 노드의 값을 이용해서 부모 노드의 값을 계산한다. 이 예제에서는 모든 값이 아래에서 위로 올라가는 synthesized attribute이기 때문에, 숫자 leaf부터 시작해서 최종적으로 root 쪽에서 전체 수식의 값이 계산된다.
+parser가 parse tree를 만들면, 그 tree의 각 노드에 `val` 같은 attribute를 붙인다. 그리고 semantic rule에 따라 자식 노드의 값을 이용해서 부모 노드의 값을 계산한다. 
+
+이 예제에서는 모든 값이 아래에서 위로 올라가는 synthesized attribute이기 때문에, 숫자 leaf부터 시작해서 최종적으로 root 쪽에서 전체 수식의 값이 계산된다.
 
 ---
 # Application of Syntax-Directed Translation
+
 앞에서는 `9 + 5 + 2` 같은 수식을 보고 parse tree에 `val` 속성을 붙여서 최종 계산값을 구했다. 즉, 문법 구조를 따라가면서 attribute를 계산하는 방법을 봤다.
 
 그런데 실제 컴파일러는 수식의 결과값만 계산하는 게 목적이 아니다. 컴파일러는 소스 코드를 분석한 뒤에, 이후 단계에서 사용하기 좋은 형태의 중간 표현을 만들어야 한다.
@@ -27,7 +30,7 @@ Concrete Syntax Tree는 보통 **parse tree**라고 보면 된다. parse tree는
 
 ### Abstract Syntax Tree란?
 
-Abstract Syntax Tree는 parse tree에서 불필요한 문법 정보를 제거하고, 실제 의미 구조만 남긴 tree다.
+>parse tree에서 불필요한 문법 정보를 제거하고, 실제 의미 구조만 남긴 tree다.
 
 오른쪽 그림을 보면 루트가 `+`이다. 왼쪽 자식은 `id`, 오른쪽 자식은 `*`이다. 그리고 `*`의 자식으로 `id`, `id`가 있다.
 
@@ -44,7 +47,8 @@ Abstract Syntax Tree는 parse tree에서 불필요한 문법 정보를 제거하
 
 >**parse tree를 그대로 쓰지 말고, SDT의 semantic rule을 이용해서 필요한 AST 노드만 새로 만들어가자**는 것이다.
 
-### AST를 어떻게 만들 것인가
+## AST를 어떻게 만들 것인가
+
 AST를 만들 때는 노드를 크게 두 종류로 생각하면 된다.
 
 하나는 **leaf node**이고, 다른 하나는 **interior node**다.
@@ -67,7 +71,8 @@ leaf node는 더 이상 자식이 없는 노드다. 예를 들어 `id`, `num` �
 
 즉 leaf node는 **실제 토큰 값을 들고 있는 끝 노드**라고 보면 된다.
 
-## 내부 노드는 어떻게 만드는가
+### 내부 노드는 어떻게 만드는가
+
 interior node는 자식이 있는 노드다. AST에서는 보통 연산자 노드가 interior node가 된다. 예를 들어 `id + id * id`에서 `+`는 두 개의 자식을 가진다. 왼쪽 자식은 `id`, 오른쪽 자식은 `*` 노드다.
 
 `*` 노드도 두 개의 자식을 가진다. 왼쪽 자식은 `id`, 오른쪽 자식도 `id`다.
@@ -127,6 +132,7 @@ F.node = Leaf(id, id.entry)
 즉 `val` attribute로 계산값을 만들었던 것처럼, 이번에는 `node` attribute로 AST 노드를 만든다. 앞 예제에서는 `E.val`, `T.val`, `F.val`을 계산했다면, 여기서는 `E.node`, `T.node`, `F.node`를 만든다고 보면 된다.
 
 ## 중요한 관점
+
 중요한 건 AST를 직접 손으로 그리는 게 아니라, **parse tree를 순회하면서 AST 노드를 attribute로 만들어 올린다**는 점이다.
 
 아래쪽 `id`에서 leaf node가 만들어지고, 그 leaf node들이 위로 전달된다. 그리고 `*`나 `+` 같은 production을 만날 때 내부 노드가 만들어진다.
@@ -155,11 +161,9 @@ F.node = Leaf(id, id.entry)
 
 ![](../images/Pasted%20image%2020260601115255.png)
 
-여기서 중요한 건 `+`가 root라는 점이다. 왜냐하면 문법 구조상 `a - 4 + c`는 왼쪽 결합으로 해석되어 `(a - 4) + c` 가 되기 때문이다.
-그래서 먼저 `a - 4`가 하나의 subtree가 되고, 그 결과와 `c`를 더하는 구조가 된다.
+여기서 중요한 건 `+`가 root라는 점이다. 왜냐하면 문법 구조상 `a - 4 + c`는 왼쪽 결합으로 해석되어 `(a - 4) + c` 가 되기 때문이다. 그래서 먼저 `a - 4`가 하나의 subtree가 되고, 그 결과와 `c`를 더하는 구조가 된다.
 
-
-`p1 = new Leaf(id, entry-a);`
+>`p1 = new Leaf(id, entry-a);`
 
 먼저 `a`를 만나서 leaf node를 만든다.
 
@@ -168,7 +172,7 @@ p1 = a
 ```
 
 
-`p2 = new Leaf(num, 4);`
+>`p2 = new Leaf(num, 4);`
 
 숫자 `4`를 만나서 leaf node를 만든다.
 
@@ -177,15 +181,14 @@ p2 = 4
 ```
 
 
-`p3 = new Node('-', p1, p2);`
+>`p3 = new Node('-', p1, p2);`
 
 이제 `a - 4`를 처리한다.
 
-앞에서 만든 `p1`, `p2`를 자식으로 사용해서 `-` 노드를 만든다.
-즉 `p3`는 `a - 4` 전체를 나타내는 AST다.
+앞에서 만든 `p1`, `p2`를 자식으로 사용해서 `-` 노드를 만든다. 즉 `p3`는 `a - 4` 전체를 나타내는 AST다.
 
 
-`p4 = new Leaf(id, entry-c);`
+>`p4 = new Leaf(id, entry-c);`
 
 이번에는 `c`를 만나서 leaf node를 만든다.
 
@@ -194,7 +197,7 @@ p4 = c
 ```
 
 
-`p5 = new Node('+', p3, p4);`
+>`p5 = new Node('+', p3, p4);`
 
 마지막으로 `a - 4`의 AST인 `p3`와 `c`의 AST인 `p4`를 자식으로 해서 `+` 노드를 만든다.
 따라서 `p5`가 최종 AST의 root가 된다.
@@ -204,8 +207,7 @@ p4 = c
 
 `id`, `num` 같은 leaf에서 먼저 node가 만들어지고, 그 node들이 위로 전달된다. 그리고 `E → E1 - T`, `E → E1 + T` 같은 production을 만날 때 부모 node가 만들어진다.
 
-즉 흐름은 아래에서 위로 올라간다.
-그래서 `E.node`는 자식들의 `node`를 이용해서 만들어진다.
+즉 흐름은 아래에서 위로 올라간다. 그래서 `E.node`는 자식들의 `node`를 이용해서 만들어진다.
 
 앞에서 `E.val = E1.val + T.val`로 계산값을 만들었다면, 여기서는 `E.node = new Node('+', E1.node, T.node)`로 AST를 만든다고 보면 된다.
 
