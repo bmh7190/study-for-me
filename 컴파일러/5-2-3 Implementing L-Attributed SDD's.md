@@ -13,7 +13,6 @@ E → E1 + T { E.val := E1.val + T.val }
 ```
 
 여기까지는 “semantic action을 어디에 배치해야 하는가”에 대한 내용이었다.
-
 그런데 실제 컴파일러는 이 action들을 진짜로 실행해야 한다. 그래서 이제 질문이 바뀐다.
 
 >이 action들을 실제 parser 코드에서는 어떻게 처리할 것인가?
@@ -55,7 +54,7 @@ result = A(inherited 값)
 ---
 ## Function A가 해야 하는 일
 
-첫 번째로, `A`를 어떤 production으로 전개할지 결정해야 한다.
+> 첫 번째로, `A`를 어떤 production으로 전개할지 결정해야 한다.
 
 예를 들어 `A`에 여러 production이 있으면, 현재 입력 token을 보고 어떤 rule을 사용할지 고른다.
 
@@ -66,21 +65,20 @@ A → Z
 
 이런 경우 현재 입력을 보고 `A → X Y`를 쓸지, `A → Z`를 쓸지 결정해야 한다.
 
-
-두 번째로, 필요한 terminal이 실제 입력에 있는지 확인해야 한다.
+>두 번째로, 필요한 terminal이 실제 입력에 있는지 확인해야 한다.
 
 예를 들어 production에 `int`가 필요하면, 현재 입력 token이 정말 `int`인지 확인한다.
 맞으면 다음 token으로 넘어가고, 아니면 syntax error가 된다.
 
 
-세 번째로, attribute 변수들을 보존해야 한다.
+> 세 번째로, attribute 변수들을 보존해야 한다.
 
 parsing 중간에 계산된 attribute는 나중에 다른 nonterminal에게 넘겨야 할 수 있다.
 
 예를 들어 왼쪽 symbol에서 계산한 값을 오른쪽 symbol의 inherited attribute로 넘겨야 한다면, 그 값을 중간 변수에 저장해두어야 한다.
 
 
-네 번째로, production body 안에 있는 nonterminal에 해당하는 함수를 호출해야 한다.
+>네 번째로, production body 안에 있는 nonterminal에 해당하는 함수를 호출해야 한다.
 
 예를 들어 production이 `A → X Y` 라면 `A()` 함수 안에서는 `X()`를 호출하고, 그다음 `Y()`를 호출한다. 만약 `Y`가 inherited attribute를 필요로 한다면, `X()`에서 얻은 값을 `Y()`의 인자로 넘길 수 있다.
 
@@ -321,9 +319,7 @@ C.true = L2
 ---
 ### `Scode = S(L1);`
 
-이 부분은 while body인 `S1`을 처리하는 부분이다.
-
-원래 SDT에서는 `S1.next = L1;` 이었다. 즉 body 실행이 끝나면 다시 조건 검사 위치 `L1`로 돌아가야 한다.
+이 부분은 while body인 `S1`을 처리하는 부분이다. 원래 SDT에서는 `S1.next = L1;` 이었다. 즉 body 실행이 끝나면 다시 조건 검사 위치 `L1`로 돌아가야 한다.
 
 코드에서는 이것을 다음처럼 구현한다.
 
@@ -332,7 +328,6 @@ Scode = S(L1);
 ```
 
 여기서 `L1`은 body statement `S1`의 inherited attribute로 전달된다.
-
 그리고 `S(L1)`은 body code를 만들어서 return한다.
 
 그래서 `Scode`는 `S1.code`에 해당한다.
@@ -552,6 +547,7 @@ D → T { L.in := T.type } L
 
 즉 이 말은 **L-attributed SDD는 LL parser가 처리하는 순서대로 inherited attribute를 넘기고 synthesized attribute를 받을 수 있는 구조다.**
 
+---
 ### We can embed actions into productions
 
 앞에서 SDT를 만들 때 semantic action을 production 안에 넣었다.
