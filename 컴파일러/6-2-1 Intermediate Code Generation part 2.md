@@ -1,8 +1,8 @@
 앞에서는 SDT나 AST 같은 개념을 봤다면, 여기서는 그걸 실제로 **three-address code**로 바꾸는 방법을 본다. 즉, 문법을 분석하는 데서 끝나는 게 아니라, 컴파일러가 다음 단계에서 사용할 수 있는 중간 표현을 만드는 과정이다.
 
 # SDT FOR IR GENERATION
-여기서 핵심은 **SDT를 이용해서 IR을 생성한다**는 것이다.  
-SDT는 문법 규칙에 의미 동작을 붙이는 방식인데, 이번에는 그 의미 동작이 단순 계산이 아니라 `t1 := a + b` 같은 중간 코드를 생성하는 역할을 한다.
+
+여기서 핵심은 **SDT를 이용해서 IR을 생성한다**는 것이다. SDT는 문법 규칙에 의미 동작을 붙이는 방식인데, 이번에는 그 의미 동작이 단순 계산이 아니라 `t1 := a + b` 같은 중간 코드를 생성하는 역할을 한다.
 
 ![](../images/Pasted%20image%2020260519130622.png)
 
@@ -20,7 +20,11 @@ a := t1
 이런 식으로 말이다.
 
 ### Synthesized Attribute
-오른쪽에 Synthesized attribute가 정리되어 있다. `E.code` `E.addr` 이 중요하다. `E.code`는 해당 식을 계산하기 위해 필요한 three-address code다. `E.addr`은 그 식의 결과값이 저장된 위치 또는 이름을 말한다.
+
+오른쪽에 Synthesized attribute가 정리되어 있다. `E.code` `E.addr` 이 중요하다. 
+
+- `E.code`는 해당 식을 계산하기 위해 필요한 three-address code다. 
+- `E.addr`은 그 식의 결과값이 저장된 위치 또는 이름을 말한다.
 
 예를 들어 `b + x`를 계산해서 결과를 `t3`에 저장했다면 `E.addr = t3` 가 된다. 정리하면 `E.addr`는 "이 식의 결과가 어디에 들어 있냐?"를 나타내는 속성이다.
 
@@ -57,6 +61,7 @@ gen(t3 := t1 + t2)
 
 ---
 # Example a = b + - c
+
 이 예제는 **문법 구조를 따라가면서 expression을 three-address code로 바꾸는 방식**을 보여주는 거다. 핵심은 `E`가 계산될 때마다 두 가지 정보를 가진다고 보면 된다.
 
 ![](../images/Pasted%20image%2020260519134835.png)
@@ -97,8 +102,6 @@ E.code = 없음
 E.addr = c
 E.code = 없음
 ```
-
-이다.
 
 변수 자체는 이미 값이 있는 장소이기 때문에 새 코드를 만들 필요가 없다.
 
@@ -191,7 +194,7 @@ t2 = b + t1
 
 전체 문장은 `S → id := E` 이다.
 
-semantic rule은 아래와 같다ㅣ.
+semantic rule은 아래와 같다.
 
 ```text
 S.code := E.code || gen(id.addr := E.addr)
@@ -229,7 +232,6 @@ after:
 ```
 
 즉, 조건식을 먼저 계산하고, 조건이 거짓이면 반복문 뒤로 빠져나간다. 참이면 본문을 실행하고 다시 시작 label로 돌아간다.
-
 
 ---
 # Translating Procedure Calls
@@ -294,8 +296,7 @@ E.addr = t1
 그러면
 
 ```text
-Elist → E
-{ initialize queue to contain only E.addr }
+Elist → E { initialize queue to contain only E.addr }
 ```
 
 에 의해 queue가 만들어진다.
@@ -307,8 +308,7 @@ queue = [t1]
 그다음 `, b`가 붙으면:
 
 ```text
-Elist → Elist , E
-{ append E.addr to the end of queue }
+Elist → Elist , E { append E.addr to the end of queue }
 ```
 
 가 실행된다.

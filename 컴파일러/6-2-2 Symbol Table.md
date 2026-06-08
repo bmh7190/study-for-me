@@ -424,6 +424,7 @@ s.b → s의 시작 주소 + 4
 
 ---
 # Symbol Tables for Scoping
+
 앞에서 설명한 내용을 실제 자료구조 형태로 보자.
 
 ![](../images/Pasted%20image%2020260602235650.png)

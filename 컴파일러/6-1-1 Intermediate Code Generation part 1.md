@@ -139,6 +139,7 @@ DAG를 효율적으로 만들기 위해 **value numbering**이라는 방법을 �
 
 ---
 # Three address code
+
 중간 표현의 대표적인 형태가 **three-address code**이다. 
 
 ![](../images/Pasted%20image%2020260518170021.png)
@@ -171,6 +172,7 @@ Three-address code는 AST나 DAG를 일렬로 펼친 표현이라고 볼 수 있
 
 
 ## Three-Address Code 장점
+
 Three-address code의 장점은 크게 세 가지이다.
 
 첫째, 실제 기계어와 어느 정도 비슷하다. 많은 기계어 명령어도 보통 몇 개의 피연산자를 가지고 계산을 수행한다. 그래서 three-address code는 이후 target code로 바꾸기 쉽다.
@@ -189,9 +191,10 @@ t3 = t2 - d
 
 ---
 # Address and Instruction
+
 Three-address code에서 address는 여러 종류가 될 수 있다.
 
-첫 번째는 소스 프로그램에 등장하는 변수 이름이다.
+> 첫 번째는 소스 프로그램에 등장하는 변수 이름이다.
 
 ```
 a, b, c, x, y
@@ -199,19 +202,19 @@ a, b, c, x, y
 
 이런 이름들은 보통 symbol table의 entry를 가리키는 방식으로 구현될 수 있다.
 
-두 번째는 상수이다.
+> 두 번째는 상수이다.
 
 ```
 1, 2, 3.14
 ```
 
-세 번째는 컴파일러가 생성한 temporary variable이다.
+> 세 번째는 컴파일러가 생성한 temporary variable이다.
 
 ```
 t1, t2, t3
 ```
 
-그리고 three-address instruction에는 여러 형태가 있다.
+ >그리고 three-address instruction에는 여러 형태가 있다.
 
 ```
 x = y op z          // 이항 연산
@@ -272,6 +275,7 @@ if t3 < v goto L
 
 ---
 # Three Address Code: Quadruple
+
 Three-address code를 실제로 저장하는 방법 중 하나가 **quadruple**이다.
 
 ![](../images/Pasted%20image%2020260518170914.png)
@@ -300,6 +304,7 @@ Quadruple의 장점은 결과 이름이 명시적으로 존재한다는 것이�
 
 ---
 # Three Address Code: Triple
+
 Triple은 quadruple보다 더 compact한 표현 방식이다.
 
 ![](../images/Pasted%20image%2020260518171106.png)
@@ -328,6 +333,7 @@ Triple의 장점은 임시 변수 이름을 따로 저장하지 않아도 되기
 
 ---
 # Three Address Code: Indirect Triples
+
 Indirect triple은 triple의 단점을 보완하기 위한 방식이다.
 
 ![](../images/Pasted%20image%2020260518171317.png)
@@ -415,6 +421,7 @@ y1 = x3 * a
 
 ---
 # Two Address Code
+
 Three-address code와 비교되는 표현으로 **two-address code**가 있다.
 
 Two-address code는 다음과 같은 형태를 가진다.
@@ -445,6 +452,7 @@ t1 = x + y
 
 ---
 # Control Flow Graph
+
 프로그램은 항상 위에서 아래로만 실행되지 않는다. if문, while문, 함수 호출, goto, return 같은 구조가 있으면 실행 흐름이 바뀐다.
 
 이 흐름을 그래프로 표현한 것이 **Control-Flow Graph**, 줄여서 CFG이다.
@@ -461,7 +469,8 @@ Control-flow graph에서 node는 보통 **basic block**이고, edge는 제어 �
 
 ---
 # Basic Blocks
-Basic block은 중간 코드 명령어들의 연속된 묶음이다.
+
+> Basic block은 중간 코드 명령어들의 연속된 묶음이다.
 
 정확히는 다음 조건을 만족하는 코드 조각이다.
 
