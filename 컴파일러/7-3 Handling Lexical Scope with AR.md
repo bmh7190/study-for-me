@@ -327,7 +327,7 @@ Access link는 **callee의 AR 안에 저장되는 포인터**이고, 그 포인�
 
 여기서는 두 경우로 나눈다.
 
-## 1. `np < nq`인 경우
+### 1. `np < nq`인 경우
 `np`는 caller `p`의 lexical depth이고, `nq`는 callee `q`의 lexical depth이다.
 `np < nq`라는 것은 호출되는 `q`가 `p`보다 더 안쪽에 선언된 procedure라는 뜻이다.
 
@@ -345,7 +345,7 @@ Access link는 **callee의 AR 안에 저장되는 포인터**이고, 그 포인�
 caller의 ARP를 callee의 access link에 복사하는 것이다.
 
 ---
-## 2. `np >= nq`인 경우
+### 2. `np >= nq`인 경우
 
 이 경우는 caller가 callee와 같은 depth이거나, caller가 callee보다 더 안쪽 depth에 있는 경우다. 이때 중요한 점은 **callee의 access link가 caller를 무조건 가리키는 것이 아니라, callee를 코드상 감싸는 lexical parent의 AR을 가리켜야 한다**는 것이다.
 
