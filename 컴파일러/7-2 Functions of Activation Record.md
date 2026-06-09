@@ -23,7 +23,7 @@ factorial(1)의 AR
 ### Activation Record Pointer
 왼쪽에 있는 **ARP**는 Activation Record Pointer이다. 
 
-현재 실행 중인 Activation Record를 가리키는 포인터이다. 그림에서 ARP가 Activation Record의 중간쯤을 가리키고 있는데, 이것은 AR 안의 여러 정보에 접근할 때 기준점 역할을 한다.
+>현재 실행 중인 Activation Record를 가리키는 포인터이다. 그림에서 ARP가 Activation Record의 중간쯤을 가리키고 있는데, 이것은 AR 안의 여러 정보에 접근할 때 기준점 역할을 한다.
 
 예를 들어 지역 변수에 접근할 때는 ARP를 기준으로 아래쪽 offset을 사용하고, parameter에 접근할 때는 ARP를 기준으로 위쪽 offset을 사용할 수 있다.
 
@@ -38,7 +38,8 @@ ARP - offset
 
 ---
 ### parameters
-맨 위의 **parameters**는 현재 routine에 전달된 매개변수들이 저장되는 공간이다.
+
+>맨 위의 **parameters**는 현재 routine에 전달된 매개변수들이 저장되는 공간이다.
 
 예를 들어 다음 코드가 있다고 하자.
 
@@ -54,7 +55,8 @@ int add(int a, int b) {
 
 ---
 ### register save area
-그다음 **register save area**는 register 값을 저장해 두는 공간이다.
+
+>그다음 **register save area**는 register 값을 저장해 두는 공간이다.
 
 함수를 호출하면 CPU register에 있던 값이 callee에 의해 바뀔 수 있다. 그런데 caller 입장에서는 함수 호출이 끝난 뒤에도 기존 register 값이 필요할 수 있다. 
 
@@ -62,7 +64,8 @@ int add(int a, int b) {
 
 ---
 ### reture value
-**return value**는 함수가 결과값을 반환할 때 사용하는 공간이다.
+
+>**return value**는 함수가 결과값을 반환할 때 사용하는 공간이다.
 
 예를 들어 `add(3, 5)`의 결과가 `8`이라면, 이 `8`을 caller에게 넘겨야 한다.
 
@@ -76,7 +79,8 @@ int x = add(3, 5);
 
 ---
 ### return address
-**return address**는 함수가 끝난 뒤 다시 돌아갈 주소이다. 함수 호출은 현재 위치에서 callee로 실행 흐름이 이동하는 것이다. 그런데 callee가 끝나면 caller의 다음 명령어로 돌아와야 한다.
+
+>**return address**는 함수가 끝난 뒤 다시 돌아갈 주소이다. 함수 호출은 현재 위치에서 callee로 실행 흐름이 이동하는 것이다. 그런데 callee가 끝나면 caller의 다음 명령어로 돌아와야 한다.
 
 예를 들어 다음 코드에서,
 
@@ -93,7 +97,10 @@ y = x + 1;
 
 ---
 ### access link
-**access link**는 non-local variable에 접근하기 위한 link이다. 여기서 non-local variable은 현재 함수 안에서 선언된 변수는 아니지만, 바깥 scope에 있어서 접근 가능한 변수를 말한다.
+
+>**access link**는 non-local variable에 접근하기 위한 link이다. 
+
+여기서 non-local variable은 현재 함수 안에서 선언된 변수는 아니지만, 바깥 scope에 있어서 접근 가능한 변수를 말한다.
 
 예를 들어 nested procedure가 있다고 하자.
 
@@ -111,7 +118,8 @@ procedure outer
 
 ---
 ### caller’s ARP
-**caller’s ARP**는 caller의 Activation Record Pointer를 저장하는 공간이다.
+
+>**caller’s ARP**는 caller의 Activation Record Pointer를 저장하는 공간이다.
 
 함수가 호출되면 현재 실행 중인 caller에서 callee로 넘어간다. 그런데 callee가 끝나면 다시 caller의 AR로 돌아와야 한다. 그러려면 callee의 AR 안에 caller의 ARP를 저장해 두어야 한다.
 
@@ -121,7 +129,8 @@ procedure outer
 
 ---
 ### local variables
-맨 아래의 **local variables**는 현재 routine 안에서 선언된 지역 변수들이 저장되는 공간이다.
+
+>맨 아래의 **local variables**는 현재 routine 안에서 선언된 지역 변수들이 저장되는 공간이다.
 
 예를 들어 다음 코드에서,
 
@@ -560,8 +569,10 @@ Activation Record 는 실제 메모리에서 어디에 저장될까?
 Activation Record는 procedure 호출 한 번에 필요한 실행 정보를 담는 구조였다. 그런데 이 AR을 항상 Stack에만 둘 수 있는 것은 아니다. 어떤 상황에서는 static 영역에 둘 수도 있고, 앞에서 언급했든 heap에서도 둘 수 있다.
 
 ### 1. Stack AR을 두는 경우
+
 가장 일반적인 경우는 AR을 스택에 두는 경우이다. 
-함수가 호출될 때 AR이 생기고, 함수가 끝날 때 AR이 사라져도 된다면 stack에 두면 된다.
+
+>함수가 호출될 때 AR이 생기고, 함수가 끝날 때 AR이 사라져도 된다면 stack에 두면 된다.
 
 예를 들어 다음 코드를 보자.
 
@@ -601,7 +612,8 @@ int fact(int n) {
 ### 2. Heap AR을 두는 경우
 그다음은 AR을 **heap**에 둬야 하는 경우이다.
 
-만약에 **함수가 끝난 뒤에도 그 함수의 실행 상태가 필요하면 stack에 두면 안 된다.**
+>만약에 **함수가 끝난 뒤에도 그 함수의 실행 상태가 필요하면 stack에 두면 안 된다.**
+
 왜냐하면 stack에 있는 AR은 함수가 return하면 제거되기 때문이다.
 
 예를 들어 어떤 언어에서 함수 안에 내부 함수를 만들고, 그 내부 함수를 밖으로 반환할 수 있다고 하자.
@@ -626,9 +638,10 @@ function outer() {
 
 ---
 ### 3. Static AR을 두는 경우
+
 아떤 procedure가 다른 함수를 호출하지 않고, 재귀도 하지 않으며, 동시에 여러 activation이 존재할 일이 없다면 AR을 static하게 둘 수 있다.
 
-Static allocation은 AR의 위치를 실행 중에 새로 잡지 않고, 미리 고정해 두는 방식이다.
+>Static allocation은 AR의 위치를 실행 중에 새로 잡지 않고, 미리 고정해 두는 방식이다.
 
 예를 들어 아주 단순한 함수가 있고, 그 함수가 동시에 여러 번 활성화될 일이 없다면, 그 함수의 지역 변수 공간을 고정된 메모리 위치에 둘 수 있다.
 

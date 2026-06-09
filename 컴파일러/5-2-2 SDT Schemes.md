@@ -556,7 +556,6 @@ left recursion 제거를 할 때도 이 action이 원래 어떤 symbol 뒤에서
 
 이것도 left recursive하다. `A → A1 Y`에서 오른쪽이 다시 `A1`으로 시작하기 때문이다.
 
-
 ![](../images/Pasted%20image%2020260601160959.png)
 
 처음에는 `X`에서 시작해서 값을 만든다.
