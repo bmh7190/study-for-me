@@ -25,4 +25,4 @@ A → D
 ## 시간 복잡도
 시간 복잡도는 vertex가 `n`개, edge가 `m`개일 때 DFS/BFS 한 번이 `O(n + m)`이고, 이를 모든 vertex에 대해 수행하므로 $O(n(n+m))$이다. 
 
-Dense graph처럼 `m = O(n^2)`이면 보통 $O(n^3)$ 으로 볼 수 있다.
+Dense graph처럼 $m = O(n^2)$ 이면 보통 $O(n^3)$ 으로 볼 수 있다.
